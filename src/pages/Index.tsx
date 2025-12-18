@@ -44,7 +44,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center">
       <div className="text-center animate-fade-in">
-        <h1 className="text-5xl font-display tracking-wider neon-text mb-4">
+        <h1 className="text-5xl font-display tracking-wider text-primary mb-4">
           ELEVEFUT
         </h1>
         <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />

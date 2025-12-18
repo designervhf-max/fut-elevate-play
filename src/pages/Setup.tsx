@@ -75,7 +75,7 @@ const Setup = () => {
             onClick={() => setSelected(type.value)}
             className={`w-full p-5 rounded-xl border-2 transition-all duration-300 animate-slide-up ${
               selected === type.value
-                ? 'border-primary bg-primary/10 shadow-neon'
+                ? 'border-primary bg-primary/10'
                 : 'border-border bg-card hover:border-primary/50'
             }`}
             style={{ animationDelay: `${index * 0.1}s` }}

@@ -72,7 +72,7 @@ const Home = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 glass px-4 py-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-display tracking-wider neon-text">
+          <h1 className="text-2xl font-display tracking-wider text-primary">
             ELEVEFUT
           </h1>
           <button
