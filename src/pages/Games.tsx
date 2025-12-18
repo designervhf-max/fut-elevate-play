@@ -402,11 +402,11 @@ const Games = () => {
                         {userParticipation && (
                           <div className="flex items-center gap-4 text-sm border-t border-border pt-3 mt-3">
                             <div className="text-center">
-                              <div className="text-lg font-display neon-text">{userParticipation.goals || 0}</div>
+                              <div className="text-lg font-display text-primary">{userParticipation.goals || 0}</div>
                               <div className="text-xs text-muted-foreground">Gols</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-lg font-display neon-text">{userParticipation.assists || 0}</div>
+                              <div className="text-lg font-display text-primary">{userParticipation.assists || 0}</div>
                               <div className="text-xs text-muted-foreground">Assist.</div>
                             </div>
                             {userParticipation.rating && (

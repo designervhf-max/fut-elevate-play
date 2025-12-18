@@ -83,7 +83,7 @@ const Profile = () => {
       <main className="p-4 space-y-6">
         {/* Profile Header */}
         <section className="text-center animate-slide-up">
-          <div className="w-28 h-28 rounded-full bg-surface-elevated border-4 border-primary shadow-neon mx-auto mb-4 flex items-center justify-center">
+          <div className="w-28 h-28 rounded-full bg-surface-elevated border-4 border-primary mx-auto mb-4 flex items-center justify-center">
             {profile.avatar_url ? (
               <img
                 src={profile.avatar_url}
@@ -100,7 +100,7 @@ const Profile = () => {
 
         {/* Overall Card */}
         <section className="fifa-card p-6 text-center animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <div className="text-6xl font-display neon-text mb-2">{profile.overall_rating}</div>
+          <div className="text-6xl font-display text-primary mb-2">{profile.overall_rating}</div>
           <p className="text-sm text-muted-foreground uppercase tracking-wider">Overall Rating</p>
         </section>
 
@@ -150,11 +150,11 @@ const Profile = () => {
           
           <div className="grid grid-cols-2 gap-3">
             <div className="fifa-card p-4 text-center">
-              <div className="text-3xl font-display neon-text">{profile.total_goals}</div>
+              <div className="text-3xl font-display text-primary">{profile.total_goals}</div>
               <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Gols</p>
             </div>
             <div className="fifa-card p-4 text-center">
-              <div className="text-3xl font-display neon-text">{profile.total_assists}</div>
+              <div className="text-3xl font-display text-primary">{profile.total_assists}</div>
               <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Assistências</p>
             </div>
           </div>

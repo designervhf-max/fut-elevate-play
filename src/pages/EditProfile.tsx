@@ -212,7 +212,7 @@ const EditProfile = () => {
         {/* Avatar Upload */}
         <section className="text-center animate-slide-up">
           <div className="relative inline-block">
-            <div className="w-28 h-28 rounded-full bg-surface-elevated border-4 border-primary shadow-neon mx-auto flex items-center justify-center overflow-hidden">
+            <div className="w-28 h-28 rounded-full bg-surface-elevated border-4 border-primary mx-auto flex items-center justify-center overflow-hidden">
               {uploading ? (
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               ) : avatarUrl ? (

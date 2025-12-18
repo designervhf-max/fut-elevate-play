@@ -27,7 +27,7 @@ const PlayerCard = ({ profile }: PlayerCardProps) => {
         {/* Top Section - Rating & Position */}
         <div className="flex justify-between items-start p-4 pb-0">
           <div className="text-center">
-            <div className="text-5xl font-display neon-text leading-none">
+            <div className="text-5xl font-display text-primary leading-none">
               {profile.overall_rating}
             </div>
             <div className="text-lg font-display text-primary mt-1">
@@ -51,7 +51,7 @@ const PlayerCard = ({ profile }: PlayerCardProps) => {
 
         {/* Player Avatar Area */}
         <div className="flex justify-center py-4">
-          <div className="w-32 h-32 rounded-full bg-surface-elevated border-4 border-primary shadow-neon flex items-center justify-center">
+          <div className="w-32 h-32 rounded-full bg-surface-elevated border-4 border-primary flex items-center justify-center">
             {profile.avatar_url ? (
               <img
                 src={profile.avatar_url}
@@ -80,12 +80,12 @@ const PlayerCard = ({ profile }: PlayerCardProps) => {
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 gap-4 px-4 pb-4 pt-2">
-          <div className="bg-surface rounded-lg p-3 text-center neon-border">
-            <div className="text-2xl font-display neon-text">{profile.total_goals}</div>
+          <div className="bg-surface rounded-lg p-3 text-center border border-primary/30">
+            <div className="text-2xl font-display text-primary">{profile.total_goals}</div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider">Gols</div>
           </div>
-          <div className="bg-surface rounded-lg p-3 text-center neon-border">
-            <div className="text-2xl font-display neon-text">{profile.total_assists}</div>
+          <div className="bg-surface rounded-lg p-3 text-center border border-primary/30">
+            <div className="text-2xl font-display text-primary">{profile.total_assists}</div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider">Assistências</div>
           </div>
         </div>
