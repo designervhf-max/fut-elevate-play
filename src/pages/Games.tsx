@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import BottomNav from '@/components/BottomNav';
 import {
   ChevronLeft,
   Calendar,
@@ -104,8 +105,18 @@ const Games = () => {
       .eq('game_id', gameId)
       .eq('user_id', userId);
 
-    // Refresh data
-    window.location.reload();
+    // Move from invites to games with updated status
+    const acceptedGame = invites.find(g => g.id === gameId);
+    if (acceptedGame) {
+      const updatedGame = {
+        ...acceptedGame,
+        participants: acceptedGame.participants.map(p =>
+          p.user_id === userId ? { ...p, status: 'Confirmado' as const } : p
+        ),
+      };
+      setInvites(prev => prev.filter(g => g.id !== gameId));
+      setGames(prev => [...prev, updatedGame]);
+    }
   };
 
   const handleDeclineInvite = async (gameId: string) => {
@@ -117,8 +128,8 @@ const Games = () => {
       .eq('game_id', gameId)
       .eq('user_id', userId);
 
-    // Refresh data
-    window.location.reload();
+    // Remove from invites list
+    setInvites(prev => prev.filter(g => g.id !== gameId));
   };
 
   const getStatusColor = (status: string) => {
@@ -341,7 +352,12 @@ const Games = () => {
                           <Users className="h-4 w-4" />
                           {game.participants.filter(p => p.status === 'Confirmado').length}/{game.max_players}
                         </span>
-                        <Button variant="ghost" size="sm" className="text-primary">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-primary"
+                          onClick={() => navigate(`/game/${game.id}`)}
+                        >
                           Ver detalhes
                         </Button>
                       </div>
@@ -399,7 +415,12 @@ const Games = () => {
                                 <div className="text-xs text-muted-foreground">Nota</div>
                               </div>
                             )}
-                            <Button variant="ghost" size="sm" className="ml-auto text-primary">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="ml-auto text-primary"
+                              onClick={() => navigate(`/game/${game.id}`)}
+                            >
                               Ver desempenho
                             </Button>
                           </div>
@@ -416,7 +437,7 @@ const Games = () => {
 
       {/* Floating Action Button */}
       {!isEmpty && (
-        <div className="fixed bottom-6 right-6 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+        <div className="fixed bottom-20 right-6 animate-slide-up" style={{ animationDelay: '0.4s' }}>
           <Button
             variant="sport"
             size="icon"
@@ -427,6 +448,8 @@ const Games = () => {
           </Button>
         </div>
       )}
+
+      <BottomNav />
     </div>
   );
 };

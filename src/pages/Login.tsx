@@ -105,6 +105,7 @@ const Login = () => {
 
           <button
             type="button"
+            onClick={() => navigate('/forgot-password')}
             className="text-sm text-muted-foreground hover:text-primary transition-colors"
           >
             Esqueci minha senha

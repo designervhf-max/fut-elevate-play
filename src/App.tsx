@@ -11,6 +11,9 @@ import Home from "./pages/Home";
 import Games from "./pages/Games";
 import CreateGame from "./pages/CreateGame";
 import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
+import GameDetails from "./pages/GameDetails";
+import ForgotPassword from "./pages/ForgotPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +33,9 @@ const App = () => (
           <Route path="/games" element={<Games />} />
           <Route path="/create-game" element={<CreateGame />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/edit" element={<EditProfile />} />
+          <Route path="/game/:id" element={<GameDetails />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
