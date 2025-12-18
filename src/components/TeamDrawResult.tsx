@@ -4,7 +4,7 @@ import type { Database } from '@/integrations/supabase/types';
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type GameParticipant = Database['public']['Tables']['game_participants']['Row'];
 
-type ParticipantWithProfile = GameParticipant & { profile: Profile };
+type ParticipantWithProfile = GameParticipant & { profile: Profile | null };
 
 interface TeamDrawResultProps {
   teamA: ParticipantWithProfile[];
@@ -21,7 +21,8 @@ const getStars = (rating: number | null): number => {
   return 1;
 };
 
-const getPositionAbbr = (position: string): string => {
+const getPositionAbbr = (position: string | null | undefined): string => {
+  if (!position) return 'N/A';
   const abbrs: Record<string, string> = {
     Goleiro: 'GOL',
     Fixo: 'FIX',
@@ -34,13 +35,26 @@ const getPositionAbbr = (position: string): string => {
   return abbrs[position] || position.slice(0, 3).toUpperCase();
 };
 
+// Helper to get player display info (handles both registered and guest players)
+const getPlayerInfo = (participant: ParticipantWithProfile) => {
+  const isGuest = !participant.user_id;
+  return {
+    name: isGuest ? participant.guest_name || 'Jogador' : participant.profile?.name || 'Jogador',
+    position: isGuest ? participant.guest_position : participant.profile?.position,
+    avatarUrl: isGuest ? null : participant.profile?.avatar_url,
+    rating: isGuest ? 50 : participant.profile?.overall_rating || 50,
+    isGuest,
+  };
+};
+
 const TeamDrawResult = ({ teamA, teamB, onReshuffle }: TeamDrawResultProps) => {
-  const totalA = teamA.reduce((sum, p) => sum + (p.profile.overall_rating || 0), 0);
-  const totalB = teamB.reduce((sum, p) => sum + (p.profile.overall_rating || 0), 0);
+  const totalA = teamA.reduce((sum, p) => sum + getPlayerInfo(p).rating, 0);
+  const totalB = teamB.reduce((sum, p) => sum + getPlayerInfo(p).rating, 0);
   const difference = Math.abs(totalA - totalB);
 
   const renderPlayer = (participant: ParticipantWithProfile) => {
-    const stars = getStars(participant.profile.overall_rating);
+    const playerInfo = getPlayerInfo(participant);
+    const stars = getStars(playerInfo.rating);
     
     return (
       <div
@@ -48,23 +62,30 @@ const TeamDrawResult = ({ teamA, teamB, onReshuffle }: TeamDrawResultProps) => {
         className="flex items-center gap-3 p-3 bg-surface/50 rounded-lg"
       >
         <div className="w-10 h-10 rounded-full bg-background border-2 border-border flex items-center justify-center flex-shrink-0">
-          {participant.profile.avatar_url ? (
+          {playerInfo.avatarUrl ? (
             <img
-              src={participant.profile.avatar_url}
-              alt={participant.profile.name}
+              src={playerInfo.avatarUrl}
+              alt={playerInfo.name}
               className="w-full h-full rounded-full object-cover"
             />
           ) : (
             <span className="text-sm font-bold text-primary">
-              {participant.profile.name.charAt(0)}
+              {playerInfo.name.charAt(0)}
             </span>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate">{participant.profile.name}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-semibold text-sm truncate">{playerInfo.name}</p>
+            {playerInfo.isGuest && (
+              <span className="text-[8px] bg-muted text-muted-foreground px-1 py-0.5 rounded flex-shrink-0">
+                ALE
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-1">
             <span className="text-xs text-muted-foreground">
-              {getPositionAbbr(participant.profile.position)}
+              {getPositionAbbr(playerInfo.position)}
             </span>
             <div className="flex ml-1">
               {[...Array(stars)].map((_, i) => (
@@ -74,7 +95,7 @@ const TeamDrawResult = ({ teamA, teamB, onReshuffle }: TeamDrawResultProps) => {
           </div>
         </div>
         <span className="text-lg font-bold text-primary">
-          {participant.profile.overall_rating}
+          {playerInfo.rating}
         </span>
       </div>
     );
