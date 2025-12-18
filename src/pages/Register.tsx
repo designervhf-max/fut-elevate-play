@@ -1,0 +1,331 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Eye, EyeOff, Mail, Lock, User, Hash, ChevronLeft, Loader2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const positions = [
+  'Goleiro',
+  'Fixo',
+  'Ala',
+  'Pivô',
+  'Zagueiro',
+  'Meia',
+  'Atacante',
+];
+
+const dominantFeet = [
+  { value: 'Destro', label: 'Destro' },
+  { value: 'Canhoto', label: 'Canhoto' },
+  { value: 'Ambos', label: 'Ambos' },
+];
+
+const Register = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    age: '',
+    position: '',
+    shirtNumber: '',
+    dominantFoot: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const validateForm = () => {
+    if (!formData.name || !formData.age || !formData.position || 
+        !formData.shirtNumber || !formData.dominantFoot || 
+        !formData.email || !formData.password || !formData.confirmPassword) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const age = parseInt(formData.age);
+    if (isNaN(age) || age < 10) {
+      toast({
+        title: "Erro",
+        description: "Idade mínima é 10 anos",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const shirtNumber = parseInt(formData.shirtNumber);
+    if (isNaN(shirtNumber) || shirtNumber < 1 || shirtNumber > 99) {
+      toast({
+        title: "Erro",
+        description: "Número da camisa deve ser entre 1 e 99",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (formData.password.length < 6) {
+      toast({
+        title: "Erro",
+        description: "Senha deve ter no mínimo 6 caracteres",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    setLoading(true);
+
+    const { error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          name: formData.name,
+          age: parseInt(formData.age),
+          position: formData.position,
+          shirt_number: parseInt(formData.shirtNumber),
+          dominant_foot: formData.dominantFoot,
+        },
+      },
+    });
+
+    setLoading(false);
+
+    if (error) {
+      if (error.message.includes('already registered')) {
+        toast({
+          title: "Erro",
+          description: "Este e-mail já está cadastrado",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro no cadastro",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    toast({
+      title: "Conta criada!",
+      description: "Bem-vindo ao EleveFut!",
+    });
+
+    navigate('/setup');
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col p-6">
+      {/* Header */}
+      <div className="flex items-center mb-6">
+        <button
+          onClick={() => navigate('/login')}
+          className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+        <h1 className="text-2xl font-display tracking-wider ml-2">CRIAR CONTA</h1>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleRegister} className="flex-1 space-y-4 overflow-auto pb-6">
+        {/* Name */}
+        <div className="space-y-2 animate-slide-up">
+          <Label htmlFor="name" className="text-sm text-muted-foreground">Nome</Label>
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              id="name"
+              placeholder="Seu nome"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className="pl-12"
+            />
+          </div>
+        </div>
+
+        {/* Age */}
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+          <Label htmlFor="age" className="text-sm text-muted-foreground">Idade</Label>
+          <Input
+            id="age"
+            type="number"
+            min={10}
+            placeholder="Mínimo 10 anos"
+            value={formData.age}
+            onChange={(e) => handleChange('age', e.target.value)}
+          />
+        </div>
+
+        {/* Position */}
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <Label className="text-sm text-muted-foreground">Posição</Label>
+          <Select value={formData.position} onValueChange={(v) => handleChange('position', v)}>
+            <SelectTrigger className="h-12 bg-surface border-border">
+              <SelectValue placeholder="Selecione sua posição" />
+            </SelectTrigger>
+            <SelectContent>
+              {positions.map((pos) => (
+                <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Shirt Number */}
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.15s' }}>
+          <Label htmlFor="shirtNumber" className="text-sm text-muted-foreground">Número da Camisa</Label>
+          <div className="relative">
+            <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              id="shirtNumber"
+              type="number"
+              min={1}
+              max={99}
+              placeholder="1 a 99"
+              value={formData.shirtNumber}
+              onChange={(e) => handleChange('shirtNumber', e.target.value)}
+              className="pl-12"
+            />
+          </div>
+        </div>
+
+        {/* Dominant Foot */}
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <Label className="text-sm text-muted-foreground">Pé Dominante</Label>
+          <Select value={formData.dominantFoot} onValueChange={(v) => handleChange('dominantFoot', v)}>
+            <SelectTrigger className="h-12 bg-surface border-border">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              {dominantFeet.map((foot) => (
+                <SelectItem key={foot.value} value={foot.value}>{foot.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Email */}
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.25s' }}>
+          <Label htmlFor="email" className="text-sm text-muted-foreground">E-mail</Label>
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="seu@email.com"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              className="pl-12"
+            />
+          </div>
+        </div>
+
+        {/* Password */}
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <Label htmlFor="password" className="text-sm text-muted-foreground">Senha</Label>
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Mínimo 6 caracteres"
+              value={formData.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+              className="pl-12 pr-12"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Confirm Password */}
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.35s' }}>
+          <Label htmlFor="confirmPassword" className="text-sm text-muted-foreground">Confirmar Senha</Label>
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              id="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              placeholder="Repita a senha"
+              value={formData.confirmPassword}
+              onChange={(e) => handleChange('confirmPassword', e.target.value)}
+              className="pl-12 pr-12"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <div className="pt-4 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+          <Button
+            type="submit"
+            variant="sport"
+            size="lg"
+            className="w-full"
+            disabled={loading}
+          >
+            {loading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              'CRIAR CONTA'
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default Register;

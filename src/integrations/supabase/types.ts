@@ -1,0 +1,328 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
+  public: {
+    Tables: {
+      game_participants: {
+        Row: {
+          assists: number | null
+          created_at: string | null
+          game_id: string
+          goals: number | null
+          id: string
+          rating: number | null
+          status: Database["public"]["Enums"]["participant_status"] | null
+          user_id: string
+        }
+        Insert: {
+          assists?: number | null
+          created_at?: string | null
+          game_id: string
+          goals?: number | null
+          id?: string
+          rating?: number | null
+          status?: Database["public"]["Enums"]["participant_status"] | null
+          user_id: string
+        }
+        Update: {
+          assists?: number | null
+          created_at?: string | null
+          game_id?: string
+          goals?: number | null
+          id?: string
+          rating?: number | null
+          status?: Database["public"]["Enums"]["participant_status"] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_participants_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      games: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          date: string
+          game_type: Database["public"]["Enums"]["game_type"]
+          id: string
+          location: string
+          max_players: number
+          status: Database["public"]["Enums"]["game_status"] | null
+          time: string
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          date: string
+          game_type: Database["public"]["Enums"]["game_type"]
+          id?: string
+          location: string
+          max_players: number
+          status?: Database["public"]["Enums"]["game_status"] | null
+          time: string
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          date?: string
+          game_type?: Database["public"]["Enums"]["game_type"]
+          id?: string
+          location?: string
+          max_players?: number
+          status?: Database["public"]["Enums"]["game_status"] | null
+          time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          age: number
+          attack_rating: number | null
+          avatar_url: string | null
+          created_at: string | null
+          defense_rating: number | null
+          dominant_foot: Database["public"]["Enums"]["dominant_foot"]
+          id: string
+          name: string
+          overall_rating: number | null
+          position: Database["public"]["Enums"]["player_position"]
+          preferred_game_type: Database["public"]["Enums"]["game_type"] | null
+          shirt_number: number
+          skill_rating: number | null
+          strength_rating: number | null
+          total_assists: number | null
+          total_goals: number | null
+        }
+        Insert: {
+          age: number
+          attack_rating?: number | null
+          avatar_url?: string | null
+          created_at?: string | null
+          defense_rating?: number | null
+          dominant_foot: Database["public"]["Enums"]["dominant_foot"]
+          id: string
+          name: string
+          overall_rating?: number | null
+          position: Database["public"]["Enums"]["player_position"]
+          preferred_game_type?: Database["public"]["Enums"]["game_type"] | null
+          shirt_number: number
+          skill_rating?: number | null
+          strength_rating?: number | null
+          total_assists?: number | null
+          total_goals?: number | null
+        }
+        Update: {
+          age?: number
+          attack_rating?: number | null
+          avatar_url?: string | null
+          created_at?: string | null
+          defense_rating?: number | null
+          dominant_foot?: Database["public"]["Enums"]["dominant_foot"]
+          id?: string
+          name?: string
+          overall_rating?: number | null
+          position?: Database["public"]["Enums"]["player_position"]
+          preferred_game_type?: Database["public"]["Enums"]["game_type"] | null
+          shirt_number?: number
+          skill_rating?: number | null
+          strength_rating?: number | null
+          total_assists?: number | null
+          total_goals?: number | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      dominant_foot: "Destro" | "Canhoto" | "Ambos"
+      game_status: "Confirmado" | "Pendente" | "Cancelado" | "Finalizado"
+      game_type: "Futsal" | "Society" | "Campo"
+      participant_status: "Confirmado" | "Pendente" | "Recusado"
+      player_position:
+        | "Goleiro"
+        | "Fixo"
+        | "Ala"
+        | "Pivô"
+        | "Zagueiro"
+        | "Meia"
+        | "Atacante"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      dominant_foot: ["Destro", "Canhoto", "Ambos"],
+      game_status: ["Confirmado", "Pendente", "Cancelado", "Finalizado"],
+      game_type: ["Futsal", "Society", "Campo"],
+      participant_status: ["Confirmado", "Pendente", "Recusado"],
+      player_position: [
+        "Goleiro",
+        "Fixo",
+        "Ala",
+        "Pivô",
+        "Zagueiro",
+        "Meia",
+        "Atacante",
+      ],
+    },
+  },
+} as const
