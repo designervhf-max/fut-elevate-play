@@ -66,33 +66,39 @@ export type Database = {
           created_at: string | null
           game_id: string
           goals: number | null
+          guest_name: string | null
+          guest_position: string | null
           id: string
           rating: number | null
           stats_submitted: boolean | null
           status: Database["public"]["Enums"]["participant_status"] | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           assists?: number | null
           created_at?: string | null
           game_id: string
           goals?: number | null
+          guest_name?: string | null
+          guest_position?: string | null
           id?: string
           rating?: number | null
           stats_submitted?: boolean | null
           status?: Database["public"]["Enums"]["participant_status"] | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           assists?: number | null
           created_at?: string | null
           game_id?: string
           goals?: number | null
+          guest_name?: string | null
+          guest_position?: string | null
           id?: string
           rating?: number | null
           stats_submitted?: boolean | null
           status?: Database["public"]["Enums"]["participant_status"] | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
