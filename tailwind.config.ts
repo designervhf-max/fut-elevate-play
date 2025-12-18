@@ -61,7 +61,7 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        neon: "hsl(var(--neon))",
+        lime: "hsl(var(--lime))",
         surface: "hsl(var(--surface))",
         "surface-elevated": "hsl(var(--surface-elevated))",
       },
@@ -79,10 +79,6 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "pulse-neon": {
-          "0%, 100%": { boxShadow: "0 0 20px hsl(var(--neon) / 0.4)" },
-          "50%": { boxShadow: "0 0 40px hsl(var(--neon) / 0.6)" },
-        },
         "float": {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
@@ -99,15 +95,13 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "pulse-neon": "pulse-neon 2s ease-in-out infinite",
         "float": "float 3s ease-in-out infinite",
         "slide-up": "slide-up 0.5s ease-out forwards",
         "fade-in": "fade-in 0.3s ease-out forwards",
       },
       boxShadow: {
-        neon: "0 0 20px hsl(var(--neon) / 0.3)",
-        "neon-strong": "0 0 40px hsl(var(--neon) / 0.5)",
         card: "0 4px 24px hsl(0, 0%, 0%, 0.4)",
+        subtle: "0 2px 8px hsl(0, 0%, 0%, 0.3)",
       },
     },
   },

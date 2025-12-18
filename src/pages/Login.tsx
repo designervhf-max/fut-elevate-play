@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
+import elevefutLogo from '@/assets/elevefut-logo.gif';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -52,9 +53,7 @@ const Login = () => {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
       {/* Logo */}
       <div className="mb-10 text-center animate-slide-up">
-        <h1 className="text-5xl font-display tracking-wider neon-text">
-          ELEVEFUT
-        </h1>
+        <img src={elevefutLogo} alt="EleveFut" className="h-16 mx-auto" />
         <p className="text-muted-foreground mt-2 text-sm">
           Eleve seu jogo
         </p>
