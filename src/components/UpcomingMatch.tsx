@@ -1,0 +1,553 @@
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import TeamDrawResult from './TeamDrawResult';
+import OrganizerStatsForm from './OrganizerStatsForm';
+import PlayerVoting from './PlayerVoting';
+import GameSummary from './GameSummary';
+import AddPlayerDialog from './AddPlayerDialog';
+import {
+  CalendarDays,
+  Clock,
+  MapPin,
+  Users,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Shuffle,
+  Flag,
+  X,
+} from 'lucide-react';
+
+type Match = {
+  id: string;
+  pelada_id: string;
+  match_date: string;
+  match_time: string;
+  location: string | null;
+  status: string;
+  mvp_id: string | null;
+  best_defender_id: string | null;
+  results_determined: boolean;
+  ended_at: string | null;
+};
+
+type MatchParticipant = {
+  id: string;
+  match_id: string;
+  user_id: string | null;
+  guest_name: string | null;
+  guest_position: string | null;
+  status: string;
+  goals: number;
+  assists: number;
+  stats_submitted: boolean;
+  rating: number | null;
+  team: number | null;
+  profile?: {
+    id: string;
+    name: string;
+    position: string;
+    avatar_url: string | null;
+    overall_rating: number;
+  };
+};
+
+type Pelada = {
+  id: string;
+  name: string;
+  location: string;
+  weekday: number;
+  time: string;
+  game_type: string;
+  max_players: number;
+};
+
+interface UpcomingMatchProps {
+  match: Match | null;
+  participants: MatchParticipant[];
+  pelada: Pelada;
+  userId: string | null;
+  isAdmin: boolean;
+  onRefresh: () => Promise<void>;
+}
+
+const UpcomingMatch = ({
+  match,
+  participants,
+  pelada,
+  userId,
+  isAdmin,
+  onRefresh,
+}: UpcomingMatchProps) => {
+  const { toast } = useToast();
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showTeamDraw, setShowTeamDraw] = useState(false);
+  const [teamA, setTeamA] = useState<MatchParticipant[]>([]);
+  const [teamB, setTeamB] = useState<MatchParticipant[]>([]);
+
+  // No match scheduled
+  if (!match) {
+    return (
+      <div className="fifa-card p-5 text-center">
+        <CalendarDays className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+        <h4 className="font-display text-lg tracking-wider text-muted-foreground">
+          SEM PARTIDA AGENDADA
+        </h4>
+        <p className="text-sm text-muted-foreground mt-2">
+          Nenhuma partida marcada para os próximos dias.
+        </p>
+        {isAdmin && (
+          <Button variant="sport" className="mt-4" onClick={() => {/* TODO: Create match */}}>
+            Agendar Partida
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  const matchDate = new Date(match.match_date + 'T00:00:00');
+  const userParticipation = participants.find(p => p.user_id === userId);
+  const confirmedCount = participants.filter(p => p.status === 'Confirmado').length;
+  const allStatsSubmitted = participants.filter(p => p.status === 'Confirmado').every(p => p.stats_submitted);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Confirmado':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'Pendente':
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'Recusado':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Confirmado':
+        return 'text-green-500';
+      case 'Pendente':
+        return 'text-yellow-500';
+      case 'Recusado':
+        return 'text-red-500';
+      default:
+        return 'text-muted-foreground';
+    }
+  };
+
+  const handleConfirmPresence = async () => {
+    if (!userId || !match) return;
+    setActionLoading(true);
+
+    if (userParticipation) {
+      // Update existing participation
+      const { error } = await supabase
+        .from('match_participants')
+        .update({ status: 'Confirmado' })
+        .eq('id', userParticipation.id);
+
+      if (error) {
+        toast({ title: 'Erro', description: 'Não foi possível confirmar presença', variant: 'destructive' });
+      } else {
+        toast({ title: 'Sucesso', description: 'Presença confirmada!' });
+        await onRefresh();
+      }
+    } else {
+      // Create new participation
+      const { error } = await supabase
+        .from('match_participants')
+        .insert({
+          match_id: match.id,
+          user_id: userId,
+          status: 'Confirmado',
+        });
+
+      if (error) {
+        toast({ title: 'Erro', description: 'Não foi possível confirmar presença', variant: 'destructive' });
+      } else {
+        toast({ title: 'Sucesso', description: 'Presença confirmada!' });
+        await onRefresh();
+      }
+    }
+
+    setActionLoading(false);
+  };
+
+  const handleCancelPresence = async () => {
+    if (!userId || !userParticipation) return;
+    setActionLoading(true);
+
+    const { error } = await supabase
+      .from('match_participants')
+      .delete()
+      .eq('id', userParticipation.id);
+
+    setActionLoading(false);
+
+    if (error) {
+      toast({ title: 'Erro', description: 'Não foi possível cancelar presença', variant: 'destructive' });
+    } else {
+      toast({ title: 'Sucesso', description: 'Presença cancelada' });
+      await onRefresh();
+    }
+  };
+
+  const getPlayerRating = (participant: MatchParticipant) => {
+    if (!participant.user_id) return 50;
+    return participant.profile?.overall_rating || 50;
+  };
+
+  const shuffleTeams = () => {
+    const confirmed = participants.filter(p => p.status === 'Confirmado');
+    
+    if (confirmed.length < 2) {
+      toast({
+        title: 'Aviso',
+        description: 'É necessário pelo menos 2 jogadores confirmados',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const sorted = [...confirmed].sort((a, b) => getPlayerRating(b) - getPlayerRating(a));
+    const newTeamA: MatchParticipant[] = [];
+    const newTeamB: MatchParticipant[] = [];
+    
+    sorted.forEach((player, index) => {
+      if (index % 2 === 0) {
+        newTeamA.push(player);
+      } else {
+        newTeamB.push(player);
+      }
+    });
+
+    setTeamA(newTeamA);
+    setTeamB(newTeamB);
+    setShowTeamDraw(true);
+  };
+
+  const handleEndMatch = async () => {
+    if (!match || !isAdmin) return;
+
+    const confirmed = window.confirm('Encerrar a partida? Após isso, você poderá registrar as estatísticas.');
+    if (!confirmed) return;
+
+    setActionLoading(true);
+
+    const { error } = await supabase
+      .from('matches')
+      .update({ 
+        status: 'finished',
+        ended_at: new Date().toISOString(),
+      })
+      .eq('id', match.id);
+
+    setActionLoading(false);
+
+    if (error) {
+      toast({ title: 'Erro', description: 'Não foi possível encerrar a partida', variant: 'destructive' });
+    } else {
+      toast({ title: 'Partida encerrada!', description: 'Registre as estatísticas dos jogadores' });
+      await onRefresh();
+    }
+  };
+
+  const handleDataRefresh = async () => {
+    await onRefresh();
+    try {
+      await supabase.functions.invoke('determine-game-results');
+    } catch (error) {
+      console.log('Result calculation will happen later');
+    }
+  };
+
+  // Adapt participants for legacy components
+  const adaptedParticipants = participants.map(p => ({
+    ...p,
+    game_id: match.id, // Legacy compatibility
+    profile: p.profile || {
+      id: p.user_id || '',
+      name: p.guest_name || 'Jogador',
+      position: p.guest_position || 'Meia',
+      avatar_url: null,
+      overall_rating: 50,
+      attack_rating: 50,
+      defense_rating: 50,
+      skill_rating: 50,
+      strength_rating: 50,
+      age: 25,
+      dominant_foot: 'Destro',
+      shirt_number: 10,
+      phone: null,
+      total_goals: 0,
+      total_assists: 0,
+      calibration_completed: false,
+      created_at: '',
+      preferred_game_type: null,
+    },
+  }));
+
+  return (
+    <div className="space-y-4">
+      {/* Match Info Card */}
+      <div className="fifa-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+              <CalendarDays className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">
+                {matchDate.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+              </p>
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {match.match_time.slice(0, 5)}
+              </p>
+            </div>
+          </div>
+          {match.status === 'finished' && (
+            <span className="text-xs bg-destructive/20 text-destructive px-2 py-1 rounded">
+              Finalizado
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <MapPin className="h-4 w-4" />
+          {match.location || pelada.location}
+        </div>
+
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <Users className="h-4 w-4" />
+          {confirmedCount}/{pelada.max_players} confirmados
+        </div>
+
+        {/* User Status */}
+        {userParticipation && (
+          <div className="flex items-center gap-2 p-3 bg-surface/50 rounded-lg mb-4">
+            {getStatusIcon(userParticipation.status)}
+            <span className={`text-sm font-medium ${getStatusColor(userParticipation.status)}`}>
+              Você está {userParticipation.status.toLowerCase()}
+            </span>
+          </div>
+        )}
+
+        {/* User Actions */}
+        {match.status !== 'finished' && (
+          <div className="flex gap-2">
+            {(!userParticipation || userParticipation.status !== 'Confirmado') && (
+              <Button
+                variant="sport"
+                className="flex-1"
+                onClick={handleConfirmPresence}
+                disabled={actionLoading}
+              >
+                {actionLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    Confirmar Presença
+                  </>
+                )}
+              </Button>
+            )}
+            {userParticipation && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={handleCancelPresence}
+                disabled={actionLoading}
+              >
+                <XCircle className="h-5 w-5 mr-2" />
+                Cancelar
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Admin Actions */}
+      {isAdmin && match.status !== 'finished' && (
+        <div className="grid grid-cols-2 gap-3">
+          <Button variant="sport" onClick={shuffleTeams}>
+            <Shuffle className="h-5 w-5 mr-2" />
+            Sortear Times
+          </Button>
+          <AddPlayerDialog
+            gameId={match.id}
+            onPlayerAdded={onRefresh}
+            isMatchParticipant
+          />
+          <Button
+            variant="destructive"
+            className="col-span-2"
+            onClick={handleEndMatch}
+            disabled={actionLoading}
+          >
+            {actionLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                <Flag className="h-5 w-5 mr-2" />
+                Encerrar Partida
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Team Draw Result */}
+      {showTeamDraw && (
+        <div className="animate-slide-up">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm text-muted-foreground uppercase tracking-wider">
+              Times Sorteados
+            </h4>
+            <button
+              onClick={() => setShowTeamDraw(false)}
+              className="p-1 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <TeamDrawResult
+            teamA={teamA as any}
+            teamB={teamB as any}
+            onReshuffle={shuffleTeams}
+          />
+        </div>
+      )}
+
+      {/* Post-Game Section */}
+      {match.status === 'finished' && (
+        <div className="space-y-4">
+          {isAdmin && !allStatsSubmitted && (
+            <div>
+              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
+                Registrar Estatísticas
+              </h4>
+              <OrganizerStatsForm
+                gameId={match.id}
+                participants={adaptedParticipants as any}
+                onSubmit={handleDataRefresh}
+              />
+            </div>
+          )}
+
+          {!isAdmin && allStatsSubmitted && userParticipation?.status === 'Confirmado' && (
+            <div>
+              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
+                Votação
+              </h4>
+              <PlayerVoting
+                gameId={match.id}
+                participants={adaptedParticipants as any}
+                currentUserId={userId!}
+                onVoteSubmitted={handleDataRefresh}
+              />
+            </div>
+          )}
+
+          {!isAdmin && !allStatsSubmitted && userParticipation?.status === 'Confirmado' && (
+            <div className="fifa-card p-5 text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
+              <h4 className="font-display text-lg tracking-wider text-primary">
+                AGUARDANDO ORGANIZADOR
+              </h4>
+              <p className="text-sm text-muted-foreground mt-2">
+                O organizador está registrando as estatísticas
+              </p>
+            </div>
+          )}
+
+          {match.results_determined && (
+            <div>
+              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
+                Resumo da Partida
+              </h4>
+              <GameSummary
+                gameId={match.id}
+                participants={adaptedParticipants as any}
+                mvpId={match.mvp_id}
+                bestDefenderId={match.best_defender_id}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Players List */}
+      <div>
+        <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
+          Jogadores ({confirmedCount}/{pelada.max_players})
+        </h4>
+        <div className="space-y-2">
+          {participants
+            .sort((a, b) => {
+              const order = { Confirmado: 0, Pendente: 1, Recusado: 2 };
+              return (order[a.status as keyof typeof order] || 2) - (order[b.status as keyof typeof order] || 2);
+            })
+            .map((participant) => {
+              const isGuest = !participant.user_id;
+              const name = isGuest ? participant.guest_name : participant.profile?.name;
+              const position = isGuest ? participant.guest_position : participant.profile?.position;
+              const avatar = isGuest ? null : participant.profile?.avatar_url;
+              const rating = isGuest ? 50 : participant.profile?.overall_rating;
+
+              return (
+                <div key={participant.id} className="fifa-card p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-surface border-2 border-border flex items-center justify-center">
+                      {avatar ? (
+                        <img src={avatar} alt={name || ''} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        <span className="text-sm font-bold text-primary">
+                          {name?.charAt(0) || '?'}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm">{name}</p>
+                        {isGuest && (
+                          <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                            Aleatório
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{position}</span>
+                        <span>•</span>
+                        <span className="text-primary font-bold">{rating}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(participant.status)}
+                    <span className={`text-xs ${getStatusColor(participant.status)}`}>
+                      {participant.status}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
+          {participants.length === 0 && (
+            <div className="text-center py-6 text-muted-foreground">
+              <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Nenhum jogador confirmado ainda</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default UpcomingMatch;
