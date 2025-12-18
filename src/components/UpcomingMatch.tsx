@@ -382,7 +382,7 @@ const UpcomingMatch = ({
           <AddPlayerDialog
             gameId={match.id}
             onPlayerAdded={onRefresh}
-            isMatchParticipant
+            useMatchParticipants
           />
           <Button
             variant="destructive"

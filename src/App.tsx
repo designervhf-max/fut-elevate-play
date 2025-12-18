@@ -2,14 +2,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Setup from "./pages/Setup";
 import Home from "./pages/Home";
 import Games from "./pages/Games";
-import CreateGame from "./pages/CreateGame";
+import CreatePelada from "./pages/CreatePelada";
+import PeladaDetails from "./pages/PeladaDetails";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import GameDetails from "./pages/GameDetails";
@@ -34,10 +35,13 @@ const App = () => (
           <Route path="/calibration" element={<Calibration />} />
           <Route path="/home" element={<Home />} />
           <Route path="/games" element={<Games />} />
-          <Route path="/create-game" element={<CreateGame />} />
+          <Route path="/create-pelada" element={<CreatePelada />} />
+          <Route path="/pelada/:id" element={<PeladaDetails />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />
+          {/* Legacy routes - redirect to new structure */}
           <Route path="/game/:id" element={<GameDetails />} />
+          <Route path="/create-game" element={<Navigate to="/create-pelada" replace />} />
           <Route path="/join/:id" element={<JoinGame />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="*" element={<NotFound />} />

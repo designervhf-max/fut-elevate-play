@@ -26,9 +26,10 @@ const positions = Constants.public.Enums.player_position;
 interface AddPlayerDialogProps {
   gameId: string;
   onPlayerAdded: () => void;
+  useMatchParticipants?: boolean;
 }
 
-const AddPlayerDialog = ({ gameId, onPlayerAdded }: AddPlayerDialogProps) => {
+const AddPlayerDialog = ({ gameId, onPlayerAdded, useMatchParticipants = false }: AddPlayerDialogProps) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
@@ -49,13 +50,27 @@ const AddPlayerDialog = ({ gameId, onPlayerAdded }: AddPlayerDialogProps) => {
 
     setLoading(true);
 
-    const { error } = await supabase.from('game_participants').insert({
-      game_id: gameId,
-      guest_name: name.trim(),
-      guest_position: position,
-      status: 'Confirmado',
-      rating: 50,
-    });
+    let error;
+
+    if (useMatchParticipants) {
+      const result = await supabase.from('match_participants').insert({
+        match_id: gameId,
+        guest_name: name.trim(),
+        guest_position: position,
+        status: 'Confirmado',
+        rating: 50,
+      });
+      error = result.error;
+    } else {
+      const result = await supabase.from('game_participants').insert({
+        game_id: gameId,
+        guest_name: name.trim(),
+        guest_position: position,
+        status: 'Confirmado',
+        rating: 50,
+      });
+      error = result.error;
+    }
 
     setLoading(false);
 

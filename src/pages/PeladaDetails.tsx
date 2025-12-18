@@ -142,16 +142,45 @@ const PeladaDetails = () => {
       setNextMatch(match);
 
       // Fetch participants for next match
-      const { data: participants } = await supabase
+      const { data: participantsData } = await supabase
         .from('match_participants')
-        .select(`
-          *,
-          profile:profiles(*)
-        `)
+        .select('*')
         .eq('match_id', match.id);
 
-      if (participants) {
-        setNextMatchParticipants(participants as MatchParticipant[]);
+      if (participantsData) {
+        // Fetch profiles for participants with user_id
+        const userIds = participantsData
+          .filter(p => p.user_id)
+          .map(p => p.user_id as string);
+
+        let profilesMap: Record<string, MatchParticipant['profile']> = {};
+        
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, name, position, avatar_url, overall_rating')
+            .in('id', userIds);
+
+          if (profiles) {
+            profilesMap = profiles.reduce((acc, p) => {
+              acc[p.id] = {
+                id: p.id,
+                name: p.name,
+                position: p.position,
+                avatar_url: p.avatar_url,
+                overall_rating: p.overall_rating || 50,
+              };
+              return acc;
+            }, {} as typeof profilesMap);
+          }
+        }
+
+        const participantsWithProfiles = participantsData.map(p => ({
+          ...p,
+          profile: p.user_id ? profilesMap[p.user_id] : undefined,
+        }));
+
+        setNextMatchParticipants(participantsWithProfiles as MatchParticipant[]);
       }
     }
 
