@@ -71,6 +71,7 @@ export type Database = {
           id: string
           location: string
           max_players: number
+          name: string
           status: Database["public"]["Enums"]["game_status"] | null
           time: string
         }
@@ -82,6 +83,7 @@ export type Database = {
           id?: string
           location: string
           max_players: number
+          name?: string
           status?: Database["public"]["Enums"]["game_status"] | null
           time: string
         }
@@ -93,6 +95,7 @@ export type Database = {
           id?: string
           location?: string
           max_players?: number
+          name?: string
           status?: Database["public"]["Enums"]["game_status"] | null
           time?: string
         }

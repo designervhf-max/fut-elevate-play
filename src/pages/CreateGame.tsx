@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronLeft, Calendar, Clock, MapPin, Users, Loader2 } from 'lucide-react';
+import { ChevronLeft, Calendar, Clock, MapPin, Users, Loader2, Trophy } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type GameType = Database['public']['Enums']['game_type'];
@@ -29,6 +29,7 @@ const CreateGame = () => {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
+    name: '',
     date: '',
     time: '',
     location: '',
@@ -43,7 +44,7 @@ const CreateGame = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.date || !formData.time || !formData.location || !formData.gameType || !formData.maxPlayers) {
+    if (!formData.name.trim() || !formData.date || !formData.time || !formData.location || !formData.gameType || !formData.maxPlayers) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos",
@@ -81,6 +82,7 @@ const CreateGame = () => {
       .from('games')
       .insert({
         creator_id: user.id,
+        name: formData.name.trim(),
         date: formData.date,
         time: formData.time,
         location: formData.location,
@@ -137,8 +139,22 @@ const CreateGame = () => {
 
       {/* Form */}
       <form onSubmit={handleCreate} className="p-4 space-y-5">
-        {/* Date */}
+        {/* Name */}
         <div className="space-y-2 animate-slide-up">
+          <Label htmlFor="name" className="text-sm text-muted-foreground flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-primary" />
+            Nome da Pelada
+          </Label>
+          <Input
+            id="name"
+            placeholder="Ex: Pelada dos Amigos"
+            value={formData.name}
+            onChange={(e) => handleChange('name', e.target.value)}
+          />
+        </div>
+
+        {/* Date */}
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.05s' }}>
           <Label htmlFor="date" className="text-sm text-muted-foreground flex items-center gap-2">
             <Calendar className="h-4 w-4 text-primary" />
             Data
@@ -153,7 +169,7 @@ const CreateGame = () => {
         </div>
 
         {/* Time */}
-        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <Label htmlFor="time" className="text-sm text-muted-foreground flex items-center gap-2">
             <Clock className="h-4 w-4 text-primary" />
             Hora
@@ -167,7 +183,7 @@ const CreateGame = () => {
         </div>
 
         {/* Location */}
-        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.15s' }}>
           <Label htmlFor="location" className="text-sm text-muted-foreground flex items-center gap-2">
             <MapPin className="h-4 w-4 text-primary" />
             Local
@@ -181,7 +197,7 @@ const CreateGame = () => {
         </div>
 
         {/* Game Type */}
-        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.15s' }}>
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <Label className="text-sm text-muted-foreground">Tipo de Jogo</Label>
           <Select value={formData.gameType} onValueChange={(v) => handleChange('gameType', v)}>
             <SelectTrigger className="h-12 bg-surface border-border">
@@ -196,7 +212,7 @@ const CreateGame = () => {
         </div>
 
         {/* Max Players */}
-        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.25s' }}>
           <Label htmlFor="maxPlayers" className="text-sm text-muted-foreground flex items-center gap-2">
             <Users className="h-4 w-4 text-primary" />
             Número Máximo de Jogadores
@@ -213,7 +229,7 @@ const CreateGame = () => {
         </div>
 
         {/* Submit Button */}
-        <div className="pt-6 animate-slide-up" style={{ animationDelay: '0.25s' }}>
+        <div className="pt-6 animate-slide-up" style={{ animationDelay: '0.3s' }}>
           <Button
             type="submit"
             variant="sport"
