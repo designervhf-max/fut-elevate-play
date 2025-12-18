@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Trophy, Target, Sparkles, Loader2 } from 'lucide-react';
+import { Trophy, Target, Sparkles, Shield, Loader2 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type GameParticipant = Database['public']['Tables']['game_participants']['Row'];
@@ -10,6 +10,7 @@ interface GameSummaryProps {
   gameId: string;
   participants: (GameParticipant & { profile: Profile })[];
   mvpId?: string | null;
+  bestDefenderId?: string | null;
 }
 
 interface VoteCount {
@@ -17,20 +18,21 @@ interface VoteCount {
   count: number;
 }
 
-const GameSummary = ({ gameId, participants, mvpId }: GameSummaryProps) => {
+const GameSummary = ({ gameId, participants, mvpId, bestDefenderId }: GameSummaryProps) => {
   const [mvpVotes, setMvpVotes] = useState<VoteCount[]>([]);
+  const [defenderVotes, setDefenderVotes] = useState<VoteCount[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchVotes = async () => {
-      const { data } = await supabase
+      // Fetch MVP votes
+      const { data: mvpData } = await supabase
         .from('mvp_votes')
         .select('voted_for_id')
         .eq('game_id', gameId);
 
-      if (data) {
-        // Count votes per player
-        const voteCounts = data.reduce((acc: Record<string, number>, vote) => {
+      if (mvpData) {
+        const voteCounts = mvpData.reduce((acc: Record<string, number>, vote) => {
           acc[vote.voted_for_id] = (acc[vote.voted_for_id] || 0) + 1;
           return acc;
         }, {});
@@ -41,6 +43,26 @@ const GameSummary = ({ gameId, participants, mvpId }: GameSummaryProps) => {
 
         setMvpVotes(sorted);
       }
+
+      // Fetch defender votes
+      const { data: defenderData } = await supabase
+        .from('defender_votes')
+        .select('voted_for_id')
+        .eq('game_id', gameId);
+
+      if (defenderData) {
+        const voteCounts = defenderData.reduce((acc: Record<string, number>, vote) => {
+          acc[vote.voted_for_id] = (acc[vote.voted_for_id] || 0) + 1;
+          return acc;
+        }, {});
+
+        const sorted = Object.entries(voteCounts)
+          .map(([voted_for_id, count]) => ({ voted_for_id, count }))
+          .sort((a, b) => b.count - a.count);
+
+        setDefenderVotes(sorted);
+      }
+
       setLoading(false);
     };
 
@@ -69,11 +91,18 @@ const GameSummary = ({ gameId, participants, mvpId }: GameSummaryProps) => {
     (a, b) => (b.assists || 0) - (a.assists || 0)
   )[0];
 
-  // Find MVP (most voted or from game.mvp_id)
+  // Find MVP (from game.mvp_id or most voted)
   const mvpPlayer = mvpId
     ? participants.find((p) => p.user_id === mvpId)
     : mvpVotes.length > 0
     ? participants.find((p) => p.user_id === mvpVotes[0].voted_for_id)
+    : null;
+
+  // Find Best Defender (from game.best_defender_id or most voted)
+  const bestDefender = bestDefenderId
+    ? participants.find((p) => p.user_id === bestDefenderId)
+    : defenderVotes.length > 0
+    ? participants.find((p) => p.user_id === defenderVotes[0].voted_for_id)
     : null;
 
   const submittedCount = confirmedParticipants.filter(
@@ -95,7 +124,7 @@ const GameSummary = ({ gameId, participants, mvpId }: GameSummaryProps) => {
           </p>
         )}
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3 mb-3">
           {/* MVP */}
           <div className="text-center p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
             <Trophy className="h-6 w-6 text-yellow-500 mx-auto mb-2" />
@@ -114,6 +143,26 @@ const GameSummary = ({ gameId, participants, mvpId }: GameSummaryProps) => {
             )}
           </div>
 
+          {/* Best Defender */}
+          <div className="text-center p-3 rounded-xl bg-blue-500/10 border border-blue-500/30">
+            <Shield className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground mb-1">Melhor Defensor</p>
+            {bestDefender ? (
+              <>
+                <p className="font-bold text-sm truncate">{bestDefender.profile.name}</p>
+                {defenderVotes.length > 0 && (
+                  <p className="text-xs text-blue-500">
+                    {defenderVotes[0]?.count || 0} votos
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">Aguardando votos</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           {/* Top Scorer */}
           <div className="text-center p-3 rounded-xl bg-primary/10 border border-primary/30">
             <Target className="h-6 w-6 text-primary mx-auto mb-2" />
@@ -129,13 +178,13 @@ const GameSummary = ({ gameId, participants, mvpId }: GameSummaryProps) => {
           </div>
 
           {/* Top Assister */}
-          <div className="text-center p-3 rounded-xl bg-blue-500/10 border border-blue-500/30">
-            <Sparkles className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+          <div className="text-center p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+            <Sparkles className="h-6 w-6 text-emerald-500 mx-auto mb-2" />
             <p className="text-xs text-muted-foreground mb-1">Garçom</p>
             {topAssister && (topAssister.assists || 0) > 0 ? (
               <>
                 <p className="font-bold text-sm truncate">{topAssister.profile.name}</p>
-                <p className="text-xs text-blue-500">{topAssister.assists} assist.</p>
+                <p className="text-xs text-emerald-500">{topAssister.assists} assist.</p>
               </>
             ) : (
               <p className="text-xs text-muted-foreground">-</p>
@@ -188,7 +237,7 @@ const GameSummary = ({ gameId, participants, mvpId }: GameSummaryProps) => {
                         <p className="text-xs text-muted-foreground">Gols</p>
                       </div>
                       <div className="text-center">
-                        <p className="font-bold text-blue-500">{participant.assists || 0}</p>
+                        <p className="font-bold text-emerald-500">{participant.assists || 0}</p>
                         <p className="text-xs text-muted-foreground">Assist.</p>
                       </div>
                     </>
