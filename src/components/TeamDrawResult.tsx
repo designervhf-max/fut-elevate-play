@@ -13,12 +13,12 @@ interface TeamDrawResultProps {
 }
 
 const getStars = (rating: number | null): number => {
-  if (!rating) return 1;
+  if (!rating) return 2; // Minimum 2 stars
   if (rating >= 90) return 5;
   if (rating >= 75) return 4;
   if (rating >= 60) return 3;
   if (rating >= 45) return 2;
-  return 1;
+  return 2; // Minimum 2 stars
 };
 
 const getPositionAbbr = (position: string | null | undefined): string => {
