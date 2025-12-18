@@ -18,6 +18,22 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { getWeekdayLabel } from '@/lib/weekday';
 
+// Helper to calculate next match date based on weekday
+const getNextMatchDate = (weekday: number): string => {
+  const today = new Date();
+  const currentDay = today.getDay();
+  let daysUntilNext = weekday - currentDay;
+  
+  if (daysUntilNext <= 0) {
+    daysUntilNext += 7;
+  }
+  
+  const nextDate = new Date(today);
+  nextDate.setDate(today.getDate() + daysUntilNext);
+  
+  return nextDate.toISOString().split('T')[0];
+};
+
 // Types
 type Pelada = {
   id: string;
@@ -126,7 +142,7 @@ const PeladaDetails = () => {
       setMembership(memberData as PeladaMember);
     }
 
-    // Fetch next match (scheduled or in_progress)
+    // Fetch next match (scheduled or in_progress) or create one
     const today = new Date().toISOString().split('T')[0];
     const { data: upcomingMatches } = await supabase
       .from('matches')
@@ -137,15 +153,40 @@ const PeladaDetails = () => {
       .order('match_date', { ascending: true })
       .limit(1);
 
+    let matchToUse: Match | null = null;
+
     if (upcomingMatches && upcomingMatches.length > 0) {
-      const match = upcomingMatches[0] as Match;
-      setNextMatch(match);
+      matchToUse = upcomingMatches[0] as Match;
+    } else if (memberData?.role === 'admin' || peladaData.creator_id === session.user.id) {
+      // Auto-create next match if admin and no upcoming match exists
+      const nextMatchDate = getNextMatchDate(peladaData.weekday);
+      
+      const { data: newMatch, error: createError } = await supabase
+        .from('matches')
+        .insert({
+          pelada_id: id,
+          match_date: nextMatchDate,
+          match_time: peladaData.time,
+          location: peladaData.location,
+          status: 'scheduled',
+        })
+        .select()
+        .single();
+
+      if (!createError && newMatch) {
+        matchToUse = newMatch as Match;
+      }
+    }
+
+    if (matchToUse) {
+      setNextMatch(matchToUse);
 
       // Fetch participants for next match
       const { data: participantsData } = await supabase
         .from('match_participants')
         .select('*')
-        .eq('match_id', match.id);
+        .eq('match_id', matchToUse.id)
+        .order('created_at', { ascending: true }); // First come first served
 
       if (participantsData) {
         // Fetch profiles for participants with user_id
