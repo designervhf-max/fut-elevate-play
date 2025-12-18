@@ -14,6 +14,52 @@ export type Database = {
   }
   public: {
     Tables: {
+      defender_votes: {
+        Row: {
+          created_at: string | null
+          game_id: string
+          id: string
+          voted_for_id: string
+          voter_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          game_id: string
+          id?: string
+          voted_for_id: string
+          voter_id: string
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string
+          id?: string
+          voted_for_id?: string
+          voter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "defender_votes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "defender_votes_voted_for_id_fkey"
+            columns: ["voted_for_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "defender_votes_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_participants: {
         Row: {
           assists: number | null
@@ -67,45 +113,61 @@ export type Database = {
       }
       games: {
         Row: {
+          best_defender_id: string | null
           created_at: string | null
           creator_id: string
+          ended_at: string | null
           game_type: Database["public"]["Enums"]["game_type"]
           id: string
           location: string
           max_players: number
           mvp_id: string | null
           name: string
+          results_determined: boolean | null
           status: Database["public"]["Enums"]["game_status"] | null
           time: string
           weekday: number
         }
         Insert: {
+          best_defender_id?: string | null
           created_at?: string | null
           creator_id: string
+          ended_at?: string | null
           game_type: Database["public"]["Enums"]["game_type"]
           id?: string
           location: string
           max_players: number
           mvp_id?: string | null
           name?: string
+          results_determined?: boolean | null
           status?: Database["public"]["Enums"]["game_status"] | null
           time: string
           weekday?: number
         }
         Update: {
+          best_defender_id?: string | null
           created_at?: string | null
           creator_id?: string
+          ended_at?: string | null
           game_type?: Database["public"]["Enums"]["game_type"]
           id?: string
           location?: string
           max_players?: number
           mvp_id?: string | null
           name?: string
+          results_determined?: boolean | null
           status?: Database["public"]["Enums"]["game_status"] | null
           time?: string
           weekday?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "games_best_defender_id_fkey"
+            columns: ["best_defender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "games_creator_id_fkey"
             columns: ["creator_id"]
@@ -173,6 +235,7 @@ export type Database = {
           age: number
           attack_rating: number | null
           avatar_url: string | null
+          calibration_completed: boolean | null
           created_at: string | null
           defense_rating: number | null
           dominant_foot: Database["public"]["Enums"]["dominant_foot"]
@@ -192,6 +255,7 @@ export type Database = {
           age: number
           attack_rating?: number | null
           avatar_url?: string | null
+          calibration_completed?: boolean | null
           created_at?: string | null
           defense_rating?: number | null
           dominant_foot: Database["public"]["Enums"]["dominant_foot"]
@@ -211,6 +275,7 @@ export type Database = {
           age?: number
           attack_rating?: number | null
           avatar_url?: string | null
+          calibration_completed?: boolean | null
           created_at?: string | null
           defense_rating?: number | null
           dominant_foot?: Database["public"]["Enums"]["dominant_foot"]
@@ -227,6 +292,84 @@ export type Database = {
           total_goals?: number | null
         }
         Relationships: []
+      }
+      rating_history: {
+        Row: {
+          assists: number | null
+          attack_after: number
+          attack_before: number
+          created_at: string | null
+          defense_after: number
+          defense_before: number
+          game_id: string
+          goals: number | null
+          id: string
+          overall_after: number
+          overall_before: number
+          skill_after: number
+          skill_before: number
+          strength_after: number
+          strength_before: number
+          user_id: string
+          was_best_defender: boolean | null
+          was_mvp: boolean | null
+        }
+        Insert: {
+          assists?: number | null
+          attack_after: number
+          attack_before: number
+          created_at?: string | null
+          defense_after: number
+          defense_before: number
+          game_id: string
+          goals?: number | null
+          id?: string
+          overall_after: number
+          overall_before: number
+          skill_after: number
+          skill_before: number
+          strength_after: number
+          strength_before: number
+          user_id: string
+          was_best_defender?: boolean | null
+          was_mvp?: boolean | null
+        }
+        Update: {
+          assists?: number | null
+          attack_after?: number
+          attack_before?: number
+          created_at?: string | null
+          defense_after?: number
+          defense_before?: number
+          game_id?: string
+          goals?: number | null
+          id?: string
+          overall_after?: number
+          overall_before?: number
+          skill_after?: number
+          skill_before?: number
+          strength_after?: number
+          strength_before?: number
+          user_id?: string
+          was_best_defender?: boolean | null
+          was_mvp?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_history_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rating_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

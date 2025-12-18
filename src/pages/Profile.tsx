@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/BottomNav';
-import { ChevronLeft, User, Edit2, Loader2 } from 'lucide-react';
+import MatchHistory from '@/components/MatchHistory';
+import { ChevronLeft, User, Edit2, Loader2, History, BarChart3 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -12,6 +13,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'stats' | 'history'>('stats');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -58,7 +60,7 @@ const Profile = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-6">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="sticky top-0 z-50 glass px-4 py-3">
         <div className="flex items-center justify-between">
@@ -118,46 +120,71 @@ const Profile = () => {
           ))}
         </section>
 
-        {/* Info Cards */}
-        <section className="space-y-3 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-          <h3 className="text-sm text-muted-foreground uppercase tracking-wider">Informações</h3>
-          
-          <div className="fifa-card p-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-muted-foreground">Idade</p>
-                <p className="font-semibold">{profile.age} anos</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Camisa</p>
-                <p className="font-semibold">#{profile.shirt_number}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Pé Dominante</p>
-                <p className="font-semibold">{profile.dominant_foot}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Preferência</p>
-                <p className="font-semibold">{profile.preferred_game_type || '-'}</p>
-              </div>
-            </div>
+        {/* Tabs */}
+        <section className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant={activeTab === 'stats' ? 'sport' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('stats')}
+              className="flex-1"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Estatísticas
+            </Button>
+            <Button
+              variant={activeTab === 'history' ? 'sport' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('history')}
+              className="flex-1"
+            >
+              <History className="h-4 w-4 mr-2" />
+              Histórico
+            </Button>
           </div>
-        </section>
 
-        {/* Career Stats */}
-        <section className="space-y-3 animate-slide-up" style={{ animationDelay: '0.4s' }}>
-          <h3 className="text-sm text-muted-foreground uppercase tracking-wider">Carreira</h3>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <div className="fifa-card p-4 text-center">
-              <div className="text-3xl font-display text-primary">{profile.total_goals}</div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Gols</p>
+          {activeTab === 'stats' && (
+            <div className="space-y-4">
+              {/* Info Cards */}
+              <div className="fifa-card p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Idade</p>
+                    <p className="font-semibold">{profile.age} anos</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Camisa</p>
+                    <p className="font-semibold">#{profile.shirt_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Pé Dominante</p>
+                    <p className="font-semibold">{profile.dominant_foot}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Preferência</p>
+                    <p className="font-semibold">{profile.preferred_game_type || '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Career Stats */}
+              <h3 className="text-sm text-muted-foreground uppercase tracking-wider">Carreira</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="fifa-card p-4 text-center">
+                  <div className="text-3xl font-display text-primary">{profile.total_goals}</div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Gols</p>
+                </div>
+                <div className="fifa-card p-4 text-center">
+                  <div className="text-3xl font-display text-primary">{profile.total_assists}</div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Assistências</p>
+                </div>
+              </div>
             </div>
-            <div className="fifa-card p-4 text-center">
-              <div className="text-3xl font-display text-primary">{profile.total_assists}</div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Assistências</p>
-            </div>
-          </div>
+          )}
+
+          {activeTab === 'history' && (
+            <MatchHistory userId={profile.id} />
+          )}
         </section>
       </main>
 

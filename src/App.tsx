@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import GameDetails from "./pages/GameDetails";
 import ForgotPassword from "./pages/ForgotPassword";
+import Calibration from "./pages/Calibration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/setup" element={<Setup />} />
+          <Route path="/calibration" element={<Calibration />} />
           <Route path="/home" element={<Home />} />
           <Route path="/games" element={<Games />} />
           <Route path="/create-game" element={<CreateGame />} />
