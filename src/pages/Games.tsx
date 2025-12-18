@@ -10,34 +10,64 @@ import {
   MapPin,
   Users,
   Plus,
-  Filter,
   Loader2,
-  Trophy,
   CheckCircle,
-  XCircle,
   AlertCircle,
 } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
-import { getWeekdayLabel, formatNextOccurrence } from '@/lib/weekday';
+import { getWeekdayLabel, formatNextOccurrence, getNextOccurrence } from '@/lib/weekday';
 
-type Game = Database['public']['Tables']['games']['Row'];
-type GameParticipant = Database['public']['Tables']['game_participants']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
+// Types for the new pelada structure
+type Pelada = {
+  id: string;
+  name: string;
+  location: string;
+  weekday: number;
+  time: string;
+  game_type: string;
+  max_players: number;
+  status: string;
+  created_at: string;
+  creator_id: string;
+};
 
-type GameWithParticipants = Game & {
-  participants: (GameParticipant & { profile: Profile })[];
-  creator: Profile;
+type PeladaMember = {
+  id: string;
+  pelada_id: string;
+  user_id: string;
+  role: 'admin' | 'member';
+  joined_at: string;
+};
+
+type Match = {
+  id: string;
+  pelada_id: string;
+  match_date: string;
+  match_time: string;
+  status: string;
+};
+
+type MatchParticipant = {
+  id: string;
+  match_id: string;
+  user_id: string | null;
+  status: string;
+};
+
+type PeladaWithDetails = Pelada & {
+  member: PeladaMember;
+  nextMatch: Match | null;
+  userMatchStatus: string | null;
 };
 
 const Games = () => {
   const navigate = useNavigate();
-  const [games, setGames] = useState<GameWithParticipants[]>([]);
-  const [invites, setInvites] = useState<GameWithParticipants[]>([]);
+  const [peladas, setPeladas] = useState<PeladaWithDetails[]>([]);
+  const [invites, setInvites] = useState<PeladaWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchGames = async () => {
+    const fetchPeladas = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -47,115 +77,94 @@ const Games = () => {
 
       setUserId(session.user.id);
 
-      // Fetch all games where user is creator or participant
-      const { data: participantGames } = await supabase
-        .from('game_participants')
-        .select('game_id')
-        .eq('user_id', session.user.id);
-
-      const gameIds = participantGames?.map(p => p.game_id) || [];
-
-      const { data: gamesData, error } = await supabase
-        .from('games')
+      // Fetch peladas where user is a member
+      const { data: memberships, error: memberError } = await supabase
+        .from('pelada_members')
         .select(`
           *,
-          creator:profiles!games_creator_id_fkey(*),
-          participants:game_participants(
-            *,
-            profile:profiles(*)
-          )
+          pelada:peladas(*)
         `)
-        .or(`creator_id.eq.${session.user.id},id.in.(${gameIds.join(',') || 'null'})`)
-        .order('weekday', { ascending: true });
+        .eq('user_id', session.user.id);
 
-      if (!error && gamesData) {
-        const allGames = gamesData as unknown as GameWithParticipants[];
-        
-        // Separate invites (pending status for current user)
-        const userInvites = allGames.filter(game => 
-          game.participants.some(p => 
-            p.user_id === session.user.id && p.status === 'Pendente'
-          ) && game.creator_id !== session.user.id
-        );
-        
-        // Rest of games
-        const userGames = allGames.filter(game => 
-          !userInvites.includes(game)
-        );
-
-        setInvites(userInvites);
-        setGames(userGames);
+      if (memberError) {
+        console.error('Error fetching peladas:', memberError);
+        setLoading(false);
+        return;
       }
 
+      if (!memberships || memberships.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      // Process each pelada to get next match and user status
+      const peladasWithDetails: PeladaWithDetails[] = await Promise.all(
+        memberships.map(async (membership) => {
+          const pelada = membership.pelada as Pelada;
+          
+          // Get next upcoming match for this pelada
+          const today = new Date().toISOString().split('T')[0];
+          const { data: matches } = await supabase
+            .from('matches')
+            .select('*')
+            .eq('pelada_id', pelada.id)
+            .gte('match_date', today)
+            .in('status', ['scheduled', 'in_progress'])
+            .order('match_date', { ascending: true })
+            .limit(1);
+
+          const nextMatch = matches && matches.length > 0 ? matches[0] as Match : null;
+
+          // Get user's status for next match
+          let userMatchStatus: string | null = null;
+          if (nextMatch) {
+            const { data: participation } = await supabase
+              .from('match_participants')
+              .select('status')
+              .eq('match_id', nextMatch.id)
+              .eq('user_id', session.user.id)
+              .single();
+
+            userMatchStatus = participation?.status || null;
+          }
+
+          return {
+            ...pelada,
+            member: {
+              id: membership.id,
+              pelada_id: membership.pelada_id,
+              user_id: membership.user_id,
+              role: membership.role as 'admin' | 'member',
+              joined_at: membership.joined_at,
+            },
+            nextMatch,
+            userMatchStatus,
+          };
+        })
+      );
+
+      // Separate active peladas from those pending invite
+      // For now, all members are considered accepted (we can add invite flow later)
+      const activePeladas = peladasWithDetails.filter(p => p.status === 'active');
+      
+      setPeladas(activePeladas);
       setLoading(false);
     };
 
-    fetchGames();
+    fetchPeladas();
   }, [navigate]);
 
-  const handleAcceptInvite = async (gameId: string) => {
-    if (!userId) return;
-
-    await supabase
-      .from('game_participants')
-      .update({ status: 'Confirmado' })
-      .eq('game_id', gameId)
-      .eq('user_id', userId);
-
-    // Move from invites to games with updated status
-    const acceptedGame = invites.find(g => g.id === gameId);
-    if (acceptedGame) {
-      const updatedGame = {
-        ...acceptedGame,
-        participants: acceptedGame.participants.map(p =>
-          p.user_id === userId ? { ...p, status: 'Confirmado' as const } : p
-        ),
-      };
-      setInvites(prev => prev.filter(g => g.id !== gameId));
-      setGames(prev => [...prev, updatedGame]);
+  const getStatusDisplay = (userMatchStatus: string | null) => {
+    if (!userMatchStatus) {
+      return { label: 'Aguardando confirmação', color: 'text-yellow-500', icon: AlertCircle };
     }
-  };
-
-  const handleDeclineInvite = async (gameId: string) => {
-    if (!userId) return;
-
-    await supabase
-      .from('game_participants')
-      .update({ status: 'Recusado' })
-      .eq('game_id', gameId)
-      .eq('user_id', userId);
-
-    // Remove from invites list
-    setInvites(prev => prev.filter(g => g.id !== gameId));
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (userMatchStatus) {
       case 'Confirmado':
-        return 'text-green-500';
+        return { label: 'Confirmado', color: 'text-green-500', icon: CheckCircle };
       case 'Pendente':
-        return 'text-yellow-500';
-      case 'Cancelado':
-        return 'text-red-500';
-      case 'Finalizado':
-        return 'text-muted-foreground';
+        return { label: 'Aguardando confirmação', color: 'text-yellow-500', icon: AlertCircle };
       default:
-        return 'text-muted-foreground';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Confirmado':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'Pendente':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      case 'Cancelado':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'Finalizado':
-        return <Trophy className="h-4 w-4 text-muted-foreground" />;
-      default:
-        return null;
+        return { label: userMatchStatus, color: 'text-muted-foreground', icon: AlertCircle };
     }
   };
 
@@ -166,13 +175,8 @@ const Games = () => {
       </div>
     );
   }
-  const isEmpty = games.length === 0 && invites.length === 0;
 
-  // Active games (confirmed status)
-  const activeGames = games.filter(g => g.status === 'Confirmado');
-  
-  // Inactive/cancelled games
-  const inactiveGames = games.filter(g => g.status !== 'Confirmado');
+  const isEmpty = peladas.length === 0 && invites.length === 0;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -197,23 +201,23 @@ const Games = () => {
               <CalendarDays className="h-10 w-10 text-muted-foreground" />
             </div>
             <h2 className="text-xl font-display tracking-wider mb-2">
-              NENHUM JOGO
+              NENHUMA PELADA
             </h2>
             <p className="text-muted-foreground text-center mb-6">
-              Você ainda não tem jogos marcados.
+              Você ainda não participa de nenhuma pelada.
             </p>
             <Button
               variant="sport"
               size="lg"
-              onClick={() => navigate('/create-game')}
+              onClick={() => navigate('/create-pelada')}
             >
               <Plus className="h-5 w-5 mr-2" />
-              CRIAR PRIMEIRA PARTIDA
+              CRIAR PRIMEIRA PELADA
             </Button>
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Invites Section */}
+            {/* Invites Section (for future use) */}
             {invites.length > 0 && (
               <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
                 <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -221,161 +225,92 @@ const Games = () => {
                   Convites Pendentes
                 </h3>
                 <div className="space-y-3">
-                  {invites.map((game) => (
-                    <div key={game.id} className="fifa-card p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-semibold">{game.name}</h4>
-                          <p className="text-sm text-muted-foreground">{game.game_type}</p>
-                        </div>
-                        <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded">
-                          Convite
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                        <span className="flex items-center gap-1">
-                          <CalendarDays className="h-4 w-4" />
-                          {getWeekdayLabel(game.weekday)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {game.time.slice(0, 5)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                        <MapPin className="h-4 w-4" />
-                        {game.location}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="sport"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleAcceptInvite(game.id)}
-                        >
-                          Aceitar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleDeclineInvite(game.id)}
-                        >
-                          Recusar
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                  {/* Invite cards would go here */}
                 </div>
               </section>
             )}
 
-            {/* Active Games */}
-            {activeGames.length > 0 && (
-              <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-                  Minhas Peladas
-                </h3>
-                <div className="space-y-3">
-                  {activeGames.map((game) => (
-                    <div key={game.id} className="fifa-card p-4">
+            {/* Active Peladas */}
+            <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+              <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
+                Minhas Peladas
+              </h3>
+              <div className="space-y-3">
+                {peladas.map((pelada) => {
+                  const status = getStatusDisplay(pelada.userMatchStatus);
+                  const StatusIcon = status.icon;
+                  
+                  // Calculate next match date
+                  let nextMatchDisplay = 'Sem partida agendada';
+                  if (pelada.nextMatch) {
+                    const matchDate = new Date(pelada.nextMatch.match_date + 'T00:00:00');
+                    nextMatchDisplay = `${matchDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${pelada.nextMatch.match_time.slice(0, 5)}`;
+                  } else {
+                    // Show calculated next occurrence based on weekday
+                    nextMatchDisplay = `Próxima: ${formatNextOccurrence(pelada.weekday, pelada.time)}`;
+                  }
+
+                  return (
+                    <div key={pelada.id} className="fifa-card p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h4 className="font-semibold text-foreground">{game.name}</h4>
+                          <h4 className="font-semibold text-foreground">{pelada.name}</h4>
                           <span className="text-xs text-muted-foreground">
-                            {game.game_type}
+                            {pelada.game_type}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          {getStatusIcon(game.status || 'Pendente')}
-                          <span className={`text-xs ${getStatusColor(game.status || 'Pendente')}`}>
-                            {game.status}
+                        {pelada.member.role === 'admin' && (
+                          <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded">
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Next Match */}
+                      <div className="mb-3 p-3 bg-surface/50 rounded-lg border border-border/50">
+                        <p className="text-xs text-muted-foreground mb-1">Próxima Partida</p>
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                          <CalendarDays className="h-4 w-4 text-primary" />
+                          {nextMatchDisplay}
+                        </div>
+                        <div className="flex items-center gap-1 mt-2">
+                          <StatusIcon className={`h-4 w-4 ${status.color}`} />
+                          <span className={`text-xs ${status.color}`}>
+                            {status.label}
                           </span>
                         </div>
                       </div>
+                      
                       <div className="flex items-center gap-4 text-sm mb-3">
                         <span className="flex items-center gap-1 text-foreground">
-                          <CalendarDays className="h-4 w-4 text-primary" />
-                          {getWeekdayLabel(game.weekday)}
-                        </span>
-                        <span className="flex items-center gap-1 text-foreground">
                           <Clock className="h-4 w-4 text-primary" />
-                          {game.time.slice(0, 5)}
+                          {getWeekdayLabel(pelada.weekday)} - {pelada.time.slice(0, 5)}
                         </span>
                       </div>
-                      <div className="text-xs text-muted-foreground mb-3">
-                        Próxima: {formatNextOccurrence(game.weekday, game.time)}
-                      </div>
+                      
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                         <MapPin className="h-4 w-4" />
-                        {game.location}
+                        {pelada.location}
                       </div>
+                      
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Users className="h-4 w-4" />
-                          {game.participants.filter(p => p.status === 'Confirmado').length}/{game.max_players}
+                          Máx: {pelada.max_players}
                         </span>
                         <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-primary"
-                          onClick={() => navigate(`/game/${game.id}`)}
+                          variant="sport" 
+                          size="sm"
+                          onClick={() => navigate(`/pelada/${pelada.id}`)}
                         >
                           Ver detalhes
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Inactive Games */}
-            {inactiveGames.length > 0 && (
-              <section className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
-                <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-                  Peladas Inativas
-                </h3>
-                <div className="space-y-3">
-                  {inactiveGames.map((game) => (
-                    <div key={game.id} className="fifa-card p-4 opacity-60">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-semibold">{game.name}</h4>
-                          <span className="text-xs text-muted-foreground">
-                            {game.game_type}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {getStatusIcon(game.status || 'Cancelado')}
-                          <span className={`text-xs ${getStatusColor(game.status || 'Cancelado')}`}>
-                            {game.status}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm mb-3 text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <CalendarDays className="h-4 w-4" />
-                          {getWeekdayLabel(game.weekday)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {game.location}
-                        </span>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-primary"
-                        onClick={() => navigate(`/game/${game.id}`)}
-                      >
-                        Ver detalhes
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+                  );
+                })}
+              </div>
+            </section>
           </div>
         )}
       </main>
@@ -387,7 +322,7 @@ const Games = () => {
             variant="sport"
             size="icon"
             className="w-14 h-14 rounded-full"
-            onClick={() => navigate('/create-game')}
+            onClick={() => navigate('/create-pelada')}
           >
             <Plus className="h-6 w-6" />
           </Button>

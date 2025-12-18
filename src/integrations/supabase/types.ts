@@ -190,6 +190,173 @@ export type Database = {
           },
         ]
       }
+      match_defender_votes: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          voted_for_id: string
+          voter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          voted_for_id: string
+          voter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          voted_for_id?: string
+          voter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_defender_votes_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_mvp_votes: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          voted_for_id: string
+          voter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          voted_for_id: string
+          voter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          voted_for_id?: string
+          voter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_mvp_votes_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_participants: {
+        Row: {
+          assists: number | null
+          created_at: string
+          goals: number | null
+          guest_name: string | null
+          guest_position: string | null
+          id: string
+          match_id: string
+          rating: number | null
+          stats_submitted: boolean | null
+          status: Database["public"]["Enums"]["participant_status"]
+          team: number | null
+          user_id: string | null
+        }
+        Insert: {
+          assists?: number | null
+          created_at?: string
+          goals?: number | null
+          guest_name?: string | null
+          guest_position?: string | null
+          id?: string
+          match_id: string
+          rating?: number | null
+          stats_submitted?: boolean | null
+          status?: Database["public"]["Enums"]["participant_status"]
+          team?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          assists?: number | null
+          created_at?: string
+          goals?: number | null
+          guest_name?: string | null
+          guest_position?: string | null
+          id?: string
+          match_id?: string
+          rating?: number | null
+          stats_submitted?: boolean | null
+          status?: Database["public"]["Enums"]["participant_status"]
+          team?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_participants_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          best_defender_id: string | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          location: string | null
+          match_date: string
+          match_time: string
+          mvp_id: string | null
+          pelada_id: string
+          results_determined: boolean | null
+          status: Database["public"]["Enums"]["match_status"]
+        }
+        Insert: {
+          best_defender_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          location?: string | null
+          match_date: string
+          match_time: string
+          mvp_id?: string | null
+          pelada_id: string
+          results_determined?: boolean | null
+          status?: Database["public"]["Enums"]["match_status"]
+        }
+        Update: {
+          best_defender_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          location?: string | null
+          match_date?: string
+          match_time?: string
+          mvp_id?: string | null
+          pelada_id?: string
+          results_determined?: boolean | null
+          status?: Database["public"]["Enums"]["match_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_pelada_id_fkey"
+            columns: ["pelada_id"]
+            isOneToOne: false
+            referencedRelation: "peladas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mvp_votes: {
         Row: {
           created_at: string | null
@@ -235,6 +402,77 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pelada_members: {
+        Row: {
+          id: string
+          joined_at: string
+          pelada_id: string
+          role: Database["public"]["Enums"]["pelada_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          pelada_id: string
+          role?: Database["public"]["Enums"]["pelada_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          pelada_id?: string
+          role?: Database["public"]["Enums"]["pelada_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pelada_members_pelada_id_fkey"
+            columns: ["pelada_id"]
+            isOneToOne: false
+            referencedRelation: "peladas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      peladas: {
+        Row: {
+          created_at: string
+          creator_id: string
+          game_type: Database["public"]["Enums"]["game_type"]
+          id: string
+          location: string
+          max_players: number
+          name: string
+          status: Database["public"]["Enums"]["pelada_status"]
+          time: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          game_type: Database["public"]["Enums"]["game_type"]
+          id?: string
+          location: string
+          max_players?: number
+          name?: string
+          status?: Database["public"]["Enums"]["pelada_status"]
+          time: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          game_type?: Database["public"]["Enums"]["game_type"]
+          id?: string
+          location?: string
+          max_players?: number
+          name?: string
+          status?: Database["public"]["Enums"]["pelada_status"]
+          time?: string
+          weekday?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -382,13 +620,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_pelada_role: {
+        Args: {
+          _pelada_id: string
+          _role: Database["public"]["Enums"]["pelada_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_pelada_member: {
+        Args: { _pelada_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       dominant_foot: "Destro" | "Canhoto" | "Ambos"
       game_status: "Confirmado" | "Pendente" | "Cancelado" | "Finalizado"
       game_type: "Futsal" | "Society" | "Campo"
+      match_status: "scheduled" | "in_progress" | "finished" | "cancelled"
       participant_status: "Confirmado" | "Pendente" | "Recusado"
+      pelada_role: "admin" | "member"
+      pelada_status: "active" | "inactive"
       player_position:
         | "Goleiro"
         | "Fixo"
@@ -527,7 +779,10 @@ export const Constants = {
       dominant_foot: ["Destro", "Canhoto", "Ambos"],
       game_status: ["Confirmado", "Pendente", "Cancelado", "Finalizado"],
       game_type: ["Futsal", "Society", "Campo"],
+      match_status: ["scheduled", "in_progress", "finished", "cancelled"],
       participant_status: ["Confirmado", "Pendente", "Recusado"],
+      pelada_role: ["admin", "member"],
+      pelada_status: ["active", "inactive"],
       player_position: [
         "Goleiro",
         "Fixo",
