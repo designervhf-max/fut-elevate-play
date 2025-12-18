@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/BottomNav';
 import {
   ChevronLeft,
-  Calendar,
+  CalendarDays,
   Clock,
   MapPin,
   Users,
@@ -18,6 +18,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
+import { getWeekdayLabel, formatNextOccurrence } from '@/lib/weekday';
 
 type Game = Database['public']['Tables']['games']['Row'];
 type GameParticipant = Database['public']['Tables']['game_participants']['Row'];
@@ -28,14 +29,11 @@ type GameWithParticipants = Game & {
   creator: Profile;
 };
 
-type FilterType = 'all' | 'future' | 'past';
-
 const Games = () => {
   const navigate = useNavigate();
   const [games, setGames] = useState<GameWithParticipants[]>([]);
   const [invites, setInvites] = useState<GameWithParticipants[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterType>('all');
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -68,10 +66,9 @@ const Games = () => {
           )
         `)
         .or(`creator_id.eq.${session.user.id},id.in.(${gameIds.join(',') || 'null'})`)
-        .order('date', { ascending: true });
+        .order('weekday', { ascending: true });
 
       if (!error && gamesData) {
-        const now = new Date();
         const allGames = gamesData as unknown as GameWithParticipants[];
         
         // Separate invites (pending status for current user)
@@ -162,30 +159,6 @@ const Games = () => {
     }
   };
 
-  const filteredGames = games.filter(game => {
-    const gameDate = new Date(game.date);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    
-    if (filter === 'future') return gameDate >= now && game.status !== 'Finalizado';
-    if (filter === 'past') return gameDate < now || game.status === 'Finalizado';
-    return true;
-  });
-
-  const futureGames = filteredGames.filter(g => {
-    const gameDate = new Date(g.date);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return gameDate >= now && g.status !== 'Finalizado';
-  });
-
-  const pastGames = filteredGames.filter(g => {
-    const gameDate = new Date(g.date);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return gameDate < now || g.status === 'Finalizado';
-  });
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -193,8 +166,13 @@ const Games = () => {
       </div>
     );
   }
-
   const isEmpty = games.length === 0 && invites.length === 0;
+
+  // Active games (confirmed status)
+  const activeGames = games.filter(g => g.status === 'Confirmado');
+  
+  // Inactive/cancelled games
+  const inactiveGames = games.filter(g => g.status !== 'Confirmado');
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -216,7 +194,7 @@ const Games = () => {
           /* Empty State */
           <div className="flex flex-col items-center justify-center py-20 animate-slide-up">
             <div className="w-20 h-20 rounded-full bg-surface border-2 border-border flex items-center justify-center mb-6">
-              <Calendar className="h-10 w-10 text-muted-foreground" />
+              <CalendarDays className="h-10 w-10 text-muted-foreground" />
             </div>
             <h2 className="text-xl font-display tracking-wider mb-2">
               NENHUM JOGO
@@ -235,25 +213,6 @@ const Games = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Filters */}
-            <div className="flex gap-2 overflow-x-auto pb-2 animate-slide-up">
-              {(['all', 'future', 'past'] as FilterType[]).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                    filter === f
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-surface text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {f === 'all' && 'Todos'}
-                  {f === 'future' && 'Futuros'}
-                  {f === 'past' && 'Passados'}
-                </button>
-              ))}
-            </div>
-
             {/* Invites Section */}
             {invites.length > 0 && (
               <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
@@ -266,7 +225,7 @@ const Games = () => {
                     <div key={game.id} className="fifa-card p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h4 className="font-semibold">{game.creator.name}</h4>
+                          <h4 className="font-semibold">{game.name}</h4>
                           <p className="text-sm text-muted-foreground">{game.game_type}</p>
                         </div>
                         <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded">
@@ -275,8 +234,8 @@ const Games = () => {
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                         <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(game.date).toLocaleDateString('pt-BR')}
+                          <CalendarDays className="h-4 w-4" />
+                          {getWeekdayLabel(game.weekday)}
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
@@ -311,18 +270,19 @@ const Games = () => {
               </section>
             )}
 
-            {/* Future Games */}
-            {futureGames.length > 0 && (filter === 'all' || filter === 'future') && (
+            {/* Active Games */}
+            {activeGames.length > 0 && (
               <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
                 <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-                  Próximos Jogos
+                  Minhas Peladas
                 </h3>
                 <div className="space-y-3">
-                  {futureGames.map((game) => (
+                  {activeGames.map((game) => (
                     <div key={game.id} className="fifa-card p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <span className="text-xs bg-surface px-2 py-1 rounded text-primary">
+                          <h4 className="font-semibold text-foreground">{game.name}</h4>
+                          <span className="text-xs text-muted-foreground">
                             {game.game_type}
                           </span>
                         </div>
@@ -335,13 +295,16 @@ const Games = () => {
                       </div>
                       <div className="flex items-center gap-4 text-sm mb-3">
                         <span className="flex items-center gap-1 text-foreground">
-                          <Calendar className="h-4 w-4 text-primary" />
-                          {new Date(game.date).toLocaleDateString('pt-BR')}
+                          <CalendarDays className="h-4 w-4 text-primary" />
+                          {getWeekdayLabel(game.weekday)}
                         </span>
                         <span className="flex items-center gap-1 text-foreground">
                           <Clock className="h-4 w-4 text-primary" />
                           {game.time.slice(0, 5)}
                         </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mb-3">
+                        Próxima: {formatNextOccurrence(game.weekday, game.time)}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                         <MapPin className="h-4 w-4" />
@@ -367,67 +330,49 @@ const Games = () => {
               </section>
             )}
 
-            {/* Past Games (History) */}
-            {pastGames.length > 0 && (filter === 'all' || filter === 'past') && (
+            {/* Inactive Games */}
+            {inactiveGames.length > 0 && (
               <section className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
                 <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-                  Histórico de Jogos
+                  Peladas Inativas
                 </h3>
                 <div className="space-y-3">
-                  {pastGames.map((game) => {
-                    const userParticipation = game.participants.find(p => p.user_id === userId);
-                    return (
-                      <div key={game.id} className="fifa-card p-4 opacity-80">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <span className="text-xs bg-surface px-2 py-1 rounded text-muted-foreground">
-                              {game.game_type}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Trophy className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">Finalizado</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm mb-3 text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {new Date(game.date).toLocaleDateString('pt-BR')}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            {game.location}
+                  {inactiveGames.map((game) => (
+                    <div key={game.id} className="fifa-card p-4 opacity-60">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="font-semibold">{game.name}</h4>
+                          <span className="text-xs text-muted-foreground">
+                            {game.game_type}
                           </span>
                         </div>
-                        {userParticipation && (
-                          <div className="flex items-center gap-4 text-sm border-t border-border pt-3 mt-3">
-                            <div className="text-center">
-                              <div className="text-lg font-display text-primary">{userParticipation.goals || 0}</div>
-                              <div className="text-xs text-muted-foreground">Gols</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-display text-primary">{userParticipation.assists || 0}</div>
-                              <div className="text-xs text-muted-foreground">Assist.</div>
-                            </div>
-                            {userParticipation.rating && (
-                              <div className="text-center">
-                                <div className="text-lg font-display text-yellow-500">{userParticipation.rating.toFixed(1)}</div>
-                                <div className="text-xs text-muted-foreground">Nota</div>
-                              </div>
-                            )}
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="ml-auto text-primary"
-                              onClick={() => navigate(`/game/${game.id}`)}
-                            >
-                              Ver desempenho
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {getStatusIcon(game.status || 'Cancelado')}
+                          <span className={`text-xs ${getStatusColor(game.status || 'Cancelado')}`}>
+                            {game.status}
+                          </span>
+                        </div>
                       </div>
-                    );
-                  })}
+                      <div className="flex items-center gap-4 text-sm mb-3 text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <CalendarDays className="h-4 w-4" />
+                          {getWeekdayLabel(game.weekday)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          {game.location}
+                        </span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-primary"
+                        onClick={() => navigate(`/game/${game.id}`)}
+                      >
+                        Ver detalhes
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </section>
             )}

@@ -12,8 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronLeft, Calendar, Clock, MapPin, Users, Loader2, Trophy } from 'lucide-react';
+import { ChevronLeft, CalendarDays, Clock, MapPin, Users, Loader2, Trophy } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
+import { WEEKDAYS } from '@/lib/weekday';
 
 type GameType = Database['public']['Enums']['game_type'];
 
@@ -30,7 +31,7 @@ const CreateGame = () => {
 
   const [formData, setFormData] = useState({
     name: '',
-    date: '',
+    weekday: '',
     time: '',
     location: '',
     gameType: '' as GameType | '',
@@ -44,7 +45,7 @@ const CreateGame = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim() || !formData.date || !formData.time || !formData.location || !formData.gameType || !formData.maxPlayers) {
+    if (!formData.name.trim() || !formData.weekday || !formData.time || !formData.location || !formData.gameType || !formData.maxPlayers) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos",
@@ -83,7 +84,7 @@ const CreateGame = () => {
       .insert({
         creator_id: user.id,
         name: formData.name.trim(),
-        date: formData.date,
+        weekday: parseInt(formData.weekday),
         time: formData.time,
         location: formData.location,
         game_type: formData.gameType as GameType,
@@ -153,19 +154,22 @@ const CreateGame = () => {
           />
         </div>
 
-        {/* Date */}
+        {/* Weekday */}
         <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.05s' }}>
-          <Label htmlFor="date" className="text-sm text-muted-foreground flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
-            Data
+          <Label className="text-sm text-muted-foreground flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-primary" />
+            Dia da Semana
           </Label>
-          <Input
-            id="date"
-            type="date"
-            value={formData.date}
-            onChange={(e) => handleChange('date', e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
-          />
+          <Select value={formData.weekday} onValueChange={(v) => handleChange('weekday', v)}>
+            <SelectTrigger className="h-12 bg-surface border-border">
+              <SelectValue placeholder="Selecione o dia" />
+            </SelectTrigger>
+            <SelectContent>
+              {WEEKDAYS.map((day) => (
+                <SelectItem key={day.value} value={day.value.toString()}>{day.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Time */}

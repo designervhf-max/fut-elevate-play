@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/BottomNav';
 import {
   ChevronLeft,
-  Calendar,
+  CalendarDays,
   Clock,
   MapPin,
   Users,
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { getWeekdayLabel, formatNextOccurrence } from '@/lib/weekday';
 
 type Game = Database['public']['Tables']['games']['Row'];
 type GameParticipant = Database['public']['Tables']['game_participants']['Row'];
@@ -215,14 +216,13 @@ const GameDetails = () => {
 
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-foreground">
-              <Calendar className="h-5 w-5 text-primary" />
-              <span className="font-medium">
-                {new Date(game.date).toLocaleDateString('pt-BR', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}
-              </span>
+              <CalendarDays className="h-5 w-5 text-primary" />
+              <div>
+                <span className="font-medium">{getWeekdayLabel(game.weekday)}</span>
+                <p className="text-xs text-muted-foreground">
+                  Próxima: {formatNextOccurrence(game.weekday, game.time)}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3 text-foreground">
               <Clock className="h-5 w-5 text-primary" />
