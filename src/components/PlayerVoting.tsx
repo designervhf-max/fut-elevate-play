@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trophy, Shield, CheckCircle } from 'lucide-react';
+import { Loader2, Trophy, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type GameParticipant = Database['public']['Tables']['game_participants']['Row'];
@@ -17,7 +17,7 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface PlayerVotingProps {
   gameId: string;
-  participants: (GameParticipant & { profile: Profile })[];
+  participants: (GameParticipant & { profile: Profile | null })[];
   currentUserId: string;
   onVoteSubmitted: () => void;
 }
@@ -38,9 +38,14 @@ const PlayerVoting = ({
   const confirmedParticipants = participants.filter(
     (p) => p.status === 'Confirmado'
   );
-  const otherPlayers = confirmedParticipants.filter(
-    (p) => p.user_id !== currentUserId
+  
+  // Only registered players (with user_id) can receive votes
+  const eligiblePlayers = confirmedParticipants.filter(
+    (p) => p.user_id && p.user_id !== currentUserId && p.profile
   );
+  
+  // Count guest players for info message
+  const guestPlayersCount = confirmedParticipants.filter(p => !p.user_id).length;
 
   // Check if user already voted
   useEffect(() => {
@@ -144,6 +149,20 @@ const PlayerVoting = ({
     );
   }
 
+  if (eligiblePlayers.length === 0) {
+    return (
+      <div className="fifa-card p-5 text-center">
+        <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-3" />
+        <h3 className="font-display text-xl tracking-wider text-primary">
+          VOTAÇÃO INDISPONÍVEL
+        </h3>
+        <p className="text-sm text-muted-foreground mt-2">
+          Não há jogadores registrados elegíveis para votação
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="fifa-card p-5 space-y-5">
       <div className="text-center">
@@ -154,6 +173,15 @@ const PlayerVoting = ({
           Vote nos destaques da partida
         </p>
       </div>
+
+      {guestPlayersCount > 0 && (
+        <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <AlertTriangle className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+          <p className="text-xs text-yellow-600 dark:text-yellow-400">
+            {guestPlayersCount} jogador(es) aleatório(s) não participam da votação
+          </p>
+        </div>
+      )}
 
       {/* MVP Vote */}
       <div className="space-y-2">
@@ -166,12 +194,12 @@ const PlayerVoting = ({
             <SelectValue placeholder="Quem foi o destaque?" />
           </SelectTrigger>
           <SelectContent>
-            {otherPlayers.map((player) => (
-              <SelectItem key={player.user_id} value={player.user_id}>
+            {eligiblePlayers.map((player) => (
+              <SelectItem key={player.user_id!} value={player.user_id!}>
                 <div className="flex items-center gap-2">
-                  <span>{player.profile.name}</span>
+                  <span>{player.profile!.name}</span>
                   <span className="text-xs text-muted-foreground">
-                    ({player.profile.position})
+                    ({player.profile!.position})
                   </span>
                 </div>
               </SelectItem>
@@ -191,12 +219,12 @@ const PlayerVoting = ({
             <SelectValue placeholder="Quem se destacou na defesa?" />
           </SelectTrigger>
           <SelectContent>
-            {otherPlayers.map((player) => (
-              <SelectItem key={player.user_id} value={player.user_id}>
+            {eligiblePlayers.map((player) => (
+              <SelectItem key={player.user_id!} value={player.user_id!}>
                 <div className="flex items-center gap-2">
-                  <span>{player.profile.name}</span>
+                  <span>{player.profile!.name}</span>
                   <span className="text-xs text-muted-foreground">
-                    ({player.profile.position})
+                    ({player.profile!.position})
                   </span>
                 </div>
               </SelectItem>

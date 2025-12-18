@@ -13,6 +13,7 @@ import CreateGame from "./pages/CreateGame";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import GameDetails from "./pages/GameDetails";
+import JoinGame from "./pages/JoinGame";
 import ForgotPassword from "./pages/ForgotPassword";
 import Calibration from "./pages/Calibration";
 import NotFound from "./pages/NotFound";
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/game/:id" element={<GameDetails />} />
+          <Route path="/join/:id" element={<JoinGame />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

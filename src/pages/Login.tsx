@@ -46,7 +46,14 @@ const Login = () => {
       return;
     }
 
-    navigate('/home');
+    // Check if there's a pending game join
+    const joinGameId = sessionStorage.getItem('joinGameId');
+    if (joinGameId) {
+      sessionStorage.removeItem('joinGameId');
+      navigate(`/join/${joinGameId}`);
+    } else {
+      navigate('/home');
+    }
   };
 
   return (

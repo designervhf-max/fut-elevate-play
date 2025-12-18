@@ -182,6 +182,15 @@ const GameDetails = () => {
     });
   };
 
+  // Helper to get player rating (handles both registered and guest players)
+  const getPlayerRating = (participant: GameParticipant & { profile: Profile }) => {
+    if (!participant.user_id) {
+      // Guest player - use fixed rating of 50
+      return 50;
+    }
+    return participant.profile?.overall_rating || 50;
+  };
+
   // Balanced team shuffle - distributes players alternately by rating
   const shuffleTeams = () => {
     const confirmed = game?.participants.filter(p => p.status === 'Confirmado') || [];
@@ -195,9 +204,9 @@ const GameDetails = () => {
       return;
     }
 
-    // Sort by overall_rating descending
+    // Sort by rating descending (using helper function for guest support)
     const sorted = [...confirmed].sort(
-      (a, b) => (b.profile.overall_rating || 0) - (a.profile.overall_rating || 0)
+      (a, b) => getPlayerRating(b) - getPlayerRating(a)
     );
 
     // Distribute alternately (draft style)
@@ -221,7 +230,8 @@ const GameDetails = () => {
   const shareInvite = async () => {
     if (!game) return;
     
-    const url = `${window.location.origin}/game/${game.id}`;
+    // Use join URL for sharing (works for non-participants)
+    const url = `${window.location.origin}/join/${game.id}`;
     const text = `⚽ ${game.name}\n📅 ${getWeekdayLabel(game.weekday)} às ${game.time.slice(0, 5)}\n📍 ${game.location}\n\nVem jogar!`;
     
     if (navigator.share) {

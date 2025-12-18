@@ -53,17 +53,31 @@ serve(async (req) => {
     for (const game of games || []) {
       console.log(`Processing game ${game.id}`);
 
-      // Get participants
-      const { data: participants } = await supabase
+      // Get all participants (including guests)
+      const { data: allParticipants } = await supabase
         .from('game_participants')
-        .select('user_id, goals, assists, stats_submitted, status')
+        .select('id, user_id, goals, assists, stats_submitted, status, guest_name')
         .eq('game_id', game.id)
         .eq('status', 'Confirmado');
 
-      const confirmedCount = participants?.length || 0;
-      const submittedCount = participants?.filter((p) => p.stats_submitted).length || 0;
+      // Only registered players (with user_id) can affect ratings
+      const registeredParticipants = allParticipants?.filter(p => p.user_id) || [];
+      const guestParticipants = allParticipants?.filter(p => !p.user_id) || [];
+      
+      console.log(`Game ${game.id}: ${registeredParticipants.length} registered, ${guestParticipants.length} guests`);
 
-      // Get MVP votes
+      // Check if stats have been submitted
+      const hasStats = allParticipants?.some(p => p.stats_submitted) || false;
+      if (!hasStats) {
+        console.log(`Game ${game.id}: No stats submitted yet, skipping`);
+        results.push({ gameId: game.id, status: 'waiting_stats' });
+        continue;
+      }
+
+      const confirmedCount = registeredParticipants.length;
+      const submittedCount = registeredParticipants.filter((p) => p.stats_submitted).length;
+
+      // Get MVP votes (only registered players can receive/give votes)
       const { data: mvpVotes } = await supabase
         .from('mvp_votes')
         .select('voted_for_id')
@@ -81,8 +95,8 @@ serve(async (req) => {
         : 0;
 
       // Determine if we should calculate results
-      const allVoted = voteCount >= confirmedCount;
-      const thresholdMet = voteCount >= confirmedCount * 0.7 && hoursAfterEnd >= 4;
+      const allVoted = confirmedCount > 0 && voteCount >= confirmedCount;
+      const thresholdMet = confirmedCount > 0 && voteCount >= confirmedCount * 0.7 && hoursAfterEnd >= 4;
       const timedOut = hoursAfterEnd >= 24;
 
       console.log(
@@ -90,7 +104,7 @@ serve(async (req) => {
       );
 
       if (!allVoted && !thresholdMet && !timedOut) {
-        results.push({ gameId: game.id, status: 'waiting' });
+        results.push({ gameId: game.id, status: 'waiting_votes' });
         continue;
       }
 
@@ -123,8 +137,10 @@ serve(async (req) => {
         })
         .eq('id', game.id);
 
-      // Process each participant's ratings
-      for (const participant of participants || []) {
+      // Process each REGISTERED participant's ratings (guests don't have profiles)
+      for (const participant of registeredParticipants) {
+        if (!participant.user_id) continue; // Safety check
+
         // Get current profile
         const { data: profile } = await supabase
           .from('profiles')
@@ -132,7 +148,10 @@ serve(async (req) => {
           .eq('id', participant.user_id)
           .single();
 
-        if (!profile) continue;
+        if (!profile) {
+          console.log(`No profile found for user ${participant.user_id}`);
+          continue;
+        }
 
         const isMVP = participant.user_id === mvpWinner;
         const isBestDefender = participant.user_id === defenderWinner;
@@ -228,6 +247,8 @@ serve(async (req) => {
         status: 'processed',
         mvp: mvpWinner,
         bestDefender: defenderWinner,
+        registeredPlayers: registeredParticipants.length,
+        guestPlayers: guestParticipants.length,
       });
     }
 
