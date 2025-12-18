@@ -95,15 +95,38 @@ const MatchStatsModal = ({ matchId, onClose }: MatchStatsModalProps) => {
       // Fetch participants
       const { data: participantsData } = await supabase
         .from('match_participants')
-        .select(`
-          *,
-          profile:profiles(name, position, avatar_url)
-        `)
+        .select('*')
         .eq('match_id', matchId)
         .eq('status', 'Confirmado');
 
       if (participantsData) {
-        setParticipants(participantsData as MatchParticipant[]);
+        // Fetch profiles for participants with user_id
+        const userIds = participantsData
+          .filter(p => p.user_id)
+          .map(p => p.user_id as string);
+
+        let profilesMap: Record<string, { name: string; position: string; avatar_url: string | null }> = {};
+        
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, name, position, avatar_url')
+            .in('id', userIds);
+
+          if (profiles) {
+            profilesMap = profiles.reduce((acc, p) => {
+              acc[p.id] = { name: p.name, position: p.position, avatar_url: p.avatar_url };
+              return acc;
+            }, {} as typeof profilesMap);
+          }
+        }
+
+        const participantsWithProfiles = participantsData.map(p => ({
+          ...p,
+          profile: p.user_id ? profilesMap[p.user_id] : undefined,
+        }));
+
+        setParticipants(participantsWithProfiles as MatchParticipant[]);
       }
 
       setLoading(false);
