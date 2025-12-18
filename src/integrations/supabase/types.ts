@@ -117,6 +117,7 @@ export type Database = {
           id: string
           name: string
           overall_rating: number | null
+          phone: string | null
           position: Database["public"]["Enums"]["player_position"]
           preferred_game_type: Database["public"]["Enums"]["game_type"] | null
           shirt_number: number
@@ -135,6 +136,7 @@ export type Database = {
           id: string
           name: string
           overall_rating?: number | null
+          phone?: string | null
           position: Database["public"]["Enums"]["player_position"]
           preferred_game_type?: Database["public"]["Enums"]["game_type"] | null
           shirt_number: number
@@ -153,6 +155,7 @@ export type Database = {
           id?: string
           name?: string
           overall_rating?: number | null
+          phone?: string | null
           position?: Database["public"]["Enums"]["player_position"]
           preferred_game_type?: Database["public"]["Enums"]["game_type"] | null
           shirt_number?: number

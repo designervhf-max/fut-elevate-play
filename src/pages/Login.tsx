@@ -52,9 +52,13 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
       {/* Logo */}
-      <div className="mb-12 text-center animate-slide-up">
-        <img src={elevefutLogo} alt="EleveFut" className="h-24 mx-auto mb-4" />
-        <p className="text-muted-foreground text-sm">
+      <div className="mb-12 text-center animate-scale-in w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg px-4">
+        <img 
+          src={elevefutLogo} 
+          alt="EleveFut" 
+          className="w-full h-auto mx-auto mb-4"
+        />
+        <p className="text-muted-foreground text-sm animate-fade-in" style={{ animationDelay: '0.2s' }}>
           Eleve seu jogo
         </p>
       </div>
