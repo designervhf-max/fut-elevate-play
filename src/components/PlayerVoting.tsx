@@ -1,0 +1,228 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Trophy, Shield, CheckCircle } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
+
+type GameParticipant = Database['public']['Tables']['game_participants']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'];
+
+interface PlayerVotingProps {
+  gameId: string;
+  participants: (GameParticipant & { profile: Profile })[];
+  currentUserId: string;
+  onVoteSubmitted: () => void;
+}
+
+const PlayerVoting = ({
+  gameId,
+  participants,
+  currentUserId,
+  onVoteSubmitted,
+}: PlayerVotingProps) => {
+  const { toast } = useToast();
+  const [mvpVote, setMvpVote] = useState<string>('');
+  const [defenderVote, setDefenderVote] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const confirmedParticipants = participants.filter(
+    (p) => p.status === 'Confirmado'
+  );
+  const otherPlayers = confirmedParticipants.filter(
+    (p) => p.user_id !== currentUserId
+  );
+
+  // Check if user already voted
+  useEffect(() => {
+    const checkExistingVotes = async () => {
+      const { data: mvpVoteData } = await supabase
+        .from('mvp_votes')
+        .select('id')
+        .eq('game_id', gameId)
+        .eq('voter_id', currentUserId)
+        .maybeSingle();
+
+      if (mvpVoteData) {
+        setHasVoted(true);
+      }
+      setLoading(false);
+    };
+
+    checkExistingVotes();
+  }, [gameId, currentUserId]);
+
+  const handleSubmit = async () => {
+    if (!mvpVote) {
+      toast({
+        title: 'Atenção',
+        description: 'Selecione o MVP da partida',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!defenderVote) {
+      toast({
+        title: 'Atenção',
+        description: 'Selecione o melhor defensor',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      // Save MVP vote
+      const { error: mvpError } = await supabase.from('mvp_votes').insert({
+        game_id: gameId,
+        voter_id: currentUserId,
+        voted_for_id: mvpVote,
+      });
+
+      if (mvpError) throw mvpError;
+
+      // Save defender vote
+      const { error: defenderError } = await supabase
+        .from('defender_votes')
+        .insert({
+          game_id: gameId,
+          voter_id: currentUserId,
+          voted_for_id: defenderVote,
+        });
+
+      if (defenderError) throw defenderError;
+
+      toast({
+        title: 'Voto registrado!',
+        description: 'Seu voto foi computado com sucesso',
+      });
+
+      setHasVoted(true);
+      onVoteSubmitted();
+    } catch (error) {
+      console.error('Error submitting vote:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível registrar seu voto',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="fifa-card p-5 flex justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (hasVoted) {
+    return (
+      <div className="fifa-card p-5 text-center">
+        <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+        <h3 className="font-display text-xl tracking-wider text-primary">
+          VOTO REGISTRADO
+        </h3>
+        <p className="text-sm text-muted-foreground mt-2">
+          Aguardando outros jogadores votarem para determinar os resultados
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fifa-card p-5 space-y-5">
+      <div className="text-center">
+        <h3 className="font-display text-xl tracking-wider text-primary">
+          VOTAÇÃO
+        </h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Vote nos destaques da partida
+        </p>
+      </div>
+
+      {/* MVP Vote */}
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <Trophy className="h-4 w-4 text-yellow-500" />
+          Melhor Jogador (MVP)
+        </label>
+        <Select value={mvpVote} onValueChange={setMvpVote}>
+          <SelectTrigger>
+            <SelectValue placeholder="Quem foi o destaque?" />
+          </SelectTrigger>
+          <SelectContent>
+            {otherPlayers.map((player) => (
+              <SelectItem key={player.user_id} value={player.user_id}>
+                <div className="flex items-center gap-2">
+                  <span>{player.profile.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({player.profile.position})
+                  </span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Defender Vote */}
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <Shield className="h-4 w-4 text-blue-500" />
+          Melhor Defensor
+        </label>
+        <Select value={defenderVote} onValueChange={setDefenderVote}>
+          <SelectTrigger>
+            <SelectValue placeholder="Quem se destacou na defesa?" />
+          </SelectTrigger>
+          <SelectContent>
+            {otherPlayers.map((player) => (
+              <SelectItem key={player.user_id} value={player.user_id}>
+                <div className="flex items-center gap-2">
+                  <span>{player.profile.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({player.profile.position})
+                  </span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <p className="text-xs text-muted-foreground text-center">
+        Você não pode votar em si mesmo
+      </p>
+
+      <Button
+        variant="sport"
+        className="w-full"
+        onClick={handleSubmit}
+        disabled={submitting}
+      >
+        {submitting ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          'Confirmar Votos'
+        )}
+      </Button>
+    </div>
+  );
+};
+
+export default PlayerVoting;

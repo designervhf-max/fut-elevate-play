@@ -159,10 +159,10 @@ const Register = () => {
 
     toast({
       title: "Conta criada!",
-      description: "Bem-vindo ao EleveFut!",
+      description: "Vamos calibrar seu perfil",
     });
 
-    navigate('/setup');
+    navigate('/calibration');
   };
 
   return (
