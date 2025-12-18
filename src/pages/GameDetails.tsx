@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/BottomNav';
+import TeamDrawResult from '@/components/TeamDrawResult';
 import {
   ChevronLeft,
   CalendarDays,
@@ -13,8 +14,10 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  LogOut,
   UserMinus,
+  Shuffle,
+  Share2,
+  X,
 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +40,9 @@ const GameDetails = () => {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showTeamDraw, setShowTeamDraw] = useState(false);
+  const [teamA, setTeamA] = useState<(GameParticipant & { profile: Profile })[]>([]);
+  const [teamB, setTeamB] = useState<(GameParticipant & { profile: Profile })[]>([]);
 
   useEffect(() => {
     const fetchGame = async () => {
@@ -171,6 +177,99 @@ const GameDetails = () => {
     });
   };
 
+  // Balanced team shuffle - distributes players alternately by rating
+  const shuffleTeams = () => {
+    const confirmed = game?.participants.filter(p => p.status === 'Confirmado') || [];
+    
+    if (confirmed.length < 2) {
+      toast({
+        title: 'Aviso',
+        description: 'É necessário pelo menos 2 jogadores confirmados para sortear times',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Sort by overall_rating descending
+    const sorted = [...confirmed].sort(
+      (a, b) => (b.profile.overall_rating || 0) - (a.profile.overall_rating || 0)
+    );
+
+    // Distribute alternately (draft style)
+    const newTeamA: typeof confirmed = [];
+    const newTeamB: typeof confirmed = [];
+    
+    sorted.forEach((player, index) => {
+      if (index % 2 === 0) {
+        newTeamA.push(player);
+      } else {
+        newTeamB.push(player);
+      }
+    });
+
+    setTeamA(newTeamA);
+    setTeamB(newTeamB);
+    setShowTeamDraw(true);
+  };
+
+  // Share invite link
+  const shareInvite = async () => {
+    if (!game) return;
+    
+    const url = `${window.location.origin}/game/${game.id}`;
+    const text = `⚽ ${game.name}\n📅 ${getWeekdayLabel(game.weekday)} às ${game.time.slice(0, 5)}\n📍 ${game.location}\n\nVem jogar!`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: game.name, text, url });
+      } catch (err) {
+        // User cancelled or error - fallback to clipboard
+        await navigator.clipboard.writeText(`${text}\n\n${url}`);
+        toast({ title: 'Link copiado!' });
+      }
+    } else {
+      await navigator.clipboard.writeText(`${text}\n\n${url}`);
+      toast({ title: 'Link copiado!' });
+    }
+  };
+
+  // Remove participant (organizer only)
+  const handleRemoveParticipant = async (participantUserId: string, participantName: string) => {
+    if (!game || !isCreator) return;
+    
+    const confirmed = window.confirm(`Remover ${participantName} da pelada?`);
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from('game_participants')
+      .delete()
+      .eq('game_id', game.id)
+      .eq('user_id', participantUserId);
+
+    if (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível remover o jogador',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Update local state
+    setGame(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        participants: prev.participants.filter(p => p.user_id !== participantUserId),
+      };
+    });
+
+    toast({
+      title: 'Sucesso',
+      description: `${participantName} foi removido da pelada`,
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -265,7 +364,56 @@ const GameDetails = () => {
           </div>
         </section>
 
-        {/* Actions */}
+        {/* Organizer Actions */}
+        {isCreator && (
+          <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
+              Ações do Organizador
+            </h3>
+            <div className="flex gap-3">
+              <Button
+                variant="sport"
+                className="flex-1"
+                onClick={shuffleTeams}
+              >
+                <Shuffle className="h-5 w-5 mr-2" />
+                Sortear Times
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={shareInvite}
+              >
+                <Share2 className="h-5 w-5 mr-2" />
+                Compartilhar
+              </Button>
+            </div>
+          </section>
+        )}
+
+        {/* Team Draw Result */}
+        {showTeamDraw && (
+          <section className="animate-slide-up">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm text-muted-foreground uppercase tracking-wider">
+                Times Sorteados
+              </h3>
+              <button
+                onClick={() => setShowTeamDraw(false)}
+                className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <TeamDrawResult
+              teamA={teamA}
+              teamB={teamB}
+              onReshuffle={shuffleTeams}
+            />
+          </section>
+        )}
+
+        {/* Actions for non-creator participants */}
         {userParticipation && !isCreator && (
           <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
             <div className="flex gap-3">
@@ -342,6 +490,15 @@ const GameDetails = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {isCreator && participant.user_id !== userId && (
+                      <button
+                        onClick={() => handleRemoveParticipant(participant.user_id, participant.profile.name)}
+                        className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                        title="Remover jogador"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
                     {getStatusIcon(participant.status || 'Pendente')}
                     <span className={`text-xs ${getStatusColor(participant.status || 'Pendente')}`}>
                       {participant.status}
