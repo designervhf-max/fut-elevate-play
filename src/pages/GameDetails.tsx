@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/BottomNav';
 import TeamDrawResult from '@/components/TeamDrawResult';
+import PostGameStats from '@/components/PostGameStats';
+import GameSummary from '@/components/GameSummary';
+import { calculateNewRatings } from '@/lib/progression';
 import {
   ChevronLeft,
   CalendarDays,
@@ -18,6 +21,7 @@ import {
   Shuffle,
   Share2,
   X,
+  Flag,
 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
@@ -270,6 +274,118 @@ const GameDetails = () => {
     });
   };
 
+  // End game (organizer only)
+  const handleEndGame = async () => {
+    if (!game || !isCreator) return;
+
+    const confirmed = window.confirm(
+      'Encerrar a partida? Após isso, os jogadores poderão registrar suas estatísticas.'
+    );
+    if (!confirmed) return;
+
+    setActionLoading(true);
+
+    const { error } = await supabase
+      .from('games')
+      .update({ status: 'Finalizado' })
+      .eq('id', game.id);
+
+    setActionLoading(false);
+
+    if (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível encerrar a partida',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setGame((prev) => (prev ? { ...prev, status: 'Finalizado' } : prev));
+
+    toast({
+      title: 'Partida encerrada!',
+      description: 'Os jogadores podem registrar suas estatísticas',
+    });
+  };
+
+  // Refresh game data after stats submission
+  const handleStatsSubmitted = async () => {
+    const { data } = await supabase
+      .from('games')
+      .select(`
+        *,
+        creator:profiles!games_creator_id_fkey(*),
+        participants:game_participants(
+          *,
+          profile:profiles(*)
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (data) {
+      setGame(data as unknown as GameWithDetails);
+
+      // Check if all confirmed players have submitted stats
+      const confirmed = data.participants.filter(
+        (p: GameParticipant & { profile: Profile }) => p.status === 'Confirmado'
+      );
+      const allSubmitted = confirmed.every(
+        (p: GameParticipant & { profile: Profile }) => p.stats_submitted
+      );
+
+      if (allSubmitted && confirmed.length > 0 && !data.mvp_id) {
+        // Calculate MVP and update game
+        await determineMVP(data.id);
+      }
+    }
+  };
+
+  // Determine and save MVP when all stats are submitted
+  const determineMVP = async (gameId: string) => {
+    const { data: votes } = await supabase
+      .from('mvp_votes')
+      .select('voted_for_id')
+      .eq('game_id', gameId);
+
+    if (!votes || votes.length === 0) return;
+
+    // Count votes
+    const voteCounts = votes.reduce((acc: Record<string, number>, vote) => {
+      acc[vote.voted_for_id] = (acc[vote.voted_for_id] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Find winner
+    const mvpId = Object.entries(voteCounts).sort(
+      ([, a], [, b]) => b - a
+    )[0]?.[0];
+
+    if (!mvpId) return;
+
+    // Save MVP to game
+    await supabase.from('games').update({ mvp_id: mvpId }).eq('id', gameId);
+
+    // Give MVP bonus to the winner
+    const { data: mvpProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', mvpId)
+      .single();
+
+    if (mvpProfile) {
+      const newRatings = calculateNewRatings(mvpProfile, 0, 0, true);
+      await supabase
+        .from('profiles')
+        .update({ overall_rating: newRatings.overall_rating })
+        .eq('id', mvpId);
+    }
+
+    // Refresh game data
+    handleStatsSubmitted();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -306,6 +422,11 @@ const GameDetails = () => {
             <span className="text-xs bg-primary/20 text-primary px-3 py-1 rounded-full font-medium">
               {game.game_type}
             </span>
+            {game.status === 'Finalizado' && (
+              <span className="text-xs bg-destructive/20 text-destructive px-3 py-1 rounded-full font-medium">
+                Finalizado
+              </span>
+            )}
             {isCreator && (
               <span className="text-xs bg-surface text-muted-foreground px-3 py-1 rounded-full">
                 Organizador
@@ -365,7 +486,7 @@ const GameDetails = () => {
         </section>
 
         {/* Organizer Actions */}
-        {isCreator && (
+        {isCreator && game.status !== 'Finalizado' && (
           <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
             <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
               Ações do Organizador
@@ -388,6 +509,21 @@ const GameDetails = () => {
                 Compartilhar
               </Button>
             </div>
+            <Button
+              variant="destructive"
+              className="w-full mt-3"
+              onClick={handleEndGame}
+              disabled={actionLoading}
+            >
+              {actionLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <>
+                  <Flag className="h-5 w-5 mr-2" />
+                  Encerrar Partida
+                </>
+              )}
+            </Button>
           </section>
         )}
 
@@ -410,6 +546,34 @@ const GameDetails = () => {
               teamB={teamB}
               onReshuffle={shuffleTeams}
             />
+          </section>
+        )}
+
+        {/* Post-Game Section - Shown when game is finished */}
+        {game.status === 'Finalizado' && (
+          <section className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
+            <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
+              {userParticipation?.stats_submitted
+                ? 'Resumo da Partida'
+                : 'Registrar Estatísticas'}
+            </h3>
+
+            {userParticipation &&
+            userParticipation.status === 'Confirmado' &&
+            !userParticipation.stats_submitted ? (
+              <PostGameStats
+                gameId={game.id}
+                participants={game.participants}
+                currentUserId={userId!}
+                onSubmit={handleStatsSubmitted}
+              />
+            ) : (
+              <GameSummary
+                gameId={game.id}
+                participants={game.participants}
+                mvpId={game.mvp_id}
+              />
+            )}
           </section>
         )}
 
