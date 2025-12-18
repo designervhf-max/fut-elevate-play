@@ -52,9 +52,9 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
       {/* Logo */}
-      <div className="mb-10 text-center animate-slide-up">
-        <img src={elevefutLogo} alt="EleveFut" className="h-16 mx-auto" />
-        <p className="text-muted-foreground mt-2 text-sm">
+      <div className="mb-12 text-center animate-slide-up">
+        <img src={elevefutLogo} alt="EleveFut" className="h-24 mx-auto mb-4" />
+        <p className="text-muted-foreground text-sm">
           Eleve seu jogo
         </p>
       </div>
