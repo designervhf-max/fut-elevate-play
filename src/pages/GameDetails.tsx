@@ -239,7 +239,7 @@ const GameDetails = () => {
   };
 
   // Remove participant (organizer only)
-  const handleRemoveParticipant = async (participantUserId: string, participantName: string) => {
+  const handleRemoveParticipant = async (participantId: string, participantName: string) => {
     if (!game || !isCreator) return;
     
     const confirmed = window.confirm(`Remover ${participantName} da pelada?`);
@@ -248,8 +248,7 @@ const GameDetails = () => {
     const { error } = await supabase
       .from('game_participants')
       .delete()
-      .eq('game_id', game.id)
-      .eq('user_id', participantUserId);
+      .eq('id', participantId);
 
     if (error) {
       toast({
@@ -265,7 +264,7 @@ const GameDetails = () => {
       if (!prev) return prev;
       return {
         ...prev,
-        participants: prev.participants.filter(p => p.user_id !== participantUserId),
+        participants: prev.participants.filter(p => p.id !== participantId),
       };
     });
 
@@ -450,7 +449,6 @@ const GameDetails = () => {
               </Button>
               <AddPlayerDialog
                 gameId={game.id}
-                existingParticipantIds={game.participants.map(p => p.user_id)}
                 onPlayerAdded={fetchGame}
               />
             </div>
@@ -602,53 +600,68 @@ const GameDetails = () => {
                 const order = { Confirmado: 0, Pendente: 1, Recusado: 2 };
                 return (order[a.status as keyof typeof order] || 2) - (order[b.status as keyof typeof order] || 2);
               })
-              .map((participant) => (
-                <div
-                  key={participant.id}
-                  className="fifa-card p-4 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-surface border-2 border-border flex items-center justify-center">
-                      {participant.profile.avatar_url ? (
-                        <img
-                          src={participant.profile.avatar_url}
-                          alt={participant.profile.name}
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-lg font-bold text-primary">
-                          {participant.profile.name.charAt(0)}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold">{participant.profile.name}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{participant.profile.position}</span>
-                        <span>•</span>
-                        <span className="text-primary font-bold">
-                          {participant.profile.overall_rating}
-                        </span>
+              .map((participant) => {
+                const isGuestPlayer = !participant.user_id;
+                const playerName = isGuestPlayer ? (participant as any).guest_name : participant.profile?.name;
+                const playerPosition = isGuestPlayer ? (participant as any).guest_position : participant.profile?.position;
+                const playerRating = isGuestPlayer ? 50 : participant.profile?.overall_rating;
+                const playerAvatar = isGuestPlayer ? null : participant.profile?.avatar_url;
+
+                return (
+                  <div
+                    key={participant.id}
+                    className="fifa-card p-4 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-surface border-2 border-border flex items-center justify-center">
+                        {playerAvatar ? (
+                          <img
+                            src={playerAvatar}
+                            alt={playerName || 'Jogador'}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-lg font-bold text-primary">
+                            {playerName?.charAt(0) || '?'}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">{playerName}</p>
+                          {isGuestPlayer && (
+                            <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                              Aleatório
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{playerPosition}</span>
+                          <span>•</span>
+                          <span className="text-primary font-bold">
+                            {playerRating}
+                          </span>
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      {isCreator && (isGuestPlayer || participant.user_id !== userId) && game.status !== 'Finalizado' && (
+                        <button
+                          onClick={() => handleRemoveParticipant(participant.id, playerName || 'Jogador')}
+                          className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                          title="Remover jogador"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                      {getStatusIcon(participant.status || 'Pendente')}
+                      <span className={`text-xs ${getStatusColor(participant.status || 'Pendente')}`}>
+                        {participant.status}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {isCreator && participant.user_id !== userId && game.status !== 'Finalizado' && (
-                      <button
-                        onClick={() => handleRemoveParticipant(participant.user_id, participant.profile.name)}
-                        className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-                        title="Remover jogador"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                    {getStatusIcon(participant.status || 'Pendente')}
-                    <span className={`text-xs ${getStatusColor(participant.status || 'Pendente')}`}>
-                      {participant.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
           </div>
 
           {game.participants.length === 0 && (
