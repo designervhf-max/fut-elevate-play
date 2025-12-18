@@ -22,6 +22,7 @@ export type Database = {
           goals: number | null
           id: string
           rating: number | null
+          stats_submitted: boolean | null
           status: Database["public"]["Enums"]["participant_status"] | null
           user_id: string
         }
@@ -32,6 +33,7 @@ export type Database = {
           goals?: number | null
           id?: string
           rating?: number | null
+          stats_submitted?: boolean | null
           status?: Database["public"]["Enums"]["participant_status"] | null
           user_id: string
         }
@@ -42,6 +44,7 @@ export type Database = {
           goals?: number | null
           id?: string
           rating?: number | null
+          stats_submitted?: boolean | null
           status?: Database["public"]["Enums"]["participant_status"] | null
           user_id?: string
         }
@@ -70,6 +73,7 @@ export type Database = {
           id: string
           location: string
           max_players: number
+          mvp_id: string | null
           name: string
           status: Database["public"]["Enums"]["game_status"] | null
           time: string
@@ -82,6 +86,7 @@ export type Database = {
           id?: string
           location: string
           max_players: number
+          mvp_id?: string | null
           name?: string
           status?: Database["public"]["Enums"]["game_status"] | null
           time: string
@@ -94,6 +99,7 @@ export type Database = {
           id?: string
           location?: string
           max_players?: number
+          mvp_id?: string | null
           name?: string
           status?: Database["public"]["Enums"]["game_status"] | null
           time?: string
@@ -103,6 +109,59 @@ export type Database = {
           {
             foreignKeyName: "games_creator_id_fkey"
             columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_mvp_id_fkey"
+            columns: ["mvp_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mvp_votes: {
+        Row: {
+          created_at: string | null
+          game_id: string
+          id: string
+          voted_for_id: string
+          voter_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          game_id: string
+          id?: string
+          voted_for_id: string
+          voter_id: string
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string
+          id?: string
+          voted_for_id?: string
+          voter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mvp_votes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvp_votes_voted_for_id_fkey"
+            columns: ["voted_for_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mvp_votes_voter_id_fkey"
+            columns: ["voter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
