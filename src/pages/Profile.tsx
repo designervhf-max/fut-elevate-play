@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import BottomNav from '@/components/BottomNav';
 import { ChevronLeft, User, Edit2, Loader2 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -70,7 +71,10 @@ const Profile = () => {
             </button>
             <h1 className="text-xl font-display tracking-wider">MEU PERFIL</h1>
           </div>
-          <button className="p-2 text-muted-foreground hover:text-primary transition-colors">
+          <button 
+            onClick={() => navigate('/profile/edit')}
+            className="p-2 text-muted-foreground hover:text-primary transition-colors"
+          >
             <Edit2 className="h-5 w-5" />
           </button>
         </div>
@@ -156,6 +160,8 @@ const Profile = () => {
           </div>
         </section>
       </main>
+
+      <BottomNav />
     </div>
   );
 };

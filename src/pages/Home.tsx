@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import PlayerCard from '@/components/PlayerCard';
 import OverallStats from '@/components/OverallStats';
+import BottomNav from '@/components/BottomNav';
 import { Calendar, Plus, User, LogOut, Loader2 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -132,6 +133,8 @@ const Home = () => {
           </Button>
         </section>
       </main>
+
+      <BottomNav />
     </div>
   );
 };
