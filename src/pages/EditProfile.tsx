@@ -36,6 +36,7 @@ const EditProfile = () => {
   const [shirtNumber, setShirtNumber] = useState('');
   const [dominantFoot, setDominantFoot] = useState('');
   const [preferredGameType, setPreferredGameType] = useState('');
+  const [phone, setPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,6 +62,7 @@ const EditProfile = () => {
         setShirtNumber(data.shirt_number.toString());
         setDominantFoot(data.dominant_foot);
         setPreferredGameType(data.preferred_game_type || '');
+        setPhone((data as any).phone || '');
         setAvatarUrl(data.avatar_url);
       }
 
@@ -133,7 +135,7 @@ const EditProfile = () => {
   const handleSave = async () => {
     if (!profile) return;
 
-    if (!name.trim() || !age || !position || !shirtNumber || !dominantFoot) {
+    if (!name.trim() || !age || !position || !shirtNumber || !dominantFoot || !phone.trim()) {
       toast({
         title: 'Erro',
         description: 'Preencha todos os campos obrigatórios',
@@ -153,8 +155,9 @@ const EditProfile = () => {
         shirt_number: parseInt(shirtNumber),
         dominant_foot: dominantFoot as Database['public']['Enums']['dominant_foot'],
         preferred_game_type: preferredGameType as Database['public']['Enums']['game_type'] || null,
+        phone: phone.trim(),
         avatar_url: avatarUrl,
-      })
+      } as any)
       .eq('id', profile.id);
 
     setSaving(false);
@@ -314,6 +317,17 @@ const EditProfile = () => {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Telefone *</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="(11) 99999-9999"
+            />
           </div>
 
           <div className="space-y-2">

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Mail, Lock, User, Hash, ChevronLeft, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Hash, ChevronLeft, Loader2, Phone } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -44,6 +44,7 @@ const Register = () => {
     shirtNumber: '',
     dominantFoot: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
   });
@@ -55,7 +56,7 @@ const Register = () => {
   const validateForm = () => {
     if (!formData.name || !formData.age || !formData.position || 
         !formData.shirtNumber || !formData.dominantFoot || 
-        !formData.email || !formData.password || !formData.confirmPassword) {
+        !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
       toast({
         title: "Erro",
         description: "Preencha todos os campos",
@@ -79,6 +80,15 @@ const Register = () => {
       toast({
         title: "Erro",
         description: "Número da camisa deve ser entre 1 e 99",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!formData.phone.trim()) {
+      toast({
+        title: "Erro",
+        description: "Telefone é obrigatório",
         variant: "destructive",
       });
       return false;
@@ -123,6 +133,7 @@ const Register = () => {
           position: formData.position,
           shirt_number: parseInt(formData.shirtNumber),
           dominant_foot: formData.dominantFoot,
+          phone: formData.phone,
         },
       },
     });
@@ -261,8 +272,24 @@ const Register = () => {
           </div>
         </div>
 
-        {/* Password */}
+        {/* Phone */}
         <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <Label htmlFor="phone" className="text-sm text-muted-foreground">Telefone</Label>
+          <div className="relative">
+            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="(11) 99999-9999"
+              value={formData.phone}
+              onChange={(e) => handleChange('phone', e.target.value)}
+              className="pl-12"
+            />
+          </div>
+        </div>
+
+        {/* Password */}
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.35s' }}>
           <Label htmlFor="password" className="text-sm text-muted-foreground">Senha</Label>
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -285,7 +312,7 @@ const Register = () => {
         </div>
 
         {/* Confirm Password */}
-        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.35s' }}>
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.4s' }}>
           <Label htmlFor="confirmPassword" className="text-sm text-muted-foreground">Confirmar Senha</Label>
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -308,7 +335,7 @@ const Register = () => {
         </div>
 
         {/* Submit Button */}
-        <div className="pt-4 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+        <div className="pt-4 animate-slide-up" style={{ animationDelay: '0.45s' }}>
           <Button
             type="submit"
             variant="sport"
