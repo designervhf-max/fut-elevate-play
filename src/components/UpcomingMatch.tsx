@@ -3,10 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import TeamDrawResult from './TeamDrawResult';
-import OrganizerStatsForm from './OrganizerStatsForm';
-import PlayerVoting from './PlayerVoting';
 import GameSummary from './GameSummary';
 import AddPlayerDialog from './AddPlayerDialog';
+import PlayerStatsForm from './PlayerStatsForm';
+import MatchVoting from './MatchVoting';
 import {
   CalendarDays,
   Clock,
@@ -19,6 +19,7 @@ import {
   Shuffle,
   Flag,
   X,
+  Trash2,
 } from 'lucide-react';
 
 type Match = {
@@ -110,8 +111,17 @@ const UpcomingMatch = ({
 
   const matchDate = new Date(match.match_date + 'T00:00:00');
   const userParticipation = participants.find(p => p.user_id === userId);
-  const confirmedCount = participants.filter(p => p.status === 'Confirmado').length;
-  const allStatsSubmitted = participants.filter(p => p.status === 'Confirmado').every(p => p.stats_submitted);
+  const confirmedParticipants = participants.filter(p => p.status === 'Confirmado');
+  const confirmedCount = confirmedParticipants.length;
+  const userSubmittedStats = userParticipation?.stats_submitted ?? false;
+  
+  // Check if voting is still open (48h after match ended)
+  const isVotingOpen = match.ended_at 
+    ? new Date().getTime() - new Date(match.ended_at).getTime() < 48 * 60 * 60 * 1000 
+    : false;
+  
+  // Check if confirmed slots are full (first come first served)
+  const isFull = confirmedCount >= pelada.max_players;
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -258,10 +268,24 @@ const UpcomingMatch = ({
 
   const handleDataRefresh = async () => {
     await onRefresh();
-    try {
-      await supabase.functions.invoke('determine-game-results');
-    } catch (error) {
-      console.log('Result calculation will happen later');
+  };
+
+  const handleRemoveParticipant = async (participantId: string) => {
+    if (!isAdmin) return;
+    
+    const confirmed = window.confirm('Remover este jogador da partida?');
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from('match_participants')
+      .delete()
+      .eq('id', participantId);
+
+    if (error) {
+      toast({ title: 'Erro', description: 'Não foi possível remover o jogador', variant: 'destructive' });
+    } else {
+      toast({ title: 'Jogador removido' });
+      await onRefresh();
     }
   };
 
@@ -325,6 +349,11 @@ const UpcomingMatch = ({
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
           <Users className="h-4 w-4" />
           {confirmedCount}/{pelada.max_players} confirmados
+          {isFull && (
+            <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded ml-2">
+              LOTADO
+            </span>
+          )}
         </div>
 
         {/* User Status */}
@@ -345,10 +374,15 @@ const UpcomingMatch = ({
                 variant="sport"
                 className="flex-1"
                 onClick={handleConfirmPresence}
-                disabled={actionLoading}
+                disabled={actionLoading || (isFull && userParticipation?.status !== 'Confirmado')}
               >
                 {actionLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
+                ) : isFull && !userParticipation ? (
+                  <>
+                    <XCircle className="h-5 w-5 mr-2" />
+                    Partida Lotada
+                  </>
                 ) : (
                   <>
                     <CheckCircle className="h-5 w-5 mr-2" />
@@ -427,42 +461,34 @@ const UpcomingMatch = ({
       {/* Post-Game Section */}
       {match.status === 'finished' && (
         <div className="space-y-4">
-          {isAdmin && !allStatsSubmitted && (
+          {/* User Stats Form - each user registers their own stats */}
+          {userParticipation?.status === 'Confirmado' && !userSubmittedStats && (
             <div>
               <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-                Registrar Estatísticas
+                Registrar Suas Estatísticas
               </h4>
-              <OrganizerStatsForm
-                gameId={match.id}
-                participants={adaptedParticipants as any}
+              <PlayerStatsForm
+                participantId={userParticipation.id}
+                currentGoals={userParticipation.goals}
+                currentAssists={userParticipation.assists}
                 onSubmit={handleDataRefresh}
               />
             </div>
           )}
 
-          {!isAdmin && allStatsSubmitted && userParticipation?.status === 'Confirmado' && (
+          {/* MVP Voting - available for 48h after match ends */}
+          {userParticipation?.status === 'Confirmado' && isVotingOpen && (
             <div>
               <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-                Votação
+                Votação MVP
               </h4>
-              <PlayerVoting
-                gameId={match.id}
-                participants={adaptedParticipants as any}
+              <MatchVoting
+                matchId={match.id}
+                participants={participants}
                 currentUserId={userId!}
+                matchEndedAt={match.ended_at!}
                 onVoteSubmitted={handleDataRefresh}
               />
-            </div>
-          )}
-
-          {!isAdmin && !allStatsSubmitted && userParticipation?.status === 'Confirmado' && (
-            <div className="fifa-card p-5 text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
-              <h4 className="font-display text-lg tracking-wider text-primary">
-                AGUARDANDO ORGANIZADOR
-              </h4>
-              <p className="text-sm text-muted-foreground mt-2">
-                O organizador está registrando as estatísticas
-              </p>
             </div>
           )}
 
@@ -533,6 +559,15 @@ const UpcomingMatch = ({
                     <span className={`text-xs ${getStatusColor(participant.status)}`}>
                       {participant.status}
                     </span>
+                    {isAdmin && match.status !== 'finished' && (
+                      <button
+                        onClick={() => handleRemoveParticipant(participant.id)}
+                        className="p-1 text-destructive/60 hover:text-destructive transition-colors"
+                        title="Remover jogador"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
