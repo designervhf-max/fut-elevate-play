@@ -7,6 +7,7 @@ import TeamDrawResult from '@/components/TeamDrawResult';
 import OrganizerStatsForm from '@/components/OrganizerStatsForm';
 import PlayerVoting from '@/components/PlayerVoting';
 import GameSummary from '@/components/GameSummary';
+import AddPlayerDialog from '@/components/AddPlayerDialog';
 import {
   ChevronLeft,
   CalendarDays,
@@ -432,10 +433,9 @@ const GameDetails = () => {
             <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
               Ações do Organizador
             </h3>
-            <div className="flex gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="sport"
-                className="flex-1"
                 onClick={shuffleTeams}
               >
                 <Shuffle className="h-5 w-5 mr-2" />
@@ -443,12 +443,16 @@ const GameDetails = () => {
               </Button>
               <Button
                 variant="outline"
-                className="flex-1"
                 onClick={shareInvite}
               >
                 <Share2 className="h-5 w-5 mr-2" />
                 Compartilhar
               </Button>
+              <AddPlayerDialog
+                gameId={game.id}
+                existingParticipantIds={game.participants.map(p => p.user_id)}
+                onPlayerAdded={fetchGame}
+              />
             </div>
             <Button
               variant="destructive"
