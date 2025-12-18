@@ -66,7 +66,6 @@ export type Database = {
         Row: {
           created_at: string | null
           creator_id: string
-          date: string
           game_type: Database["public"]["Enums"]["game_type"]
           id: string
           location: string
@@ -74,11 +73,11 @@ export type Database = {
           name: string
           status: Database["public"]["Enums"]["game_status"] | null
           time: string
+          weekday: number
         }
         Insert: {
           created_at?: string | null
           creator_id: string
-          date: string
           game_type: Database["public"]["Enums"]["game_type"]
           id?: string
           location: string
@@ -86,11 +85,11 @@ export type Database = {
           name?: string
           status?: Database["public"]["Enums"]["game_status"] | null
           time: string
+          weekday?: number
         }
         Update: {
           created_at?: string | null
           creator_id?: string
-          date?: string
           game_type?: Database["public"]["Enums"]["game_type"]
           id?: string
           location?: string
@@ -98,6 +97,7 @@ export type Database = {
           name?: string
           status?: Database["public"]["Enums"]["game_status"] | null
           time?: string
+          weekday?: number
         }
         Relationships: [
           {
