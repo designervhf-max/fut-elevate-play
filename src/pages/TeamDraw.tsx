@@ -83,8 +83,9 @@ const TeamDraw = () => {
 
       // Calculate suggested players per team
       const confirmed = participantsWithProfiles.length;
-      const suggested = Math.floor(confirmed / 2);
-      setPlayersPerTeam(Math.max(5, Math.min(suggested, 7)));
+      const maxPossible = Math.floor(confirmed / 2);
+      const suggested = Math.min(maxPossible, 6);
+      setPlayersPerTeam(Math.max(1, suggested));
     }
 
     setLoading(false);
@@ -215,8 +216,8 @@ const TeamDraw = () => {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setPlayersPerTeam(Math.max(3, playersPerTeam - 1))}
-                disabled={playersPerTeam <= 3}
+                onClick={() => setPlayersPerTeam(prev => Math.max(1, prev - 1))}
+                disabled={playersPerTeam <= 1}
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -226,8 +227,8 @@ const TeamDraw = () => {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setPlayersPerTeam(Math.min(maxPerTeam, playersPerTeam + 1))}
-                disabled={playersPerTeam >= maxPerTeam}
+                onClick={() => setPlayersPerTeam(prev => Math.min(maxPerTeam || 20, prev + 1))}
+                disabled={maxPerTeam > 0 && playersPerTeam >= maxPerTeam}
               >
                 <Plus className="h-4 w-4" />
               </Button>
