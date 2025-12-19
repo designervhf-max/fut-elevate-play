@@ -317,6 +317,7 @@ export type Database = {
           match_date: string
           match_time: string
           mvp_id: string | null
+          open_for_confirmation: boolean
           pelada_id: string
           results_determined: boolean | null
           status: Database["public"]["Enums"]["match_status"]
@@ -330,6 +331,7 @@ export type Database = {
           match_date: string
           match_time: string
           mvp_id?: string | null
+          open_for_confirmation?: boolean
           pelada_id: string
           results_determined?: boolean | null
           status?: Database["public"]["Enums"]["match_status"]
@@ -343,6 +345,7 @@ export type Database = {
           match_date?: string
           match_time?: string
           mvp_id?: string | null
+          open_for_confirmation?: boolean
           pelada_id?: string
           results_determined?: boolean | null
           status?: Database["public"]["Enums"]["match_status"]

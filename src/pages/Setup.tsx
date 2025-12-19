@@ -8,10 +8,10 @@ import type { Database } from '@/integrations/supabase/types';
 
 type GameType = Database['public']['Enums']['game_type'];
 
-const gameTypes: { value: GameType; label: string; icon: string }[] = [
-  { value: 'Futsal', label: 'Futsal', icon: '🏟️' },
-  { value: 'Society', label: 'Campo Society', icon: '⚽' },
-  { value: 'Campo', label: 'Campo', icon: '🏆' },
+const gameTypes: { value: GameType; label: string }[] = [
+  { value: 'Futsal', label: 'Futsal' },
+  { value: 'Society', label: 'Campo Society' },
+  { value: 'Campo', label: 'Campo' },
 ];
 
 const Setup = () => {
@@ -80,8 +80,7 @@ const Setup = () => {
             }`}
             style={{ animationDelay: `${index * 0.1}s` }}
           >
-            <div className="flex items-center gap-4">
-              <span className="text-3xl">{type.icon}</span>
+            <div className="flex items-center justify-center">
               <span className={`font-display text-xl tracking-wider ${
                 selected === type.value ? 'text-primary' : 'text-foreground'
               }`}>

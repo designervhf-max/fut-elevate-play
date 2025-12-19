@@ -232,7 +232,7 @@ const GameDetails = () => {
     
     // Use join URL for sharing (works for non-participants)
     const url = `${window.location.origin}/join/${game.id}`;
-    const text = `⚽ ${game.name}\n📅 ${getWeekdayLabel(game.weekday)} às ${game.time.slice(0, 5)}\n📍 ${game.location}\n\nVem jogar!`;
+    const text = `${game.name}\n${getWeekdayLabel(game.weekday)} as ${game.time.slice(0, 5)}\n${game.location}\n\nVem jogar!`;
     
     if (navigator.share) {
       try {

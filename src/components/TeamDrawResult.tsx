@@ -134,8 +134,8 @@ const TeamDrawResult = ({ teamA, teamB, onReshuffle }: TeamDrawResultProps) => {
       {/* Balance info */}
       <div className="text-center">
         <p className="text-xs text-muted-foreground">
-          Diferença de rating: <span className={difference <= 5 ? 'text-green-500' : difference <= 15 ? 'text-yellow-500' : 'text-red-500'} >{difference}</span>
-          {difference <= 5 && ' ⚖️ Times equilibrados!'}
+          Diferenca de rating: <span className={difference <= 5 ? 'text-green-500' : difference <= 15 ? 'text-yellow-500' : 'text-red-500'} >{difference}</span>
+          {difference <= 5 && ' - Times equilibrados'}
         </p>
       </div>
 
@@ -143,7 +143,7 @@ const TeamDrawResult = ({ teamA, teamB, onReshuffle }: TeamDrawResultProps) => {
         onClick={onReshuffle}
         className="w-full py-2 text-sm text-primary hover:text-primary/80 transition-colors"
       >
-        🔄 Sortear novamente
+        Sortear novamente
       </button>
     </div>
   );
