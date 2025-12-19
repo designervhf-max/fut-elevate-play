@@ -20,6 +20,8 @@ import {
   Flag,
   X,
   Trash2,
+  Unlock,
+  Lock,
 } from 'lucide-react';
 
 type Match = {
@@ -33,6 +35,7 @@ type Match = {
   best_defender_id: string | null;
   results_determined: boolean;
   ended_at: string | null;
+  open_for_confirmation: boolean;
 };
 
 type MatchParticipant = {
@@ -282,9 +285,29 @@ const UpcomingMatch = ({
       .eq('id', participantId);
 
     if (error) {
-      toast({ title: 'Erro', description: 'Não foi possível remover o jogador', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Nao foi possivel remover o jogador', variant: 'destructive' });
     } else {
       toast({ title: 'Jogador removido' });
+      await onRefresh();
+    }
+  };
+
+  const handleToggleConfirmations = async () => {
+    if (!match || !isAdmin) return;
+    setActionLoading(true);
+
+    const newValue = !match.open_for_confirmation;
+    const { error } = await supabase
+      .from('matches')
+      .update({ open_for_confirmation: newValue })
+      .eq('id', match.id);
+
+    setActionLoading(false);
+
+    if (error) {
+      toast({ title: 'Erro', description: 'Nao foi possivel atualizar', variant: 'destructive' });
+    } else {
+      toast({ title: newValue ? 'Confirmacoes liberadas' : 'Confirmacoes bloqueadas' });
       await onRefresh();
     }
   };
@@ -361,13 +384,23 @@ const UpcomingMatch = ({
           <div className="flex items-center gap-2 p-3 bg-surface/50 rounded-lg mb-4">
             {getStatusIcon(userParticipation.status)}
             <span className={`text-sm font-medium ${getStatusColor(userParticipation.status)}`}>
-              Você está {userParticipation.status.toLowerCase()}
+              Voce esta {userParticipation.status.toLowerCase()}
+            </span>
+          </div>
+        )}
+
+        {/* Confirmations closed message */}
+        {!match.open_for_confirmation && match.status !== 'finished' && !isAdmin && (
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg mb-4">
+            <Lock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              Confirmacoes ainda nao liberadas pelo admin
             </span>
           </div>
         )}
 
         {/* User Actions */}
-        {match.status !== 'finished' && (
+        {match.status !== 'finished' && match.open_for_confirmation && (
           <div className="flex gap-2">
             {(!userParticipation || userParticipation.status !== 'Confirmado') && (
               <Button
@@ -386,7 +419,7 @@ const UpcomingMatch = ({
                 ) : (
                   <>
                     <CheckCircle className="h-5 w-5 mr-2" />
-                    Confirmar Presença
+                    Confirmar Presenca
                   </>
                 )}
               </Button>
@@ -409,9 +442,26 @@ const UpcomingMatch = ({
       {/* Admin Actions */}
       {isAdmin && match.status !== 'finished' && (
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="sport" onClick={shuffleTeams}>
+          <Button
+            variant={match.open_for_confirmation ? 'outline' : 'sport'}
+            onClick={handleToggleConfirmations}
+            disabled={actionLoading}
+          >
+            {match.open_for_confirmation ? (
+              <>
+                <Lock className="h-5 w-5 mr-2" />
+                Bloquear
+              </>
+            ) : (
+              <>
+                <Unlock className="h-5 w-5 mr-2" />
+                Liberar
+              </>
+            )}
+          </Button>
+          <Button variant="outline" onClick={shuffleTeams}>
             <Shuffle className="h-5 w-5 mr-2" />
-            Sortear Times
+            Sortear
           </Button>
           <AddPlayerDialog
             gameId={match.id}
@@ -420,7 +470,6 @@ const UpcomingMatch = ({
           />
           <Button
             variant="destructive"
-            className="col-span-2"
             onClick={handleEndMatch}
             disabled={actionLoading}
           >
@@ -429,7 +478,7 @@ const UpcomingMatch = ({
             ) : (
               <>
                 <Flag className="h-5 w-5 mr-2" />
-                Encerrar Partida
+                Encerrar
               </>
             )}
           </Button>

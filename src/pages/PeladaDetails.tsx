@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/BottomNav';
 import UpcomingMatch from '@/components/UpcomingMatch';
 import PastMatchesList from '@/components/PastMatchesList';
+import PeladaSettingsDialog from '@/components/PeladaSettingsDialog';
 import {
   ChevronLeft,
   CalendarDays,
@@ -13,10 +14,10 @@ import {
   Users,
   Loader2,
   Share2,
-  Settings,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getWeekdayLabel } from '@/lib/weekday';
+import { useMasterUser } from '@/hooks/useMasterUser';
 
 // Helper to calculate next match date based on weekday
 const getNextMatchDate = (weekday: number): string => {
@@ -52,6 +53,7 @@ type Match = {
   pelada_id: string;
   match_date: string;
   match_time: string;
+  open_for_confirmation: boolean;
   location: string | null;
   status: string;
   mvp_id: string | null;
@@ -92,6 +94,7 @@ const PeladaDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isMaster } = useMasterUser();
   
   const [pelada, setPelada] = useState<Pelada | null>(null);
   const [membership, setMembership] = useState<PeladaMember | null>(null);
@@ -248,7 +251,7 @@ const PeladaDetails = () => {
     if (!pelada) return;
     
     const url = `${window.location.origin}/join-pelada/${pelada.id}`;
-    const text = `⚽ ${pelada.name}\n📅 ${getWeekdayLabel(pelada.weekday)} às ${pelada.time.slice(0, 5)}\n📍 ${pelada.location}\n\nVem jogar!`;
+    const text = `${pelada.name}\n${getWeekdayLabel(pelada.weekday)} as ${pelada.time.slice(0, 5)}\n${pelada.location}\n\nVem jogar!`;
     
     if (navigator.share) {
       try {
@@ -273,7 +276,11 @@ const PeladaDetails = () => {
 
   if (!pelada) return null;
 
-  const isAdmin = membership?.role === 'admin';
+  const isAdmin = membership?.role === 'admin' || isMaster;
+
+  const matchDateFormatted = nextMatch 
+    ? new Date(nextMatch.match_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    : undefined;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -297,12 +304,12 @@ const PeladaDetails = () => {
               <Share2 className="h-5 w-5" />
             </button>
             {isAdmin && (
-              <button
-                onClick={() => {/* TODO: pelada settings */}}
-                className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Settings className="h-5 w-5" />
-              </button>
+              <PeladaSettingsDialog
+                peladaId={pelada.id}
+                peladaName={pelada.name}
+                matchId={nextMatch?.id}
+                matchDate={matchDateFormatted}
+              />
             )}
           </div>
         </div>
@@ -336,15 +343,15 @@ const PeladaDetails = () => {
             </div>
             <div className="flex items-center gap-2 text-foreground">
               <Users className="h-4 w-4 text-primary" />
-              Máx: {pelada.max_players} jogadores
+              Max: {pelada.max_players} jogadores
             </div>
           </div>
         </section>
 
-        {/* Seção 1: Próxima Partida */}
+        {/* Proxima Partida */}
         <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-            🔹 Próxima Partida
+            Proxima Partida
           </h3>
           <UpcomingMatch
             match={nextMatch}
@@ -356,10 +363,10 @@ const PeladaDetails = () => {
           />
         </section>
 
-        {/* Seção 2: Jogos Anteriores */}
+        {/* Jogos Anteriores */}
         <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-            📊 Jogos Anteriores
+            Jogos Anteriores
           </h3>
           <PastMatchesList matches={pastMatches} peladaId={pelada.id} />
         </section>
