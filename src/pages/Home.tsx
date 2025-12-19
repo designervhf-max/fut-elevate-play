@@ -6,6 +6,7 @@ import PlayerCard from '@/components/PlayerCard';
 import OverallStats from '@/components/OverallStats';
 import BottomNav from '@/components/BottomNav';
 import AvatarUpload from '@/components/AvatarUpload';
+import NextMatchCard from '@/components/NextMatchCard';
 import { Calendar, Plus, User, LogOut, Loader2 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { useMasterUser } from '@/hooks/useMasterUser';
@@ -140,18 +141,25 @@ const Home = () => {
           </section>
         )}
 
+        {/* Next Match Card */}
+        {!isMaster && (
+          <section className="animate-slide-up" style={{ animationDelay: '0.05s' }}>
+            <NextMatchCard userId={profile.id} />
+          </section>
+        )}
+
         {/* Player Card Section */}
-        <section className="animate-slide-up" style={{ animationDelay: '0.05s' }}>
+        <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <PlayerCard profile={profile} />
         </section>
 
         {/* Overall Stats Section */}
-        <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <section className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
           <OverallStats profile={profile} />
         </section>
 
         {/* View Profile Button */}
-        <section className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
+        <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <Button
             variant="outline"
             className="w-full"
@@ -163,9 +171,9 @@ const Home = () => {
         </section>
 
         {/* Action Buttons */}
-        <section className="space-y-3 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <section className="space-y-3 animate-slide-up" style={{ animationDelay: '0.25s' }}>
           <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-            Acoes
+            Ações
           </h3>
           <Button
             variant="dark"

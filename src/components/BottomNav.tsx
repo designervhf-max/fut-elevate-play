@@ -22,14 +22,17 @@ const BottomNav = () => {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
+              className={`flex flex-col items-center justify-center w-full h-full transition-all duration-200 ${
                 isActive 
-                  ? 'text-primary' 
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'text-primary scale-110' 
+                  : 'text-muted-foreground hover:text-foreground hover:scale-105'
               }`}
             >
-              <Icon className={`h-5 w-5 mb-1 ${isActive ? 'stroke-[2.5]' : ''}`} />
+              <Icon className={`h-5 w-5 mb-1 transition-transform ${isActive ? 'stroke-[2.5]' : ''}`} />
               <span className="text-xs font-medium">{item.label}</span>
+              {isActive && (
+                <div className="absolute -bottom-0 w-8 h-0.5 bg-primary rounded-full" />
+              )}
             </button>
           );
         })}
