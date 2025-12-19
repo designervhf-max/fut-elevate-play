@@ -455,13 +455,13 @@ const UpcomingMatch = ({
             ) : (
               <>
                 <Unlock className="h-5 w-5 mr-2" />
-                Liberar
+                Liberar Partida
               </>
             )}
           </Button>
-          <Button variant="outline" onClick={shuffleTeams}>
+          <Button variant="outline" onClick={() => window.location.href = `/team-draw/${match.id}`}>
             <Shuffle className="h-5 w-5 mr-2" />
-            Sortear
+            Sortear Times
           </Button>
           <AddPlayerDialog
             gameId={match.id}

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import PlayerCard from '@/components/PlayerCard';
 import OverallStats from '@/components/OverallStats';
 import BottomNav from '@/components/BottomNav';
+import AvatarUpload from '@/components/AvatarUpload';
 import { Calendar, Plus, User, LogOut, Loader2 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { useMasterUser } from '@/hooks/useMasterUser';
@@ -90,6 +91,12 @@ const Home = () => {
     navigate('/login');
   };
 
+  const handleAvatarUpdate = (url: string) => {
+    if (profile) {
+      setProfile({ ...profile, avatar_url: url });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -121,8 +128,20 @@ const Home = () => {
 
       {/* Content */}
       <main className="p-4 space-y-6">
+        {/* Avatar Upload */}
+        {!isMaster && (
+          <section className="flex justify-center animate-slide-up">
+            <AvatarUpload
+              userId={profile.id}
+              currentAvatarUrl={profile.avatar_url}
+              onUploadComplete={handleAvatarUpdate}
+              size="lg"
+            />
+          </section>
+        )}
+
         {/* Player Card Section */}
-        <section className="animate-slide-up">
+        <section className="animate-slide-up" style={{ animationDelay: '0.05s' }}>
           <PlayerCard profile={profile} />
         </section>
 
@@ -132,7 +151,7 @@ const Home = () => {
         </section>
 
         {/* View Profile Button */}
-        <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <section className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
           <Button
             variant="outline"
             className="w-full"
@@ -144,9 +163,9 @@ const Home = () => {
         </section>
 
         {/* Action Buttons */}
-        <section className="space-y-3 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+        <section className="space-y-3 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-            Ações
+            Acoes
           </h3>
           <Button
             variant="dark"

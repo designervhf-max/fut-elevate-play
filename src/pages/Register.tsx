@@ -162,7 +162,14 @@ const Register = () => {
       description: "Vamos calibrar seu perfil",
     });
 
-    navigate('/calibration');
+    // Check if user came from pelada invite
+    const joinPeladaId = localStorage.getItem('join_pelada_id');
+    if (joinPeladaId) {
+      localStorage.removeItem('join_pelada_id');
+      navigate(`/join-pelada/${joinPeladaId}`);
+    } else {
+      navigate('/calibration');
+    }
   };
 
   return (

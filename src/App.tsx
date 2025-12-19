@@ -15,6 +15,8 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import GameDetails from "./pages/GameDetails";
 import JoinGame from "./pages/JoinGame";
+import JoinPelada from "./pages/JoinPelada";
+import TeamDraw from "./pages/TeamDraw";
 import ForgotPassword from "./pages/ForgotPassword";
 import Calibration from "./pages/Calibration";
 import NotFound from "./pages/NotFound";
@@ -37,6 +39,8 @@ const App = () => (
           <Route path="/games" element={<Games />} />
           <Route path="/create-pelada" element={<CreatePelada />} />
           <Route path="/pelada/:id" element={<PeladaDetails />} />
+          <Route path="/join-pelada/:id" element={<JoinPelada />} />
+          <Route path="/team-draw/:matchId" element={<TeamDraw />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />
           {/* Legacy routes - redirect to new structure */}
