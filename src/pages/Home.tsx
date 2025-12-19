@@ -7,16 +7,47 @@ import OverallStats from '@/components/OverallStats';
 import BottomNav from '@/components/BottomNav';
 import { Calendar, Plus, User, LogOut, Loader2 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
+import { useMasterUser } from '@/hooks/useMasterUser';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
+// Default master profile for testing
+const MASTER_PROFILE: Profile = {
+  id: 'master-user-id',
+  name: 'MASTER',
+  age: 30,
+  position: 'Meia',
+  shirt_number: 10,
+  dominant_foot: 'Destro',
+  phone: null,
+  avatar_url: null,
+  overall_rating: 99,
+  attack_rating: 99,
+  defense_rating: 99,
+  skill_rating: 99,
+  strength_rating: 99,
+  total_goals: 999,
+  total_assists: 999,
+  calibration_completed: true,
+  created_at: new Date().toISOString(),
+  preferred_game_type: 'Futsal',
+};
+
 const Home = () => {
   const navigate = useNavigate();
+  const { isMaster, logout: masterLogout } = useMasterUser();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Master user bypass
+      if (isMaster) {
+        setProfile(MASTER_PROFILE);
+        setLoading(false);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -42,16 +73,20 @@ const Home = () => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
+      if (!isMaster && (event === 'SIGNED_OUT' || !session)) {
         navigate('/login');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, isMaster]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    if (isMaster) {
+      masterLogout();
+    } else {
+      await supabase.auth.signOut();
+    }
     navigate('/login');
   };
 
