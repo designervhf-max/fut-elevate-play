@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/BottomNav';
 import MatchHistory from '@/components/MatchHistory';
+import AvatarUpload from '@/components/AvatarUpload';
 import { ChevronLeft, User, Edit2, Loader2, History, BarChart3 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -39,6 +40,12 @@ const Profile = () => {
 
     fetchProfile();
   }, [navigate]);
+
+  const handleAvatarUpdate = (url: string) => {
+    if (profile) {
+      setProfile({ ...profile, avatar_url: url });
+    }
+  };
 
   if (loading) {
     return (
@@ -83,27 +90,18 @@ const Profile = () => {
       </header>
 
       <main className="p-4 space-y-6">
-        {/* Profile Header */}
+        {/* Profile Header with Avatar Upload */}
         <section className="text-center animate-slide-up">
-          <div className="w-28 h-28 rounded-full bg-surface-elevated border-4 border-primary mx-auto mb-4 flex items-center justify-center">
-            {profile.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={profile.name}
-                className="w-full h-full rounded-full object-cover"
-              />
-            ) : (
-              <User className="w-14 h-14 text-muted-foreground" />
-            )}
+          <div className="flex justify-center mb-4">
+            <AvatarUpload
+              userId={profile.id}
+              currentAvatarUrl={profile.avatar_url}
+              onUploadComplete={handleAvatarUpdate}
+              size="lg"
+            />
           </div>
           <h2 className="text-3xl font-display tracking-wider">{profile.name.toUpperCase()}</h2>
           <p className="text-primary mt-1">{profile.position}</p>
-        </section>
-
-        {/* Overall Card */}
-        <section className="fifa-card p-6 text-center animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <div className="text-6xl font-display text-primary mb-2">{profile.overall_rating}</div>
-          <p className="text-sm text-muted-foreground uppercase tracking-wider">Overall Rating</p>
         </section>
 
         {/* Stats Grid */}
