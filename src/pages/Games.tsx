@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { getWeekdayLabel, formatNextOccurrence, getNextOccurrence } from '@/lib/weekday';
+import { useMasterUser } from '@/hooks/useMasterUser';
 
 // Types for the new pelada structure
 type Pelada = {
@@ -61,6 +62,7 @@ type PeladaWithDetails = Pelada & {
 
 const Games = () => {
   const navigate = useNavigate();
+  const { isMaster } = useMasterUser();
   const [peladas, setPeladas] = useState<PeladaWithDetails[]>([]);
   const [invites, setInvites] = useState<PeladaWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +70,50 @@ const Games = () => {
 
   useEffect(() => {
     const fetchPeladas = async () => {
+      // Master user can access without session
+      if (isMaster) {
+        setUserId('master-user-id');
+        // Fetch all peladas for master user
+        const { data: allPeladas } = await supabase
+          .from('peladas')
+          .select('*')
+          .eq('status', 'active');
+
+        if (allPeladas && allPeladas.length > 0) {
+          const peladasWithDetails = await Promise.all(
+            allPeladas.map(async (pelada) => {
+              const today = new Date().toISOString().split('T')[0];
+              const { data: matches } = await supabase
+                .from('matches')
+                .select('*')
+                .eq('pelada_id', pelada.id)
+                .gte('match_date', today)
+                .in('status', ['scheduled', 'in_progress'])
+                .order('match_date', { ascending: true })
+                .limit(1);
+
+              const nextMatch = matches && matches.length > 0 ? matches[0] as Match : null;
+
+              return {
+                ...pelada,
+                member: {
+                  id: 'master',
+                  pelada_id: pelada.id,
+                  user_id: 'master-user-id',
+                  role: 'admin' as const,
+                  joined_at: new Date().toISOString(),
+                },
+                nextMatch,
+                userMatchStatus: 'Confirmado',
+              };
+            })
+          );
+          setPeladas(peladasWithDetails);
+        }
+        setLoading(false);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -152,7 +198,7 @@ const Games = () => {
     };
 
     fetchPeladas();
-  }, [navigate]);
+  }, [navigate, isMaster]);
 
   const getStatusDisplay = (userMatchStatus: string | null) => {
     if (!userMatchStatus) {

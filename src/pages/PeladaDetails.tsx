@@ -105,14 +105,21 @@ const PeladaDetails = () => {
   const [userId, setUserId] = useState<string | null>(null);
 
   const fetchData = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    let currentUserId = 'master-user-id';
     
-    if (!session) {
-      navigate('/login');
-      return;
-    }
+    // Master user bypass
+    if (!isMaster) {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate('/login');
+        return;
+      }
 
-    setUserId(session.user.id);
+      currentUserId = session.user.id;
+    }
+    
+    setUserId(currentUserId);
 
     // Fetch pelada details
     const { data: peladaData, error: peladaError } = await supabase
@@ -124,7 +131,7 @@ const PeladaDetails = () => {
     if (peladaError || !peladaData) {
       toast({
         title: 'Erro',
-        description: 'Pelada não encontrada',
+        description: 'Pelada nao encontrada',
         variant: 'destructive',
       });
       navigate('/games');
@@ -133,16 +140,26 @@ const PeladaDetails = () => {
 
     setPelada(peladaData as Pelada);
 
-    // Fetch user's membership
-    const { data: memberData } = await supabase
-      .from('pelada_members')
-      .select('*')
-      .eq('pelada_id', id)
-      .eq('user_id', session.user.id)
-      .single();
+    // For master user, set admin membership
+    if (isMaster) {
+      setMembership({
+        id: 'master',
+        pelada_id: id!,
+        user_id: 'master-user-id',
+        role: 'admin',
+      });
+    } else {
+      // Fetch user's membership
+      const { data: memberData } = await supabase
+        .from('pelada_members')
+        .select('*')
+        .eq('pelada_id', id)
+        .eq('user_id', currentUserId)
+        .single();
 
-    if (memberData) {
-      setMembership(memberData as PeladaMember);
+      if (memberData) {
+        setMembership(memberData as PeladaMember);
+      }
     }
 
     // Fetch next match (scheduled or in_progress) or create one
@@ -160,7 +177,7 @@ const PeladaDetails = () => {
 
     if (upcomingMatches && upcomingMatches.length > 0) {
       matchToUse = upcomingMatches[0] as Match;
-    } else if (memberData?.role === 'admin' || peladaData.creator_id === session.user.id) {
+    } else if (isMaster || membership?.role === 'admin') {
       // Auto-create next match if admin and no upcoming match exists
       const nextMatchDate = getNextMatchDate(peladaData.weekday);
       
@@ -245,7 +262,7 @@ const PeladaDetails = () => {
 
   useEffect(() => {
     fetchData();
-  }, [id, navigate, toast]);
+  }, [id, navigate, toast, isMaster]);
 
   const shareInvite = async () => {
     if (!pelada) return;
