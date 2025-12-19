@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import TeamDrawResult from './TeamDrawResult';
 import GameSummary from './GameSummary';
 import AddPlayerDialog from './AddPlayerDialog';
@@ -91,6 +92,11 @@ const UpcomingMatch = ({
   const [showTeamDraw, setShowTeamDraw] = useState(false);
   const [teamA, setTeamA] = useState<MatchParticipant[]>([]);
   const [teamB, setTeamB] = useState<MatchParticipant[]>([]);
+  
+  // Dialog states
+  const [showEndMatchDialog, setShowEndMatchDialog] = useState(false);
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [participantToRemove, setParticipantToRemove] = useState<string | null>(null);
 
   // No match scheduled
   if (!match) {
@@ -246,9 +252,6 @@ const UpcomingMatch = ({
   const handleEndMatch = async () => {
     if (!match || !isAdmin) return;
 
-    const confirmed = window.confirm('Encerrar a partida? Após isso, você poderá registrar as estatísticas.');
-    if (!confirmed) return;
-
     setActionLoading(true);
 
     const { error } = await supabase
@@ -260,6 +263,7 @@ const UpcomingMatch = ({
       .eq('id', match.id);
 
     setActionLoading(false);
+    setShowEndMatchDialog(false);
 
     if (error) {
       toast({ title: 'Erro', description: 'Não foi possível encerrar a partida', variant: 'destructive' });
@@ -273,23 +277,28 @@ const UpcomingMatch = ({
     await onRefresh();
   };
 
-  const handleRemoveParticipant = async (participantId: string) => {
-    if (!isAdmin) return;
-    
-    const confirmed = window.confirm('Remover este jogador da partida?');
-    if (!confirmed) return;
+  const handleRemoveParticipant = async () => {
+    if (!isAdmin || !participantToRemove) return;
 
     const { error } = await supabase
       .from('match_participants')
       .delete()
-      .eq('id', participantId);
+      .eq('id', participantToRemove);
+
+    setShowRemoveDialog(false);
+    setParticipantToRemove(null);
 
     if (error) {
-      toast({ title: 'Erro', description: 'Nao foi possivel remover o jogador', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível remover o jogador', variant: 'destructive' });
     } else {
       toast({ title: 'Jogador removido' });
       await onRefresh();
     }
+  };
+
+  const openRemoveDialog = (participantId: string) => {
+    setParticipantToRemove(participantId);
+    setShowRemoveDialog(true);
   };
 
   const handleToggleConfirmations = async () => {
@@ -305,9 +314,9 @@ const UpcomingMatch = ({
     setActionLoading(false);
 
     if (error) {
-      toast({ title: 'Erro', description: 'Nao foi possivel atualizar', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível atualizar', variant: 'destructive' });
     } else {
-      toast({ title: newValue ? 'Confirmacoes liberadas' : 'Confirmacoes bloqueadas' });
+      toast({ title: newValue ? 'Confirmações liberadas' : 'Confirmações bloqueadas' });
       await onRefresh();
     }
   };
@@ -369,14 +378,24 @@ const UpcomingMatch = ({
           {match.location || pelada.location}
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-          <Users className="h-4 w-4" />
-          {confirmedCount}/{pelada.max_players} confirmados
-          {isFull && (
-            <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded ml-2">
-              LOTADO
-            </span>
-          )}
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <span>{confirmedCount}/{pelada.max_players} confirmados</span>
+            </div>
+            {isFull && (
+              <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded">
+                LOTADO
+              </span>
+            )}
+          </div>
+          <div className="w-full bg-surface rounded-full h-2 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-primary to-lime transition-all duration-500 ease-out"
+              style={{ width: `${Math.min((confirmedCount / pelada.max_players) * 100, 100)}%` }}
+            />
+          </div>
         </div>
 
         {/* User Status */}
@@ -384,7 +403,7 @@ const UpcomingMatch = ({
           <div className="flex items-center gap-2 p-3 bg-surface/50 rounded-lg mb-4">
             {getStatusIcon(userParticipation.status)}
             <span className={`text-sm font-medium ${getStatusColor(userParticipation.status)}`}>
-              Voce esta {userParticipation.status.toLowerCase()}
+              Você está {userParticipation.status.toLowerCase()}
             </span>
           </div>
         )}
@@ -394,7 +413,7 @@ const UpcomingMatch = ({
           <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg mb-4">
             <Lock className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
-              Confirmacoes ainda nao liberadas pelo admin
+              Confirmações ainda não liberadas pelo admin
             </span>
           </div>
         )}
@@ -419,7 +438,7 @@ const UpcomingMatch = ({
                 ) : (
                   <>
                     <CheckCircle className="h-5 w-5 mr-2" />
-                    Confirmar Presenca
+                    Confirmar Presença
                   </>
                 )}
               </Button>
@@ -470,7 +489,7 @@ const UpcomingMatch = ({
           />
           <Button
             variant="destructive"
-            onClick={handleEndMatch}
+            onClick={() => setShowEndMatchDialog(true)}
             disabled={actionLoading}
           >
             {actionLoading ? (
@@ -610,7 +629,7 @@ const UpcomingMatch = ({
                     </span>
                     {isAdmin && match.status !== 'finished' && (
                       <button
-                        onClick={() => handleRemoveParticipant(participant.id)}
+                        onClick={() => openRemoveDialog(participant.id)}
                         className="p-1 text-destructive/60 hover:text-destructive transition-colors"
                         title="Remover jogador"
                       >
@@ -630,6 +649,27 @@ const UpcomingMatch = ({
           )}
         </div>
       </div>
+
+      {/* Confirmation Dialogs */}
+      <ConfirmDialog
+        open={showEndMatchDialog}
+        onOpenChange={setShowEndMatchDialog}
+        title="Encerrar partida?"
+        description="Após encerrar, você poderá registrar as estatísticas dos jogadores."
+        confirmText="Encerrar"
+        onConfirm={handleEndMatch}
+        variant="destructive"
+      />
+
+      <ConfirmDialog
+        open={showRemoveDialog}
+        onOpenChange={setShowRemoveDialog}
+        title="Remover jogador?"
+        description="Tem certeza que deseja remover este jogador da partida?"
+        confirmText="Remover"
+        onConfirm={handleRemoveParticipant}
+        variant="destructive"
+      />
     </div>
   );
 };

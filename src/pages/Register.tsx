@@ -30,6 +30,23 @@ const dominantFeet = [
   { value: 'Ambos', label: 'Ambos' },
 ];
 
+const getPasswordStrength = (password: string): number => {
+  let strength = 0;
+  if (password.length >= 6) strength++;
+  if (password.length >= 8) strength++;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) strength++;
+  if (/\d/.test(password) || /[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+  return strength;
+};
+
+const getPasswordStrengthText = (password: string): string => {
+  const strength = getPasswordStrength(password);
+  if (strength <= 1) return 'Fraca';
+  if (strength === 2) return 'Razoável';
+  if (strength === 3) return 'Boa';
+  return 'Forte';
+};
+
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -50,7 +67,23 @@ const Register = () => {
   });
 
   const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === 'phone') {
+      // Apply phone mask (XX) XXXXX-XXXX
+      const digits = value.replace(/\D/g, '').slice(0, 11);
+      let formatted = digits;
+      if (digits.length > 0) {
+        formatted = `(${digits.slice(0, 2)}`;
+        if (digits.length > 2) {
+          formatted += `) ${digits.slice(2, 7)}`;
+          if (digits.length > 7) {
+            formatted += `-${digits.slice(7, 11)}`;
+          }
+        }
+      }
+      setFormData((prev) => ({ ...prev, phone: formatted }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   const validateForm = () => {
@@ -316,6 +349,32 @@ const Register = () => {
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
+          {/* Password Strength Indicator */}
+          {formData.password && (
+            <div className="space-y-1">
+              <div className="flex gap-1">
+                {[1, 2, 3, 4].map((level) => {
+                  const strength = getPasswordStrength(formData.password);
+                  return (
+                    <div
+                      key={level}
+                      className={`h-1 flex-1 rounded-full transition-colors ${
+                        level <= strength
+                          ? strength <= 1 ? 'bg-red-500' 
+                          : strength <= 2 ? 'bg-yellow-500'
+                          : strength <= 3 ? 'bg-lime/70'
+                          : 'bg-green-500'
+                          : 'bg-surface'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {getPasswordStrengthText(formData.password)}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Confirm Password */}

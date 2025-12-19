@@ -167,7 +167,7 @@ const Login = () => {
 
       {/* Footer */}
       <p className="mt-10 text-xs text-muted-foreground animate-fade-in" style={{ animationDelay: '0.3s' }}>
-        © 2024 EleveFut. Todos os direitos reservados.
+        © {new Date().getFullYear()} EleveFut. Todos os direitos reservados.
       </p>
     </div>
   );

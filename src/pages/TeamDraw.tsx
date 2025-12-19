@@ -112,7 +112,7 @@ const TeamDraw = () => {
     if (confirmed.length < 2) {
       toast({
         title: 'Aviso',
-        description: 'Minimo de 2 jogadores confirmados',
+        description: 'Mínimo de 2 jogadores confirmados',
         variant: 'destructive',
       });
       return;
@@ -291,7 +291,7 @@ const TeamDraw = () => {
                   <div key={p.id} className="flex items-center gap-2 p-2 bg-surface/50 rounded-lg">
                     <div className="w-8 h-8 rounded-full bg-surface flex items-center justify-center overflow-hidden">
                       {p.profile?.avatar_url ? (
-                        <img src={p.profile.avatar_url} alt="" className="w-4 h-4 object-cover" />
+                        <img src={p.profile.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <User className="w-4 h-4 text-muted-foreground" />
                       )}
