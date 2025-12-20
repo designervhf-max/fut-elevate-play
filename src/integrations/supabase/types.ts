@@ -264,6 +264,7 @@ export type Database = {
           id: string
           match_id: string
           rating: number | null
+          saves: number | null
           stats_submitted: boolean | null
           status: Database["public"]["Enums"]["participant_status"]
           team: number | null
@@ -278,6 +279,7 @@ export type Database = {
           id?: string
           match_id: string
           rating?: number | null
+          saves?: number | null
           stats_submitted?: boolean | null
           status?: Database["public"]["Enums"]["participant_status"]
           team?: number | null
@@ -292,6 +294,7 @@ export type Database = {
           id?: string
           match_id?: string
           rating?: number | null
+          saves?: number | null
           stats_submitted?: boolean | null
           status?: Database["public"]["Enums"]["participant_status"]
           team?: number | null
@@ -477,6 +480,41 @@ export type Database = {
         }
         Relationships: []
       }
+      player_ratings: {
+        Row: {
+          created_at: string | null
+          id: string
+          match_id: string
+          rated_id: string
+          rater_id: string
+          rating: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          match_id: string
+          rated_id: string
+          rater_id: string
+          rating: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          match_id?: string
+          rated_id?: string
+          rater_id?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_ratings_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           age: number
@@ -496,7 +534,12 @@ export type Database = {
           skill_rating: number | null
           strength_rating: number | null
           total_assists: number | null
+          total_best_defender: number | null
+          total_games: number | null
           total_goals: number | null
+          total_mvps: number | null
+          total_participations: number | null
+          total_saves: number | null
         }
         Insert: {
           age: number
@@ -516,7 +559,12 @@ export type Database = {
           skill_rating?: number | null
           strength_rating?: number | null
           total_assists?: number | null
+          total_best_defender?: number | null
+          total_games?: number | null
           total_goals?: number | null
+          total_mvps?: number | null
+          total_participations?: number | null
+          total_saves?: number | null
         }
         Update: {
           age?: number
@@ -536,7 +584,12 @@ export type Database = {
           skill_rating?: number | null
           strength_rating?: number | null
           total_assists?: number | null
+          total_best_defender?: number | null
+          total_games?: number | null
           total_goals?: number | null
+          total_mvps?: number | null
+          total_participations?: number | null
+          total_saves?: number | null
         }
         Relationships: []
       }

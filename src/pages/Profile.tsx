@@ -5,7 +5,11 @@ import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/BottomNav';
 import MatchHistory from '@/components/MatchHistory';
 import AvatarUpload from '@/components/AvatarUpload';
-import { ChevronLeft, User, Edit2, Loader2, History, BarChart3 } from 'lucide-react';
+import CareerStats from '@/components/CareerStats';
+import MvpShowcase from '@/components/MvpShowcase';
+import EvolutionChart from '@/components/EvolutionChart';
+import PeladaCareerHistory from '@/components/PeladaCareerHistory';
+import { ChevronLeft, Edit2, Loader2, History, BarChart3, TrendingUp, Users } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -14,7 +18,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'stats' | 'history'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'history' | 'evolution' | 'peladas'>('stats');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -66,6 +70,8 @@ const Profile = () => {
     { label: 'FOR', value: profile.strength_rating },
   ];
 
+  const isGoalkeeper = profile.position === 'Goleiro';
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
@@ -104,8 +110,16 @@ const Profile = () => {
           <p className="text-primary mt-1">{profile.position}</p>
         </section>
 
-        {/* Stats Grid */}
-        <section className="grid grid-cols-4 gap-3 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        {/* Overall Rating */}
+        <section className="text-center animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/30">
+            <span className="text-3xl font-display font-bold text-white">{profile.overall_rating}</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 uppercase tracking-wider">Overall</p>
+        </section>
+
+        {/* Attribute Stats Grid */}
+        <section className="grid grid-cols-4 gap-3 animate-slide-up" style={{ animationDelay: '0.15s' }}>
           {stats.map((stat) => (
             <div key={stat.label} className="text-center">
               <div className="stat-circle w-16 h-16 mx-auto mb-2">
@@ -118,33 +132,72 @@ const Profile = () => {
           ))}
         </section>
 
+        {/* MVP Showcase */}
+        <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <MvpShowcase 
+            mvpCount={profile.total_mvps || 0} 
+            defenderCount={profile.total_best_defender || 0} 
+          />
+        </section>
+
         {/* Tabs */}
-        <section className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
-          <div className="flex gap-2 mb-4">
+        <section className="animate-slide-up" style={{ animationDelay: '0.25s' }}>
+          <div className="grid grid-cols-4 gap-1 mb-4">
             <Button
               variant={activeTab === 'stats' ? 'sport' : 'outline'}
               size="sm"
               onClick={() => setActiveTab('stats')}
-              className="flex-1"
+              className="text-xs px-2"
             >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Estatísticas
+              <BarChart3 className="h-3 w-3 mr-1" />
+              Stats
+            </Button>
+            <Button
+              variant={activeTab === 'evolution' ? 'sport' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('evolution')}
+              className="text-xs px-2"
+            >
+              <TrendingUp className="h-3 w-3 mr-1" />
+              Evolução
+            </Button>
+            <Button
+              variant={activeTab === 'peladas' ? 'sport' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('peladas')}
+              className="text-xs px-2"
+            >
+              <Users className="h-3 w-3 mr-1" />
+              Peladas
             </Button>
             <Button
               variant={activeTab === 'history' ? 'sport' : 'outline'}
               size="sm"
               onClick={() => setActiveTab('history')}
-              className="flex-1"
+              className="text-xs px-2"
             >
-              <History className="h-4 w-4 mr-2" />
-              Histórico
+              <History className="h-3 w-3 mr-1" />
+              Jogos
             </Button>
           </div>
 
           {activeTab === 'stats' && (
             <div className="space-y-4">
+              {/* Career Stats */}
+              <CareerStats
+                totalGames={profile.total_games || 0}
+                totalGoals={profile.total_goals || 0}
+                totalAssists={profile.total_assists || 0}
+                totalParticipations={profile.total_participations || 0}
+                totalMvps={profile.total_mvps || 0}
+                totalBestDefender={profile.total_best_defender || 0}
+                totalSaves={profile.total_saves || 0}
+                isGoalkeeper={isGoalkeeper}
+              />
+
               {/* Info Cards */}
               <div className="fifa-card p-4">
+                <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">Informações</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-muted-foreground">Idade</p>
@@ -164,20 +217,15 @@ const Profile = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Career Stats */}
-              <h3 className="text-sm text-muted-foreground uppercase tracking-wider">Carreira</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="fifa-card p-4 text-center">
-                  <div className="text-3xl font-display text-primary">{profile.total_goals}</div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Gols</p>
-                </div>
-                <div className="fifa-card p-4 text-center">
-                  <div className="text-3xl font-display text-primary">{profile.total_assists}</div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Assistências</p>
-                </div>
-              </div>
             </div>
+          )}
+
+          {activeTab === 'evolution' && (
+            <EvolutionChart userId={profile.id} />
+          )}
+
+          {activeTab === 'peladas' && (
+            <PeladaCareerHistory userId={profile.id} />
           )}
 
           {activeTab === 'history' && (

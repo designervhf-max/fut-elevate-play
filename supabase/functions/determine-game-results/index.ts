@@ -13,8 +13,11 @@ const PROGRESSION_CONFIG = {
   MVP_BONUS: 3.0,
   DEFENDER_BONUS: 2.5,
   PARTICIPATION_BONUS: 0.5,
-  MAX_RATING: 100,
+  SAVE_BONUS: 0.3, // Bonus for goalkeeper saves
+  RATING_BONUS: 0.5, // Bonus based on average rating received
+  MAX_RATING: 99,
   MIN_RATING: 0,
+  GUEST_INITIAL_OVERALL: 49,
 };
 
 const calculateBonus = (currentRating: number, baseBonus: number): number => {
@@ -56,7 +59,7 @@ serve(async (req) => {
       // Get all participants (including guests)
       const { data: allParticipants } = await supabase
         .from('game_participants')
-        .select('id, user_id, goals, assists, stats_submitted, status, guest_name')
+        .select('id, user_id, goals, assists, stats_submitted, status, guest_name, saves')
         .eq('game_id', game.id)
         .eq('status', 'Confirmado');
 
@@ -157,6 +160,7 @@ serve(async (req) => {
         const isBestDefender = participant.user_id === defenderWinner;
         const goals = participant.goals || 0;
         const assists = participant.assists || 0;
+        const saves = participant.saves || 0;
 
         // Calculate rating changes
         const currentAttack = profile.attack_rating || 50;
@@ -170,9 +174,17 @@ serve(async (req) => {
         const skillBonus =
           assists * calculateBonus(currentSkill, PROGRESSION_CONFIG.ASSIST_BONUS);
         const strengthBonus = calculateBonus(currentStrength, PROGRESSION_CONFIG.PARTICIPATION_BONUS);
-        const defenseBonus = isBestDefender
+        
+        // Defense bonus: best defender award + saves for goalkeepers
+        let defenseBonus = isBestDefender
           ? calculateBonus(currentDefense, PROGRESSION_CONFIG.DEFENDER_BONUS)
           : 0;
+        
+        // Add save bonus for goalkeepers
+        if (profile.position === 'Goleiro' && saves > 0) {
+          defenseBonus += saves * calculateBonus(currentDefense, PROGRESSION_CONFIG.SAVE_BONUS);
+        }
+        
         const mvpBonus = isMVP
           ? calculateBonus(currentOverall, PROGRESSION_CONFIG.MVP_BONUS)
           : 0;
@@ -223,7 +235,7 @@ serve(async (req) => {
           was_best_defender: isBestDefender,
         });
 
-        // Update profile
+        // Update profile with new ratings AND increment career stats
         await supabase
           .from('profiles')
           .update({
@@ -234,11 +246,16 @@ serve(async (req) => {
             overall_rating: Math.round(newOverall),
             total_goals: (profile.total_goals || 0) + goals,
             total_assists: (profile.total_assists || 0) + assists,
+            total_games: (profile.total_games || 0) + 1,
+            total_participations: (profile.total_participations || 0) + 1,
+            total_mvps: (profile.total_mvps || 0) + (isMVP ? 1 : 0),
+            total_best_defender: (profile.total_best_defender || 0) + (isBestDefender ? 1 : 0),
+            total_saves: (profile.total_saves || 0) + saves,
           })
           .eq('id', participant.user_id);
 
         console.log(
-          `Updated ${participant.user_id}: overall ${currentOverall} -> ${Math.round(newOverall)}`
+          `Updated ${participant.user_id}: overall ${currentOverall} -> ${Math.round(newOverall)}, games: ${(profile.total_games || 0) + 1}`
         );
       }
 
