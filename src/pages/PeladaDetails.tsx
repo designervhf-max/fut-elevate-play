@@ -162,8 +162,11 @@ const PeladaDetails = () => {
       }
     }
 
-    // Fetch next match (scheduled or in_progress) or create one
+    // Fetch next match (scheduled, in_progress, or recently finished for voting)
     const today = new Date().toISOString().split('T')[0];
+    const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    
+    // First try to get scheduled or in_progress match
     const { data: upcomingMatches } = await supabase
       .from('matches')
       .select('*')
@@ -177,24 +180,38 @@ const PeladaDetails = () => {
 
     if (upcomingMatches && upcomingMatches.length > 0) {
       matchToUse = upcomingMatches[0] as Match;
-    } else if (isMaster || membership?.role === 'admin') {
-      // Auto-create next match if admin and no upcoming match exists
-      const nextMatchDate = getNextMatchDate(peladaData.weekday);
-      
-      const { data: newMatch, error: createError } = await supabase
+    } else {
+      // Check for recently finished match (< 48h) that's still votable
+      const { data: recentFinished } = await supabase
         .from('matches')
-        .insert({
-          pelada_id: id,
-          match_date: nextMatchDate,
-          match_time: peladaData.time,
-          location: peladaData.location,
-          status: 'scheduled',
-        })
-        .select()
-        .single();
+        .select('*')
+        .eq('pelada_id', id)
+        .eq('status', 'finished')
+        .gte('ended_at', twoDaysAgo)
+        .order('ended_at', { ascending: false })
+        .limit(1);
 
-      if (!createError && newMatch) {
-        matchToUse = newMatch as Match;
+      if (recentFinished && recentFinished.length > 0) {
+        matchToUse = recentFinished[0] as Match;
+      } else if (isMaster || membership?.role === 'admin') {
+        // Auto-create next match if admin and no upcoming/recent match exists
+        const nextMatchDate = getNextMatchDate(peladaData.weekday);
+        
+        const { data: newMatch, error: createError } = await supabase
+          .from('matches')
+          .insert({
+            pelada_id: id,
+            match_date: nextMatchDate,
+            match_time: peladaData.time,
+            location: peladaData.location,
+            status: 'scheduled',
+          })
+          .select()
+          .single();
+
+        if (!createError && newMatch) {
+          matchToUse = newMatch as Match;
+        }
       }
     }
 
