@@ -8,6 +8,7 @@ import GameSummary from './GameSummary';
 import AddPlayerDialog from './AddPlayerDialog';
 import PlayerStatsForm from './PlayerStatsForm';
 import MatchVoting from './MatchVoting';
+import PlayerRatingsForm from './PlayerRatingsForm';
 import {
   CalendarDays,
   Clock,
@@ -556,6 +557,27 @@ const UpcomingMatch = ({
                 currentUserId={userId!}
                 matchEndedAt={match.ended_at!}
                 onVoteSubmitted={handleDataRefresh}
+              />
+            </div>
+          )}
+
+          {/* Player Ratings - available for 48h after match ends */}
+          {userParticipation?.status === 'Confirmado' && isVotingOpen && userId && (
+            <div>
+              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
+                Avaliar Jogadores (0-10)
+              </h4>
+              <PlayerRatingsForm
+                matchId={match.id}
+                currentUserId={userId}
+                players={participants
+                  .filter(p => p.user_id && p.status === 'Confirmado')
+                  .map(p => ({
+                    id: p.user_id!,
+                    name: p.profile?.name || 'Jogador',
+                    avatarUrl: p.profile?.avatar_url || null,
+                  }))}
+                onSubmit={handleDataRefresh}
               />
             </div>
           )}

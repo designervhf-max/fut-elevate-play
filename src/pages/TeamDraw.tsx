@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, Loader2, Users, Shuffle, Minus, Plus, User } from 'lucide-react';
+import { ChevronLeft, Loader2, Users, Shuffle, Minus, Plus, User, Share2 } from 'lucide-react';
 
 type MatchParticipant = {
   id: string;
@@ -172,6 +172,25 @@ const TeamDraw = () => {
     navigate(-1);
   };
 
+  const shareOnWhatsApp = () => {
+    const teamANames = teamA.map(p => `• ${getPlayerName(p)} (${getPlayerRating(p)})`).join('\n');
+    const teamBNames = teamB.map(p => `• ${getPlayerName(p)} (${getPlayerRating(p)})`).join('\n');
+    
+    const message = `⚽ *TIMES SORTEADOS* ⚽
+
+🟢 *TIME A* (OVR ${getTeamAverage(teamA)})
+${teamANames}
+
+🔵 *TIME B* (OVR ${getTeamAverage(teamB)})
+${teamBNames}
+
+🎯 Diferença: ${Math.abs(getTeamAverage(teamA) - getTeamAverage(teamB))} pontos`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -307,20 +326,30 @@ const TeamDraw = () => {
           </div>
         )}
 
-        {/* Save Button */}
+        {/* Action Buttons */}
         {hasDrawn && (
-          <Button
-            variant="sport"
-            className="w-full animate-slide-up"
-            onClick={saveTeams}
-            disabled={saving}
-          >
-            {saving ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              'Salvar Times'
-            )}
-          </Button>
+          <div className="flex gap-3 animate-slide-up">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={shareOnWhatsApp}
+            >
+              <Share2 className="h-5 w-5 mr-2" />
+              WhatsApp
+            </Button>
+            <Button
+              variant="sport"
+              className="flex-1"
+              onClick={saveTeams}
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                'Salvar Times'
+              )}
+            </Button>
+          </div>
         )}
 
         {/* Available Players */}
