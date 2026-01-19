@@ -9,6 +9,7 @@ import AddPlayerDialog from './AddPlayerDialog';
 import PlayerStatsForm from './PlayerStatsForm';
 import MatchVoting from './MatchVoting';
 import PlayerRatingsForm from './PlayerRatingsForm';
+import MatchReminderButton from './MatchReminderButton';
 import {
   CalendarDays,
   Clock,
@@ -24,6 +25,7 @@ import {
   Trash2,
   Unlock,
   Lock,
+  MessageCircle,
 } from 'lucide-react';
 
 type Match = {
@@ -457,51 +459,96 @@ const UpcomingMatch = ({
             )}
           </div>
         )}
+
+        {/* WhatsApp Share Button */}
+        {confirmedCount > 0 && (
+          <Button
+            variant="outline"
+            className="w-full mt-3"
+            onClick={() => {
+              const confirmedNames = confirmedParticipants
+                .map(p => `• ${p.profile?.name || p.guest_name}`)
+                .join('\n');
+
+              const dateStr = matchDate.toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                day: '2-digit',
+                month: 'long',
+              });
+
+              const message = `⚽ *${pelada.name}*
+📅 ${dateStr}
+🕐 ${match.match_time.slice(0, 5)}
+📍 ${match.location || pelada.location}
+
+✅ *CONFIRMADOS (${confirmedCount}/${pelada.max_players})*
+${confirmedNames}
+
+${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas restantes`}`;
+
+              const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+              window.open(whatsappUrl, '_blank');
+            }}
+          >
+            <MessageCircle className="h-5 w-5 mr-2" />
+            Compartilhar no WhatsApp
+          </Button>
+        )}
       </div>
 
       {/* Admin Actions */}
       {isAdmin && match.status !== 'finished' && (
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            variant={match.open_for_confirmation ? 'outline' : 'sport'}
-            onClick={handleToggleConfirmations}
-            disabled={actionLoading}
-          >
-            {match.open_for_confirmation ? (
-              <>
-                <Lock className="h-5 w-5 mr-2" />
-                Bloquear
-              </>
-            ) : (
-              <>
-                <Unlock className="h-5 w-5 mr-2" />
-                Liberar Partida
-              </>
-            )}
-          </Button>
-          <Button variant="outline" onClick={() => window.location.href = `/team-draw/${match.id}`}>
-            <Shuffle className="h-5 w-5 mr-2" />
-            Sortear Times
-          </Button>
-          <AddPlayerDialog
-            gameId={match.id}
-            onPlayerAdded={onRefresh}
-            useMatchParticipants
-          />
-          <Button
-            variant="destructive"
-            onClick={() => setShowEndMatchDialog(true)}
-            disabled={actionLoading}
-          >
-            {actionLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <>
-                <Flag className="h-5 w-5 mr-2" />
-                Encerrar
-              </>
-            )}
-          </Button>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant={match.open_for_confirmation ? 'outline' : 'sport'}
+              onClick={handleToggleConfirmations}
+              disabled={actionLoading}
+            >
+              {match.open_for_confirmation ? (
+                <>
+                  <Lock className="h-5 w-5 mr-2" />
+                  Bloquear
+                </>
+              ) : (
+                <>
+                  <Unlock className="h-5 w-5 mr-2" />
+                  Liberar Partida
+                </>
+              )}
+            </Button>
+            <Button variant="outline" onClick={() => window.location.href = `/team-draw/${match.id}`}>
+              <Shuffle className="h-5 w-5 mr-2" />
+              Sortear Times
+            </Button>
+            <AddPlayerDialog
+              gameId={match.id}
+              onPlayerAdded={onRefresh}
+              useMatchParticipants
+            />
+            <Button
+              variant="destructive"
+              onClick={() => setShowEndMatchDialog(true)}
+              disabled={actionLoading}
+            >
+              {actionLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <>
+                  <Flag className="h-5 w-5 mr-2" />
+                  Encerrar
+                </>
+              )}
+            </Button>
+          </div>
+          {/* Reminder Button for Admins */}
+          <div className="flex gap-3">
+            <MatchReminderButton
+              pelada={pelada}
+              match={match}
+              confirmedCount={confirmedCount}
+            />
+          </div>
         </div>
       )}
 

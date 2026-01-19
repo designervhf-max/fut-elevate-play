@@ -9,7 +9,8 @@ import CareerStats from '@/components/CareerStats';
 import MvpShowcase from '@/components/MvpShowcase';
 import EvolutionChart from '@/components/EvolutionChart';
 import PeladaCareerHistory from '@/components/PeladaCareerHistory';
-import { ChevronLeft, Edit2, Loader2, History, BarChart3, TrendingUp, Users } from 'lucide-react';
+import DetailedStats from '@/components/DetailedStats';
+import { ChevronLeft, Edit2, Loader2, History, BarChart3, TrendingUp, Users, Activity } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -18,7 +19,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'stats' | 'history' | 'evolution' | 'peladas'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'history' | 'evolution' | 'peladas' | 'analysis'>('stats');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -142,41 +143,50 @@ const Profile = () => {
 
         {/* Tabs */}
         <section className="animate-slide-up" style={{ animationDelay: '0.25s' }}>
-          <div className="grid grid-cols-4 gap-1 mb-4">
+          <div className="grid grid-cols-5 gap-1 mb-4">
             <Button
               variant={activeTab === 'stats' ? 'sport' : 'outline'}
               size="sm"
               onClick={() => setActiveTab('stats')}
-              className="text-xs px-2"
+              className="text-xs px-1"
             >
-              <BarChart3 className="h-3 w-3 mr-1" />
+              <BarChart3 className="h-3 w-3 mr-0.5" />
               Stats
+            </Button>
+            <Button
+              variant={activeTab === 'analysis' ? 'sport' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('analysis')}
+              className="text-xs px-1"
+            >
+              <Activity className="h-3 w-3 mr-0.5" />
+              Análise
             </Button>
             <Button
               variant={activeTab === 'evolution' ? 'sport' : 'outline'}
               size="sm"
               onClick={() => setActiveTab('evolution')}
-              className="text-xs px-2"
+              className="text-xs px-1"
             >
-              <TrendingUp className="h-3 w-3 mr-1" />
+              <TrendingUp className="h-3 w-3 mr-0.5" />
               Evolução
             </Button>
             <Button
               variant={activeTab === 'peladas' ? 'sport' : 'outline'}
               size="sm"
               onClick={() => setActiveTab('peladas')}
-              className="text-xs px-2"
+              className="text-xs px-1"
             >
-              <Users className="h-3 w-3 mr-1" />
+              <Users className="h-3 w-3 mr-0.5" />
               Peladas
             </Button>
             <Button
               variant={activeTab === 'history' ? 'sport' : 'outline'}
               size="sm"
               onClick={() => setActiveTab('history')}
-              className="text-xs px-2"
+              className="text-xs px-1"
             >
-              <History className="h-3 w-3 mr-1" />
+              <History className="h-3 w-3 mr-0.5" />
               Jogos
             </Button>
           </div>
@@ -218,6 +228,10 @@ const Profile = () => {
                 </div>
               </div>
             </div>
+          )}
+
+          {activeTab === 'analysis' && (
+            <DetailedStats userId={profile.id} />
           )}
 
           {activeTab === 'evolution' && (
