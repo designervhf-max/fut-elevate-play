@@ -152,40 +152,40 @@ const DetailedStats = ({ userId }: DetailedStatsProps) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Main Metrics */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="fifa-card p-4 text-center">
-          <Target className="h-6 w-6 mx-auto text-green-500 mb-2" />
-          <p className="text-2xl font-display font-bold">{stats.goalsPerGame}</p>
-          <p className="text-xs text-muted-foreground">Gols/Jogo</p>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="fifa-card p-3 text-center">
+          <Target className="h-5 w-5 mx-auto text-green-500 mb-1" />
+          <p className="text-xl font-display font-bold">{stats.goalsPerGame}</p>
+          <p className="text-[10px] text-muted-foreground">Gols/Jogo</p>
         </div>
-        <div className="fifa-card p-4 text-center">
-          <Sparkles className="h-6 w-6 mx-auto text-blue-500 mb-2" />
-          <p className="text-2xl font-display font-bold">{stats.assistsPerGame}</p>
-          <p className="text-xs text-muted-foreground">Assists/Jogo</p>
+        <div className="fifa-card p-3 text-center">
+          <Sparkles className="h-5 w-5 mx-auto text-blue-500 mb-1" />
+          <p className="text-xl font-display font-bold">{stats.assistsPerGame}</p>
+          <p className="text-[10px] text-muted-foreground">Assists/Jogo</p>
         </div>
-        <div className="fifa-card p-4 text-center">
-          <Trophy className="h-6 w-6 mx-auto text-yellow-500 mb-2" />
-          <p className="text-2xl font-display font-bold">{stats.mvpRate}%</p>
-          <p className="text-xs text-muted-foreground">Taxa MVP</p>
+        <div className="fifa-card p-3 text-center">
+          <Trophy className="h-5 w-5 mx-auto text-yellow-500 mb-1" />
+          <p className="text-xl font-display font-bold">{stats.mvpRate}%</p>
+          <p className="text-[10px] text-muted-foreground">Taxa MVP</p>
         </div>
-        <div className="fifa-card p-4 text-center">
-          <Flame className="h-6 w-6 mx-auto text-orange-500 mb-2" />
-          <span className={`text-sm px-2 py-1 rounded font-medium ${getFormColor(stats.currentForm)}`}>
+        <div className="fifa-card p-3 text-center">
+          <Flame className="h-5 w-5 mx-auto text-orange-500 mb-1" />
+          <span className={`text-xs px-2 py-0.5 rounded font-medium ${getFormColor(stats.currentForm)}`}>
             {getFormLabel(stats.currentForm)}
           </span>
-          <p className="text-xs text-muted-foreground mt-1">Forma Atual</p>
+          <p className="text-[10px] text-muted-foreground mt-1">Forma Atual</p>
         </div>
       </div>
 
       {/* Last 5 Games Mini Chart */}
-      <div className="fifa-card p-4">
-        <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-primary" />
+      <div className="fifa-card p-3">
+        <h4 className="text-xs font-medium mb-2 flex items-center gap-2">
+          <TrendingUp className="h-3 w-3 text-primary" />
           Últimos 5 Jogos
         </h4>
-        <div className="flex items-end justify-between gap-2 h-20">
+        <div className="flex items-end justify-between gap-2 h-16">
           {stats.last5GamesGoals.map((goals, i) => (
             <div key={i} className="flex-1 flex flex-col items-center">
               <div
@@ -207,12 +207,12 @@ const DetailedStats = ({ userId }: DetailedStatsProps) => {
       </div>
 
       {/* Monthly Performance */}
-      <div className="fifa-card p-4">
-        <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-          <Activity className="h-4 w-4 text-primary" />
+      <div className="fifa-card p-3">
+        <h4 className="text-xs font-medium mb-2 flex items-center gap-2">
+          <Activity className="h-3 w-3 text-primary" />
           Performance Mensal
         </h4>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {stats.monthlyPerformance.map((month, i) => (
             <div key={i} className="flex items-center justify-between">
               <span className="text-sm capitalize w-12">{month.month}</span>

@@ -206,7 +206,8 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col p-6">
+    <div className="min-h-screen bg-background flex flex-col p-4 safe-top">
+      <div className="w-full max-w-sm mx-auto flex flex-col flex-1">
       {/* Header */}
       <div className="flex items-center mb-6">
         <button
@@ -417,6 +418,7 @@ const Register = () => {
           </Button>
         </div>
       </form>
+      </div>
     </div>
   );
 };

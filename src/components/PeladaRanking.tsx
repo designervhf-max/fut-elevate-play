@@ -174,36 +174,40 @@ const PeladaRanking = ({ peladaId }: PeladaRankingProps) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Category Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
         <Button
           variant={category === 'goals' ? 'sport' : 'outline'}
           size="sm"
           onClick={() => setCategory('goals')}
+          className="shrink-0 text-xs"
         >
-          <Target className="h-4 w-4 mr-1" /> Gols
+          <Target className="h-3 w-3 mr-1" /> Gols
         </Button>
         <Button
           variant={category === 'assists' ? 'sport' : 'outline'}
           size="sm"
           onClick={() => setCategory('assists')}
+          className="shrink-0 text-xs"
         >
-          <Sparkles className="h-4 w-4 mr-1" /> Assists
+          <Sparkles className="h-3 w-3 mr-1" /> Assists
         </Button>
         <Button
           variant={category === 'mvp' ? 'sport' : 'outline'}
           size="sm"
           onClick={() => setCategory('mvp')}
+          className="shrink-0 text-xs"
         >
-          <Trophy className="h-4 w-4 mr-1" /> MVPs
+          <Trophy className="h-3 w-3 mr-1" /> MVPs
         </Button>
         <Button
           variant={category === 'defender' ? 'sport' : 'outline'}
           size="sm"
           onClick={() => setCategory('defender')}
+          className="shrink-0 text-xs"
         >
-          <Shield className="h-4 w-4 mr-1" /> Defensor
+          <Shield className="h-3 w-3 mr-1" /> Defensor
         </Button>
       </div>
 
@@ -212,7 +216,7 @@ const PeladaRanking = ({ peladaId }: PeladaRankingProps) => {
         {sortedRankings.slice(0, 10).map((player, index) => (
           <div
             key={player.userId}
-            className={`fifa-card p-3 flex items-center gap-3 ${
+            className={`fifa-card p-2.5 flex items-center gap-2 ${
               index < 3 ? 'border-l-4' : ''
             } ${
               index === 0
@@ -237,7 +241,7 @@ const PeladaRanking = ({ peladaId }: PeladaRankingProps) => {
             >
               {index + 1}
             </span>
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-8 w-8">
               <AvatarImage src={player.avatarUrl || undefined} />
               <AvatarFallback className="bg-primary/20 text-primary">
                 {player.name.charAt(0)}

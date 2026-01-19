@@ -55,9 +55,9 @@ Confirme sua presença no app!`;
   };
 
   return (
-    <Button variant="outline" size="sm" onClick={generateReminder} className="flex-1">
-      <Bell className="h-4 w-4 mr-2" />
-      Lembrete
+    <Button variant="outline" size="sm" onClick={generateReminder} className="w-full text-xs">
+      <Bell className="h-4 w-4 mr-1" />
+      Lembrete WhatsApp
     </Button>
   );
 };
