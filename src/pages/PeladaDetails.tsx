@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getWeekdayLabel } from '@/lib/weekday';
-import { useMasterUser } from '@/hooks/useMasterUser';
 
 // Helper to calculate next match date based on weekday
 const getNextMatchDate = (weekday: number): string => {
@@ -94,7 +93,6 @@ const PeladaDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isMaster } = useMasterUser();
   
   const [pelada, setPelada] = useState<Pelada | null>(null);
   const [membership, setMembership] = useState<PeladaMember | null>(null);
@@ -105,20 +103,14 @@ const PeladaDetails = () => {
   const [userId, setUserId] = useState<string | null>(null);
 
   const fetchData = async () => {
-    let currentUserId = 'master-user-id';
+    const { data: { session } } = await supabase.auth.getSession();
     
-    // Master user bypass
-    if (!isMaster) {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate('/login');
-        return;
-      }
-
-      currentUserId = session.user.id;
+    if (!session) {
+      navigate('/login');
+      return;
     }
-    
+
+    const currentUserId = session.user.id;
     setUserId(currentUserId);
 
     // Fetch pelada details
@@ -140,27 +132,19 @@ const PeladaDetails = () => {
 
     setPelada(peladaData as Pelada);
 
-    // For master user, set admin membership
-    if (isMaster) {
-      setMembership({
-        id: 'master',
-        pelada_id: id!,
-        user_id: 'master-user-id',
-        role: 'admin',
-      });
-    } else {
-      // Fetch user's membership
-      const { data: memberData } = await supabase
-        .from('pelada_members')
-        .select('*')
-        .eq('pelada_id', id)
-        .eq('user_id', currentUserId)
-        .single();
+    // Fetch user's membership
+    const { data: memberData } = await supabase
+      .from('pelada_members')
+      .select('*')
+      .eq('pelada_id', id)
+      .eq('user_id', currentUserId)
+      .single();
 
-      if (memberData) {
-        setMembership(memberData as PeladaMember);
-      }
+    if (memberData) {
+      setMembership(memberData as PeladaMember);
     }
+
+    const isAdmin = memberData?.role === 'admin';
 
     // Fetch next match (scheduled, in_progress, or recently finished for voting)
     const today = new Date().toISOString().split('T')[0];
@@ -193,7 +177,7 @@ const PeladaDetails = () => {
 
       if (recentFinished && recentFinished.length > 0) {
         matchToUse = recentFinished[0] as Match;
-      } else if (isMaster || membership?.role === 'admin') {
+      } else if (isAdmin) {
         // Auto-create next match if admin and no upcoming/recent match exists
         const nextMatchDate = getNextMatchDate(peladaData.weekday);
         
@@ -279,7 +263,7 @@ const PeladaDetails = () => {
 
   useEffect(() => {
     fetchData();
-  }, [id, navigate, toast, isMaster]);
+  }, [id, navigate, toast]);
 
   const shareInvite = async () => {
     if (!pelada) return;
@@ -310,7 +294,7 @@ const PeladaDetails = () => {
 
   if (!pelada) return null;
 
-  const isAdmin = membership?.role === 'admin' || isMaster;
+  const isAdmin = membership?.role === 'admin';
 
   const matchDateFormatted = nextMatch 
     ? new Date(nextMatch.match_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
