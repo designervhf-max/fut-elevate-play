@@ -6,6 +6,7 @@ import BottomNav from '@/components/BottomNav';
 import UpcomingMatch from '@/components/UpcomingMatch';
 import PastMatchesList from '@/components/PastMatchesList';
 import PeladaSettingsDialog from '@/components/PeladaSettingsDialog';
+import PeladaRanking from '@/components/PeladaRanking';
 import {
   ChevronLeft,
   CalendarDays,
@@ -14,6 +15,7 @@ import {
   Users,
   Loader2,
   Share2,
+  Trophy,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getWeekdayLabel } from '@/lib/weekday';
@@ -381,8 +383,17 @@ const PeladaDetails = () => {
           />
         </section>
 
-        {/* Jogos Anteriores */}
+        {/* Ranking da Pelada */}
         <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-yellow-500" />
+            Ranking da Pelada
+          </h3>
+          <PeladaRanking peladaId={pelada.id} />
+        </section>
+
+        {/* Jogos Anteriores */}
+        <section className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
           <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
             Jogos Anteriores
           </h3>
