@@ -30,15 +30,6 @@ const Login = () => {
 
     setLoading(true);
 
-    // Master user secret login
-    if (email === 'MASTER_USER' && password === 'master@user2025') {
-      localStorage.setItem('master_session', 'true');
-      setLoading(false);
-      toast({ title: 'Acesso Master' });
-      navigate('/home');
-      return;
-    }
-
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,

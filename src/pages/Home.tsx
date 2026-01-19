@@ -9,52 +9,16 @@ import AvatarUpload from '@/components/AvatarUpload';
 import NextMatchCard from '@/components/NextMatchCard';
 import { Calendar, Plus, User, LogOut, Loader2 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
-import { useMasterUser } from '@/hooks/useMasterUser';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
-// Default master profile for testing
-const MASTER_PROFILE: Profile = {
-  id: 'master-user-id',
-  name: 'MASTER',
-  age: 30,
-  position: 'Meia',
-  shirt_number: 10,
-  dominant_foot: 'Destro',
-  phone: null,
-  avatar_url: null,
-  overall_rating: 99,
-  attack_rating: 99,
-  defense_rating: 99,
-  skill_rating: 99,
-  strength_rating: 99,
-  total_goals: 999,
-  total_assists: 999,
-  total_games: 999,
-  total_mvps: 99,
-  total_best_defender: 99,
-  total_participations: 999,
-  total_saves: 0,
-  calibration_completed: true,
-  created_at: new Date().toISOString(),
-  preferred_game_type: 'Futsal',
-};
-
 const Home = () => {
   const navigate = useNavigate();
-  const { isMaster, logout: masterLogout } = useMasterUser();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Master user bypass
-      if (isMaster) {
-        setProfile(MASTER_PROFILE);
-        setLoading(false);
-        return;
-      }
-
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -80,20 +44,16 @@ const Home = () => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!isMaster && (event === 'SIGNED_OUT' || !session)) {
+      if (event === 'SIGNED_OUT' || !session) {
         navigate('/login');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, isMaster]);
+  }, [navigate]);
 
   const handleLogout = async () => {
-    if (isMaster) {
-      masterLogout();
-    } else {
-      await supabase.auth.signOut();
-    }
+    await supabase.auth.signOut();
     navigate('/login');
   };
 
@@ -135,23 +95,19 @@ const Home = () => {
       {/* Content */}
       <main className="p-4 space-y-6">
         {/* Avatar Upload */}
-        {!isMaster && (
-          <section className="flex justify-center animate-slide-up">
-            <AvatarUpload
-              userId={profile.id}
-              currentAvatarUrl={profile.avatar_url}
-              onUploadComplete={handleAvatarUpdate}
-              size="lg"
-            />
-          </section>
-        )}
+        <section className="flex justify-center animate-slide-up">
+          <AvatarUpload
+            userId={profile.id}
+            currentAvatarUrl={profile.avatar_url}
+            onUploadComplete={handleAvatarUpdate}
+            size="lg"
+          />
+        </section>
 
         {/* Next Match Card */}
-        {!isMaster && (
-          <section className="animate-slide-up" style={{ animationDelay: '0.05s' }}>
-            <NextMatchCard userId={profile.id} />
-          </section>
-        )}
+        <section className="animate-slide-up" style={{ animationDelay: '0.05s' }}>
+          <NextMatchCard userId={profile.id} />
+        </section>
 
         {/* Player Card Section */}
         <section className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
