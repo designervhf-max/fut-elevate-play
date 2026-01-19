@@ -153,6 +153,24 @@
 }
 
 @layer utilities {
+  /* Mobile utility classes */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4rem);
+  }
+
   @keyframes float {
     0%, 100% {
       transform: translateY(0);

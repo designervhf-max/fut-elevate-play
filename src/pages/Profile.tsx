@@ -74,7 +74,8 @@ const Profile = () => {
   const isGoalkeeper = profile.position === 'Goleiro';
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-md mx-auto pb-24">
       {/* Header */}
       <header className="sticky top-0 z-50 glass px-4 py-3">
         <div className="flex items-center justify-between">
@@ -143,50 +144,50 @@ const Profile = () => {
 
         {/* Tabs */}
         <section className="animate-slide-up" style={{ animationDelay: '0.25s' }}>
-          <div className="grid grid-cols-5 gap-1 mb-4">
+          <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
             <Button
               variant={activeTab === 'stats' ? 'sport' : 'outline'}
               size="sm"
               onClick={() => setActiveTab('stats')}
-              className="text-xs px-1"
+              className="text-xs px-2 shrink-0"
             >
-              <BarChart3 className="h-3 w-3 mr-0.5" />
+              <BarChart3 className="h-3 w-3 mr-1" />
               Stats
             </Button>
             <Button
               variant={activeTab === 'analysis' ? 'sport' : 'outline'}
               size="sm"
               onClick={() => setActiveTab('analysis')}
-              className="text-xs px-1"
+              className="text-xs px-2 shrink-0"
             >
-              <Activity className="h-3 w-3 mr-0.5" />
+              <Activity className="h-3 w-3 mr-1" />
               Análise
             </Button>
             <Button
               variant={activeTab === 'evolution' ? 'sport' : 'outline'}
               size="sm"
               onClick={() => setActiveTab('evolution')}
-              className="text-xs px-1"
+              className="text-xs px-2 shrink-0"
             >
-              <TrendingUp className="h-3 w-3 mr-0.5" />
+              <TrendingUp className="h-3 w-3 mr-1" />
               Evolução
             </Button>
             <Button
               variant={activeTab === 'peladas' ? 'sport' : 'outline'}
               size="sm"
               onClick={() => setActiveTab('peladas')}
-              className="text-xs px-1"
+              className="text-xs px-2 shrink-0"
             >
-              <Users className="h-3 w-3 mr-0.5" />
+              <Users className="h-3 w-3 mr-1" />
               Peladas
             </Button>
             <Button
               variant={activeTab === 'history' ? 'sport' : 'outline'}
               size="sm"
               onClick={() => setActiveTab('history')}
-              className="text-xs px-1"
+              className="text-xs px-2 shrink-0"
             >
-              <History className="h-3 w-3 mr-0.5" />
+              <History className="h-3 w-3 mr-1" />
               Jogos
             </Button>
           </div>
@@ -249,6 +250,7 @@ const Profile = () => {
       </main>
 
       <BottomNav />
+      </div>
     </div>
   );
 };

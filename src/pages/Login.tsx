@@ -57,9 +57,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 safe-top">
+      <div className="w-full max-w-sm mx-auto">
       {/* Logo */}
-      <div className="mb-12 text-center animate-scale-in w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg px-4">
+      <div className="mb-8 text-center animate-scale-in w-full">
         <img 
           src={elevefutLogo} 
           alt="EleveFut" 
@@ -157,9 +158,10 @@ const Login = () => {
       </div>
 
       {/* Footer */}
-      <p className="mt-10 text-xs text-muted-foreground animate-fade-in" style={{ animationDelay: '0.3s' }}>
-        © {new Date().getFullYear()} EleveFut. Todos os direitos reservados.
+      <p className="mt-8 text-xs text-muted-foreground animate-fade-in text-center" style={{ animationDelay: '0.3s' }}>
+        © {new Date().getFullYear()} EleveFut
       </p>
+      </div>
     </div>
   );
 };

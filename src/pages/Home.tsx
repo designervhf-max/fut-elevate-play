@@ -76,7 +76,8 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-md mx-auto pb-24">
       {/* Header */}
       <header className="sticky top-0 z-50 glass px-4 py-3">
         <div className="flex items-center justify-between">
@@ -158,6 +159,7 @@ const Home = () => {
       </main>
 
       <BottomNav />
+      </div>
     </div>
   );
 };

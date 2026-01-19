@@ -179,7 +179,8 @@ const Games = () => {
   const isEmpty = peladas.length === 0 && invites.length === 0;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-md mx-auto pb-24">
       {/* Header */}
       <header className="sticky top-0 z-50 glass px-4 py-3">
         <div className="flex items-center gap-3">
@@ -330,6 +331,7 @@ const Games = () => {
       )}
 
       <BottomNav />
+      </div>
     </div>
   );
 };
