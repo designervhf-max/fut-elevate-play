@@ -24,12 +24,11 @@ import { Constants } from '@/integrations/supabase/types';
 const positions = Constants.public.Enums.player_position;
 
 interface AddPlayerDialogProps {
-  gameId: string;
+  matchId: string;
   onPlayerAdded: () => void;
-  useMatchParticipants?: boolean;
 }
 
-const AddPlayerDialog = ({ gameId, onPlayerAdded, useMatchParticipants = false }: AddPlayerDialogProps) => {
+const AddPlayerDialog = ({ matchId, onPlayerAdded }: AddPlayerDialogProps) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
@@ -50,27 +49,13 @@ const AddPlayerDialog = ({ gameId, onPlayerAdded, useMatchParticipants = false }
 
     setLoading(true);
 
-    let error;
-
-    if (useMatchParticipants) {
-      const result = await supabase.from('match_participants').insert({
-        match_id: gameId,
-        guest_name: name.trim(),
-        guest_position: position,
-        status: 'Confirmado',
-        rating: 50,
-      });
-      error = result.error;
-    } else {
-      const result = await supabase.from('game_participants').insert({
-        game_id: gameId,
-        guest_name: name.trim(),
-        guest_position: position,
-        status: 'Confirmado',
-        rating: 50,
-      });
-      error = result.error;
-    }
+    const { error } = await supabase.from('match_participants').insert({
+      match_id: matchId,
+      guest_name: name.trim(),
+      guest_position: position,
+      status: 'Confirmado',
+      rating: 50,
+    });
 
     setLoading(false);
 
@@ -86,7 +71,7 @@ const AddPlayerDialog = ({ gameId, onPlayerAdded, useMatchParticipants = false }
 
     toast({
       title: 'Sucesso',
-      description: `${name} foi adicionado à pelada`,
+      description: `${name} foi adicionado à partida`,
     });
 
     setName('');

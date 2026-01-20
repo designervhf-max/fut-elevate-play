@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Target, Sparkles, Save } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
-type GameParticipant = Database['public']['Tables']['game_participants']['Row'];
+type MatchParticipant = Database['public']['Tables']['match_participants']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface PlayerStats {
@@ -15,13 +15,13 @@ interface PlayerStats {
 }
 
 interface OrganizerStatsFormProps {
-  gameId: string;
-  participants: (GameParticipant & { profile: Profile | null })[];
+  matchId: string;
+  participants: (MatchParticipant & { profile: Profile | null })[];
   onSubmit: () => void;
 }
 
 const OrganizerStatsForm = ({
-  gameId,
+  matchId,
   participants,
   onSubmit,
 }: OrganizerStatsFormProps) => {
@@ -68,7 +68,7 @@ const OrganizerStatsForm = ({
         if (!stats) continue;
 
         const { error } = await supabase
-          .from('game_participants')
+          .from('match_participants')
           .update({
             goals: stats.goals,
             assists: stats.assists,
@@ -107,7 +107,7 @@ const OrganizerStatsForm = ({
   );
 
   // Helper to get player display info
-  const getPlayerInfo = (participant: GameParticipant & { profile: Profile | null }) => {
+  const getPlayerInfo = (participant: MatchParticipant & { profile: Profile | null }) => {
     const isGuest = !participant.user_id;
     return {
       name: isGuest ? participant.guest_name || 'Jogador' : participant.profile?.name || 'Jogador',

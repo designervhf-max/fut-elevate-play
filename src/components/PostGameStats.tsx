@@ -12,21 +12,20 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trophy, Target, Sparkles } from 'lucide-react';
-import { calculateNewRatings } from '@/lib/progression';
 import type { Database } from '@/integrations/supabase/types';
 
-type GameParticipant = Database['public']['Tables']['game_participants']['Row'];
+type MatchParticipant = Database['public']['Tables']['match_participants']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface PostGameStatsProps {
-  gameId: string;
-  participants: (GameParticipant & { profile: Profile })[];
+  matchId: string;
+  participants: (MatchParticipant & { profile: Profile | null })[];
   currentUserId: string;
   onSubmit: () => void;
 }
 
 const PostGameStats = ({
-  gameId,
+  matchId,
   participants,
   currentUserId,
   onSubmit,
@@ -40,8 +39,9 @@ const PostGameStats = ({
   const confirmedParticipants = participants.filter(
     (p) => p.status === 'Confirmado'
   );
+  // Only registered players can receive votes
   const otherPlayers = confirmedParticipants.filter(
-    (p) => p.user_id !== currentUserId
+    (p) => p.user_id && p.user_id !== currentUserId && p.profile
   );
 
   const handleSubmit = async () => {
@@ -57,53 +57,27 @@ const PostGameStats = ({
     setSubmitting(true);
 
     try {
-      // 1. Update game_participants with goals/assists
+      // 1. Update match_participants with goals/assists
       const { error: participantError } = await supabase
-        .from('game_participants')
+        .from('match_participants')
         .update({
           goals,
           assists,
           stats_submitted: true,
         })
-        .eq('game_id', gameId)
+        .eq('match_id', matchId)
         .eq('user_id', currentUserId);
 
       if (participantError) throw participantError;
 
       // 2. Save MVP vote
-      const { error: voteError } = await supabase.from('mvp_votes').insert({
-        game_id: gameId,
+      const { error: voteError } = await supabase.from('match_mvp_votes').insert({
+        match_id: matchId,
         voter_id: currentUserId,
         voted_for_id: mvpVote,
       });
 
       if (voteError) throw voteError;
-
-      // 3. Get current profile and calculate new ratings
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUserId)
-        .single();
-
-      if (profileError) throw profileError;
-
-      // Calculate new ratings (MVP status will be determined later when all votes are in)
-      const newRatings = calculateNewRatings(profile, goals, assists, false);
-
-      // 4. Update profile with new stats (without MVP bonus for now)
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          attack_rating: newRatings.attack_rating,
-          skill_rating: newRatings.skill_rating,
-          strength_rating: newRatings.strength_rating,
-          total_goals: newRatings.total_goals,
-          total_assists: newRatings.total_assists,
-        })
-        .eq('id', currentUserId);
-
-      if (updateError) throw updateError;
 
       toast({
         title: 'Estatísticas enviadas!',
@@ -179,11 +153,11 @@ const PostGameStats = ({
           </SelectTrigger>
           <SelectContent>
             {otherPlayers.map((player) => (
-              <SelectItem key={player.user_id} value={player.user_id}>
+              <SelectItem key={player.user_id!} value={player.user_id!}>
                 <div className="flex items-center gap-2">
-                  <span>{player.profile.name}</span>
+                  <span>{player.profile!.name}</span>
                   <span className="text-xs text-muted-foreground">
-                    ({player.profile.position})
+                    ({player.profile!.position})
                   </span>
                 </div>
               </SelectItem>
