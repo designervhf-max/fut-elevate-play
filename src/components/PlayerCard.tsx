@@ -5,9 +5,11 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface PlayerCardProps {
   profile: Profile;
+  showShareButton?: boolean;
+  onShare?: () => void;
 }
 
-const PlayerCard = ({ profile }: PlayerCardProps) => {
+const PlayerCard = ({ profile, showShareButton = false, onShare }: PlayerCardProps) => {
   const getPositionAbbr = (position: string) => {
     const abbrs: Record<string, string> = {
       'Goleiro': 'GOL',
@@ -21,75 +23,87 @@ const PlayerCard = ({ profile }: PlayerCardProps) => {
     return abbrs[position] || position.substring(0, 3).toUpperCase();
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  };
+
   return (
-    <div className="fifa-card animate-border-pulse p-1">
-      <div className="relative bg-gradient-to-b from-card to-background rounded-xl overflow-hidden">
+    <div className="space-y-3">
+      <div className="fifa-card p-4">
         {/* Top Section - Rating & Position */}
-        <div className="flex justify-between items-start p-4 pb-0">
-          <div className="text-center">
+        <div className="flex items-start justify-between mb-4">
+          <div>
             <div className="text-5xl font-display text-primary leading-none">
               {profile.overall_rating}
             </div>
-            <div className="text-lg font-display text-primary mt-1">
+            <div className="text-lg font-display text-primary/80 mt-1">
               {getPositionAbbr(profile.position)}
             </div>
           </div>
-          <div className="text-right">
-            <div className="w-12 h-12 rounded-full bg-surface border-2 border-primary flex items-center justify-center">
-              {profile.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt={profile.name}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                <User className="w-6 h-6 text-primary" />
-              )}
-            </div>
+          <div className="text-right text-xs text-muted-foreground">
+            <div>#{profile.shirt_number}</div>
           </div>
         </div>
 
-        {/* Player Avatar Area */}
+        {/* Player Avatar */}
         <div className="flex justify-center py-4">
-          <div className="w-32 h-32 rounded-full bg-surface-elevated border-4 border-primary flex items-center justify-center">
+          <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden">
             {profile.avatar_url ? (
               <img
                 src={profile.avatar_url}
                 alt={profile.name}
-                className="w-full h-full rounded-full object-cover"
+                className="w-full h-full object-cover"
               />
             ) : (
-              <User className="w-16 h-16 text-muted-foreground" />
+              <span className="text-3xl font-display text-muted-foreground">
+                {getInitials(profile.name)}
+              </span>
             )}
           </div>
         </div>
 
-        {/* Player Name & Info */}
-        <div className="text-center px-4 pb-3">
-          <h2 className="text-2xl font-display tracking-wider truncate">
+        {/* Player Name */}
+        <div className="text-center mb-4">
+          <h2 className="text-xl font-display tracking-wider text-foreground">
             {profile.name.toUpperCase()}
           </h2>
-          <div className="flex justify-center items-center gap-4 mt-2 text-sm text-muted-foreground">
-            <span>{profile.age} anos</span>
-            <span className="w-1 h-1 bg-muted-foreground rounded-full"></span>
-            <span>#{profile.shirt_number}</span>
-            <span className="w-1 h-1 bg-muted-foreground rounded-full"></span>
-            <span>{profile.dominant_foot}</span>
-          </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 gap-4 px-4 pb-4 pt-2">
-          <div className="bg-surface rounded-lg p-3 text-center border border-primary/30">
-            <div className="text-2xl font-display text-primary">{profile.total_goals}</div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wider">Gols</div>
+        {/* Attributes Row */}
+        <div className="flex justify-center gap-6 pt-2 border-t border-border">
+          <div className="text-center">
+            <div className="text-xs text-muted-foreground mb-1">ATA</div>
+            <div className="text-lg font-semibold text-foreground">{profile.attack_rating || 50}</div>
           </div>
-          <div className="bg-surface rounded-lg p-3 text-center border border-primary/30">
-            <div className="text-2xl font-display text-primary">{profile.total_assists}</div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wider">Assistências</div>
+          <div className="text-center">
+            <div className="text-xs text-muted-foreground mb-1">DEF</div>
+            <div className="text-lg font-semibold text-foreground">{profile.defense_rating || 50}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-muted-foreground mb-1">FOR</div>
+            <div className="text-lg font-semibold text-foreground">{profile.strength_rating || 50}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-muted-foreground mb-1">HAB</div>
+            <div className="text-lg font-semibold text-foreground">{profile.skill_rating || 50}</div>
           </div>
         </div>
       </div>
+
+      {/* Share Button */}
+      {showShareButton && (
+        <button 
+          onClick={onShare}
+          className="w-full py-3 rounded-xl bg-muted text-foreground text-sm font-medium transition-colors hover:bg-muted/80"
+        >
+          Compartilhar card
+        </button>
+      )}
     </div>
   );
 };
