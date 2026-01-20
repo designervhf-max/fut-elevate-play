@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Users, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, XCircle, AlertCircle, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 type Participant = {
   id: string;
@@ -28,12 +29,16 @@ type MatchInfo = {
   };
 };
 
+type StatusFilter = 'all' | 'Confirmado' | 'Pendente' | 'Recusado';
+
 const MatchParticipants = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [matchInfo, setMatchInfo] = useState<MatchInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,6 +109,22 @@ const MatchParticipants = () => {
     fetchData();
   }, [matchId]);
 
+  const filteredParticipants = useMemo(() => {
+    return participants.filter(participant => {
+      const name = participant.user_id 
+        ? participant.profile?.name 
+        : participant.guest_name;
+      
+      const matchesSearch = searchQuery === '' || 
+        name?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || 
+        participant.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [participants, searchQuery, statusFilter]);
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'Confirmado':
@@ -127,6 +148,15 @@ const MatchParticipants = () => {
   };
 
   const confirmedCount = participants.filter(p => p.status === 'Confirmado').length;
+  const pendingCount = participants.filter(p => p.status === 'Pendente').length;
+  const refusedCount = participants.filter(p => p.status === 'Recusado').length;
+
+  const statusFilters: { label: string; value: StatusFilter; count: number }[] = [
+    { label: 'Todos', value: 'all', count: participants.length },
+    { label: 'Confirmados', value: 'Confirmado', count: confirmedCount },
+    { label: 'Pendentes', value: 'Pendente', count: pendingCount },
+    { label: 'Recusados', value: 'Recusado', count: refusedCount },
+  ];
 
   if (loading) {
     return (
@@ -137,7 +167,7 @@ const MatchParticipants = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 animate-fade-in">
       <div className="max-w-md mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
@@ -158,7 +188,7 @@ const MatchParticipants = () => {
         </div>
 
         {/* Stats */}
-        <div className="fifa-card p-4 mb-6">
+        <div className="fifa-card p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
@@ -172,9 +202,45 @@ const MatchParticipants = () => {
           </div>
         </div>
 
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar jogador..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 pr-10 bg-card border-border"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Status Filters */}
+        <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1">
+          {statusFilters.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => setStatusFilter(filter.value)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                statusFilter === filter.value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-card text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {filter.label} ({filter.count})
+            </button>
+          ))}
+        </div>
+
         {/* Players List */}
         <div className="space-y-2">
-          {participants.map((participant) => {
+          {filteredParticipants.map((participant, index) => {
             const isGuest = !participant.user_id;
             const name = isGuest ? participant.guest_name : participant.profile?.name;
             const position = isGuest ? participant.guest_position : participant.profile?.position;
@@ -182,7 +248,11 @@ const MatchParticipants = () => {
             const rating = isGuest ? 50 : participant.profile?.overall_rating;
 
             return (
-              <div key={participant.id} className="fifa-card p-3 flex items-center justify-between">
+              <div 
+                key={participant.id} 
+                className="fifa-card p-3 flex items-center justify-between animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-surface border-2 border-border flex items-center justify-center">
                     {avatar ? (
@@ -219,8 +289,24 @@ const MatchParticipants = () => {
             );
           })}
 
+          {filteredParticipants.length === 0 && participants.length > 0 && (
+            <div className="text-center py-12 text-muted-foreground animate-fade-in">
+              <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>Nenhum jogador encontrado</p>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('all');
+                }}
+                className="text-primary text-sm mt-2 hover:underline"
+              >
+                Limpar filtros
+              </button>
+            </div>
+          )}
+
           {participants.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="text-center py-12 text-muted-foreground animate-fade-in">
               <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>Nenhum jogador na partida</p>
             </div>
