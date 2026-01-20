@@ -4,34 +4,26 @@ import { Loader2, Trophy, Shield, Target, Sparkles, TrendingUp, TrendingDown } f
 import type { Database } from '@/integrations/supabase/types';
 
 type RatingHistory = Database['public']['Tables']['rating_history']['Row'];
-type Game = Database['public']['Tables']['games']['Row'];
-
-interface MatchHistoryEntry extends RatingHistory {
-  game: Game | null;
-}
 
 interface MatchHistoryProps {
   userId: string;
 }
 
 const MatchHistory = ({ userId }: MatchHistoryProps) => {
-  const [history, setHistory] = useState<MatchHistoryEntry[]>([]);
+  const [history, setHistory] = useState<RatingHistory[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHistory = async () => {
       const { data, error } = await supabase
         .from('rating_history')
-        .select(`
-          *,
-          game:games(*)
-        `)
+        .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (!error && data) {
-        setHistory(data as MatchHistoryEntry[]);
+        setHistory(data);
       }
       setLoading(false);
     };
@@ -69,9 +61,8 @@ const MatchHistory = ({ userId }: MatchHistoryProps) => {
             {/* Game Info */}
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="font-semibold">{entry.game?.name || 'Pelada'}</p>
+                <p className="font-semibold">Partida</p>
                 <p className="text-xs text-muted-foreground">
-                  {entry.game?.location} •{' '}
                   {new Date(entry.created_at || '').toLocaleDateString('pt-BR')}
                 </p>
               </div>

@@ -2,9 +2,9 @@ import { Star } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
-type GameParticipant = Database['public']['Tables']['game_participants']['Row'];
+type MatchParticipant = Database['public']['Tables']['match_participants']['Row'];
 
-type ParticipantWithProfile = GameParticipant & { profile: Profile | null };
+type ParticipantWithProfile = MatchParticipant & { profile: Profile | null };
 
 interface TeamDrawResultProps {
   teamA: ParticipantWithProfile[];

@@ -522,9 +522,8 @@ ${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas r
               Sortear Times
             </Button>
             <AddPlayerDialog
-              gameId={match.id}
+              matchId={match.id}
               onPlayerAdded={onRefresh}
-              useMatchParticipants
             />
             <Button
               variant="destructive"
@@ -635,8 +634,8 @@ ${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas r
                 Resumo da Partida
               </h4>
               <GameSummary
-                gameId={match.id}
-                participants={adaptedParticipants as any}
+                matchId={match.id}
+                participants={participants as any}
                 mvpId={match.mvp_id}
                 bestDefenderId={match.best_defender_id}
               />

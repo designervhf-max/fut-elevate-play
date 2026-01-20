@@ -23,19 +23,7 @@ const PeladaCareerHistory = ({ userId }: PeladaCareerHistoryProps) => {
 
   useEffect(() => {
     const fetchPeladaStats = async () => {
-      // Get all rating history with game info (for games table - old system)
-      const { data: gameHistory } = await supabase
-        .from('rating_history')
-        .select(`
-          goals,
-          assists,
-          was_mvp,
-          was_best_defender,
-          game:games(id, name, location)
-        `)
-        .eq('user_id', userId);
-
-      // Get all match participations (for matches table - new system)
+      // Get all match participations (for matches table)
       const { data: matchParticipations } = await supabase
         .from('match_participants')
         .select(`
@@ -56,7 +44,7 @@ const PeladaCareerHistory = ({ userId }: PeladaCareerHistoryProps) => {
       // Aggregate stats by pelada from matches
       const peladaStatsMap: Record<string, PeladaStats> = {};
 
-      // Process match participations (new pelada system)
+      // Process match participations
       for (const participation of matchParticipations || []) {
         const match = participation.match;
         if (!match || !match.pelada) continue;
@@ -88,46 +76,8 @@ const PeladaCareerHistory = ({ userId }: PeladaCareerHistoryProps) => {
         }
       }
 
-      // Process old game history (legacy system) - group by game name as pseudo-pelada
-      const gameStatsMap: Record<string, PeladaStats> = {};
-      for (const entry of gameHistory || []) {
-        const game = entry.game;
-        if (!game) continue;
-
-        const gameKey = game.name;
-        
-        if (!gameStatsMap[gameKey]) {
-          gameStatsMap[gameKey] = {
-            peladaId: game.id,
-            peladaName: game.name,
-            peladaLocation: game.location,
-            gamesPlayed: 0,
-            totalGoals: 0,
-            totalAssists: 0,
-            mvpCount: 0,
-            defenderCount: 0,
-          };
-        }
-
-        gameStatsMap[gameKey].gamesPlayed += 1;
-        gameStatsMap[gameKey].totalGoals += entry.goals || 0;
-        gameStatsMap[gameKey].totalAssists += entry.assists || 0;
-        
-        if (entry.was_mvp) {
-          gameStatsMap[gameKey].mvpCount += 1;
-        }
-        if (entry.was_best_defender) {
-          gameStatsMap[gameKey].defenderCount += 1;
-        }
-      }
-
-      // Combine both sources
-      const allStats = [
-        ...Object.values(peladaStatsMap),
-        ...Object.values(gameStatsMap),
-      ];
-
-      // Sort by games played
+      // Convert to array and sort by games played
+      const allStats = Object.values(peladaStatsMap);
       allStats.sort((a, b) => b.gamesPlayed - a.gamesPlayed);
 
       setStats(allStats);

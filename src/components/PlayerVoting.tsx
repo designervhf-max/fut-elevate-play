@@ -12,18 +12,18 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trophy, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
-type GameParticipant = Database['public']['Tables']['game_participants']['Row'];
+type MatchParticipant = Database['public']['Tables']['match_participants']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface PlayerVotingProps {
-  gameId: string;
-  participants: (GameParticipant & { profile: Profile | null })[];
+  matchId: string;
+  participants: (MatchParticipant & { profile: Profile | null })[];
   currentUserId: string;
   onVoteSubmitted: () => void;
 }
 
 const PlayerVoting = ({
-  gameId,
+  matchId,
   participants,
   currentUserId,
   onVoteSubmitted,
@@ -51,9 +51,9 @@ const PlayerVoting = ({
   useEffect(() => {
     const checkExistingVotes = async () => {
       const { data: mvpVoteData } = await supabase
-        .from('mvp_votes')
+        .from('match_mvp_votes')
         .select('id')
-        .eq('game_id', gameId)
+        .eq('match_id', matchId)
         .eq('voter_id', currentUserId)
         .maybeSingle();
 
@@ -64,7 +64,7 @@ const PlayerVoting = ({
     };
 
     checkExistingVotes();
-  }, [gameId, currentUserId]);
+  }, [matchId, currentUserId]);
 
   const handleSubmit = async () => {
     if (!mvpVote) {
@@ -89,8 +89,8 @@ const PlayerVoting = ({
 
     try {
       // Save MVP vote
-      const { error: mvpError } = await supabase.from('mvp_votes').insert({
-        game_id: gameId,
+      const { error: mvpError } = await supabase.from('match_mvp_votes').insert({
+        match_id: matchId,
         voter_id: currentUserId,
         voted_for_id: mvpVote,
       });
@@ -99,9 +99,9 @@ const PlayerVoting = ({
 
       // Save defender vote
       const { error: defenderError } = await supabase
-        .from('defender_votes')
+        .from('match_defender_votes')
         .insert({
-          game_id: gameId,
+          match_id: matchId,
           voter_id: currentUserId,
           voted_for_id: defenderVote,
         });
