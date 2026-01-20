@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import BottomNav from '@/components/BottomNav';
 import MatchHistory from '@/components/MatchHistory';
-import AvatarUpload from '@/components/AvatarUpload';
 import CareerStats from '@/components/CareerStats';
 import MvpShowcase from '@/components/MvpShowcase';
 import EvolutionChart from '@/components/EvolutionChart';
@@ -46,12 +45,6 @@ const Profile = () => {
 
     fetchProfile();
   }, [navigate]);
-
-  const handleAvatarUpdate = (url: string) => {
-    if (profile) {
-      setProfile({ ...profile, avatar_url: url });
-    }
-  };
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -108,24 +101,8 @@ const Profile = () => {
               title="Estatísticas" 
               rightLabel={String(currentYear)}
               onClick={() => toggleSection('stats')}
-            >
-              {expandedSection === 'stats' ? (
-                <div className="space-y-4 pt-2">
-                  <CareerStats
-                    totalGames={profile.total_games || 0}
-                    totalGoals={profile.total_goals || 0}
-                    totalAssists={profile.total_assists || 0}
-                    totalParticipations={profile.total_participations || 0}
-                    totalMvps={profile.total_mvps || 0}
-                    totalBestDefender={profile.total_best_defender || 0}
-                    totalSaves={profile.total_saves || 0}
-                    isGoalkeeper={isGoalkeeper}
-                  />
-                  <div className="pt-4 border-t border-border">
-                    <DetailedStats userId={profile.id} />
-                  </div>
-                </div>
-              ) : (
+              isExpanded={expandedSection === 'stats'}
+              collapsedContent={
                 <CareerStats
                   totalGames={profile.total_games || 0}
                   totalGoals={profile.total_goals || 0}
@@ -136,7 +113,23 @@ const Profile = () => {
                   totalSaves={profile.total_saves || 0}
                   isGoalkeeper={isGoalkeeper}
                 />
-              )}
+              }
+            >
+              <div className="space-y-4">
+                <CareerStats
+                  totalGames={profile.total_games || 0}
+                  totalGoals={profile.total_goals || 0}
+                  totalAssists={profile.total_assists || 0}
+                  totalParticipations={profile.total_participations || 0}
+                  totalMvps={profile.total_mvps || 0}
+                  totalBestDefender={profile.total_best_defender || 0}
+                  totalSaves={profile.total_saves || 0}
+                  isGoalkeeper={isGoalkeeper}
+                />
+                <div className="pt-4 border-t border-border">
+                  <DetailedStats userId={profile.id} />
+                </div>
+              </div>
             </SectionCard>
           </section>
 
@@ -146,7 +139,7 @@ const Profile = () => {
               <SectionCard 
                 title="Conquistas"
                 rightLabel={`${(profile.total_mvps || 0) + (profile.total_best_defender || 0)} títulos`}
-                onClick={() => toggleSection('conquistas')}
+                showArrow={false}
               >
                 <MvpShowcase 
                   mvpCount={profile.total_mvps || 0} 
@@ -161,12 +154,12 @@ const Profile = () => {
             <SectionCard 
               title="Evolução"
               onClick={() => toggleSection('evolution')}
-            >
-              {expandedSection === 'evolution' ? (
-                <EvolutionChart userId={profile.id} />
-              ) : (
+              isExpanded={expandedSection === 'evolution'}
+              collapsedContent={
                 <p className="text-sm text-muted-foreground">Acompanhe sua evolução ao longo do tempo</p>
-              )}
+              }
+            >
+              <EvolutionChart userId={profile.id} />
             </SectionCard>
           </section>
 
@@ -175,12 +168,12 @@ const Profile = () => {
             <SectionCard 
               title="Peladas"
               onClick={() => toggleSection('peladas')}
-            >
-              {expandedSection === 'peladas' ? (
-                <PeladaCareerHistory userId={profile.id} />
-              ) : (
+              isExpanded={expandedSection === 'peladas'}
+              collapsedContent={
                 <p className="text-sm text-muted-foreground">Suas peladas ativas</p>
-              )}
+              }
+            >
+              <PeladaCareerHistory userId={profile.id} />
             </SectionCard>
           </section>
 
@@ -189,12 +182,12 @@ const Profile = () => {
             <SectionCard 
               title="Histórico de Jogos"
               onClick={() => toggleSection('history')}
-            >
-              {expandedSection === 'history' ? (
-                <MatchHistory userId={profile.id} />
-              ) : (
+              isExpanded={expandedSection === 'history'}
+              collapsedContent={
                 <p className="text-sm text-muted-foreground">Ver todos os jogos realizados</p>
-              )}
+              }
+            >
+              <MatchHistory userId={profile.id} />
             </SectionCard>
           </section>
 
