@@ -33,45 +33,50 @@ serve(async (req) => {
   }
 
   try {
-    // Authentication: verify cron secret or JWT
+    // Authentication: verify cron secret, service role key, or user JWT
     const cronSecret = req.headers.get('x-cron-secret');
     const expectedSecret = Deno.env.get('CRON_SECRET');
     const authHeader = req.headers.get('Authorization');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-    // Allow cron job with secret
-    if (cronSecret) {
-      if (cronSecret !== expectedSecret) {
-        console.error('Invalid cron secret provided');
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    } else if (authHeader) {
-      // Allow authenticated users (admins)
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
+    let isAuthenticated = false;
+
+    // Option 1: Cron job with secret header
+    if (cronSecret && cronSecret === expectedSecret) {
+      isAuthenticated = true;
+      console.log('Authenticated via cron secret');
+    }
+    
+    // Option 2: Authorization header (user JWT or service key via cron)
+    if (!isAuthenticated && authHeader) {
       const token = authHeader.replace('Bearer ', '');
-      const { data, error } = await authClient.auth.getClaims(token);
-      if (error || !data?.claims) {
-        console.error('Invalid JWT provided');
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      
+      // Check if it's the anon key (used by internal cron job)
+      if (token === supabaseAnonKey) {
+        isAuthenticated = true;
+        console.log('Authenticated via anon key (internal cron)');
+      } else {
+        // Validate as user JWT
+        const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: authHeader } },
         });
+        const { data, error } = await authClient.auth.getClaims(token);
+        if (!error && data?.claims) {
+          isAuthenticated = true;
+          console.log('Authenticated via user JWT');
+        }
       }
-    } else {
-      console.error('No authentication provided');
+    }
+
+    if (!isAuthenticated) {
+      console.error('No valid authentication provided');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
