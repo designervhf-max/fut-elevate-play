@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
 // Progression constants
@@ -13,8 +13,8 @@ const PROGRESSION_CONFIG = {
   MVP_BONUS: 3.0,
   DEFENDER_BONUS: 2.5,
   PARTICIPATION_BONUS: 0.5,
-  SAVE_BONUS: 0.3, // Bonus for goalkeeper saves
-  RATING_BONUS: 0.5, // Bonus based on average rating received
+  SAVE_BONUS: 0.3,
+  RATING_BONUS: 0.5,
   MAX_RATING: 99,
   MIN_RATING: 0,
   GUEST_INITIAL_OVERALL: 49,
@@ -33,68 +33,106 @@ serve(async (req) => {
   }
 
   try {
+    // Authentication: verify cron secret or JWT
+    const cronSecret = req.headers.get('x-cron-secret');
+    const expectedSecret = Deno.env.get('CRON_SECRET');
+    const authHeader = req.headers.get('Authorization');
+
+    // Allow cron job with secret
+    if (cronSecret) {
+      if (cronSecret !== expectedSecret) {
+        console.error('Invalid cron secret provided');
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } else if (authHeader) {
+      // Allow authenticated users (admins)
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const token = authHeader.replace('Bearer ', '');
+      const { data, error } = await authClient.auth.getClaims(token);
+      if (error || !data?.claims) {
+        console.error('Invalid JWT provided');
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } else {
+      console.error('No authentication provided');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get games that are finished but results not determined
-    const { data: games, error: gamesError } = await supabase
-      .from('games')
-      .select('id, ended_at, status, mvp_id, best_defender_id, results_determined')
-      .eq('status', 'Finalizado')
+    // Get matches that are finished but results not determined
+    const { data: matches, error: matchesError } = await supabase
+      .from('matches')
+      .select('id, ended_at, status, mvp_id, best_defender_id, results_determined, pelada_id')
+      .eq('status', 'finished')
       .eq('results_determined', false);
 
-    if (gamesError) {
-      console.error('Error fetching games:', gamesError);
-      throw gamesError;
+    if (matchesError) {
+      console.error('Error fetching matches:', matchesError);
+      throw matchesError;
     }
 
-    console.log(`Found ${games?.length || 0} games to process`);
+    console.log(`Found ${matches?.length || 0} matches to process`);
 
     const results = [];
 
-    for (const game of games || []) {
-      console.log(`Processing game ${game.id}`);
+    for (const match of matches || []) {
+      console.log(`Processing match ${match.id}`);
 
       // Get all participants (including guests)
       const { data: allParticipants } = await supabase
-        .from('game_participants')
+        .from('match_participants')
         .select('id, user_id, goals, assists, stats_submitted, status, guest_name, saves')
-        .eq('game_id', game.id)
+        .eq('match_id', match.id)
         .eq('status', 'Confirmado');
 
       // Only registered players (with user_id) can affect ratings
       const registeredParticipants = allParticipants?.filter(p => p.user_id) || [];
       const guestParticipants = allParticipants?.filter(p => !p.user_id) || [];
       
-      console.log(`Game ${game.id}: ${registeredParticipants.length} registered, ${guestParticipants.length} guests`);
+      console.log(`Match ${match.id}: ${registeredParticipants.length} registered, ${guestParticipants.length} guests`);
 
       // Check if stats have been submitted
       const hasStats = allParticipants?.some(p => p.stats_submitted) || false;
       if (!hasStats) {
-        console.log(`Game ${game.id}: No stats submitted yet, skipping`);
-        results.push({ gameId: game.id, status: 'waiting_stats' });
+        console.log(`Match ${match.id}: No stats submitted yet, skipping`);
+        results.push({ matchId: match.id, status: 'waiting_stats' });
         continue;
       }
 
       const confirmedCount = registeredParticipants.length;
       const submittedCount = registeredParticipants.filter((p) => p.stats_submitted).length;
 
-      // Get MVP votes (only registered players can receive/give votes)
+      // Get MVP votes from match_mvp_votes table
       const { data: mvpVotes } = await supabase
-        .from('mvp_votes')
+        .from('match_mvp_votes')
         .select('voted_for_id')
-        .eq('game_id', game.id);
+        .eq('match_id', match.id);
 
-      // Get defender votes
+      // Get defender votes from match_defender_votes table
       const { data: defenderVotes } = await supabase
-        .from('defender_votes')
+        .from('match_defender_votes')
         .select('voted_for_id')
-        .eq('game_id', game.id);
+        .eq('match_id', match.id);
 
       const voteCount = mvpVotes?.length || 0;
-      const hoursAfterEnd = game.ended_at
-        ? (Date.now() - new Date(game.ended_at).getTime()) / (1000 * 60 * 60)
+      const hoursAfterEnd = match.ended_at
+        ? (Date.now() - new Date(match.ended_at).getTime()) / (1000 * 60 * 60)
         : 0;
 
       // Determine if we should calculate results
@@ -103,11 +141,11 @@ serve(async (req) => {
       const timedOut = hoursAfterEnd >= 24;
 
       console.log(
-        `Game ${game.id}: votes=${voteCount}, confirmed=${confirmedCount}, hours=${hoursAfterEnd.toFixed(1)}, allVoted=${allVoted}, thresholdMet=${thresholdMet}, timedOut=${timedOut}`
+        `Match ${match.id}: votes=${voteCount}, confirmed=${confirmedCount}, hours=${hoursAfterEnd.toFixed(1)}, allVoted=${allVoted}, thresholdMet=${thresholdMet}, timedOut=${timedOut}`
       );
 
       if (!allVoted && !thresholdMet && !timedOut) {
-        results.push({ gameId: game.id, status: 'waiting_votes' });
+        results.push({ matchId: match.id, status: 'waiting_votes' });
         continue;
       }
 
@@ -128,17 +166,17 @@ serve(async (req) => {
       const defenderWinner =
         Object.entries(defenderCounts).sort(([, a], [, b]) => b - a)[0]?.[0] || null;
 
-      console.log(`Game ${game.id}: MVP=${mvpWinner}, Defender=${defenderWinner}`);
+      console.log(`Match ${match.id}: MVP=${mvpWinner}, Defender=${defenderWinner}`);
 
-      // Update game with results
+      // Update match with results
       await supabase
-        .from('games')
+        .from('matches')
         .update({
           mvp_id: mvpWinner,
           best_defender_id: defenderWinner,
           results_determined: true,
         })
-        .eq('id', game.id);
+        .eq('id', match.id);
 
       // Process each REGISTERED participant's ratings (guests don't have profiles)
       for (const participant of registeredParticipants) {
@@ -215,10 +253,10 @@ serve(async (req) => {
           Math.round((weightedOverall + mvpBonus) * 10) / 10
         );
 
-        // Save rating history
+        // Save rating history (using match_id reference)
         await supabase.from('rating_history').insert({
           user_id: participant.user_id,
-          game_id: game.id,
+          game_id: match.id, // Note: column still named game_id in database
           overall_before: currentOverall,
           overall_after: Math.round(newOverall),
           attack_before: currentAttack,
@@ -260,7 +298,7 @@ serve(async (req) => {
       }
 
       results.push({
-        gameId: game.id,
+        matchId: match.id,
         status: 'processed',
         mvp: mvpWinner,
         bestDefender: defenderWinner,
