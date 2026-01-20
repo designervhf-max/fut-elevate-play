@@ -26,7 +26,11 @@ import {
   Unlock,
   Lock,
   MessageCircle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
+
+const PARTICIPANTS_DISPLAY_LIMIT = 3;
 
 type Match = {
   id: string;
@@ -95,6 +99,7 @@ const UpcomingMatch = ({
   const [showTeamDraw, setShowTeamDraw] = useState(false);
   const [teamA, setTeamA] = useState<MatchParticipant[]>([]);
   const [teamB, setTeamB] = useState<MatchParticipant[]>([]);
+  const [showAllParticipants, setShowAllParticipants] = useState(false);
   
   // Dialog states
   const [showEndMatchDialog, setShowEndMatchDialog] = useState(false);
@@ -655,6 +660,7 @@ ${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas r
               const order = { Confirmado: 0, Pendente: 1, Recusado: 2 };
               return (order[a.status as keyof typeof order] || 2) - (order[b.status as keyof typeof order] || 2);
             })
+            .slice(0, showAllParticipants ? undefined : PARTICIPANTS_DISPLAY_LIMIT)
             .map((participant) => {
               const isGuest = !participant.user_id;
               const name = isGuest ? participant.guest_name : participant.profile?.name;
@@ -708,6 +714,25 @@ ${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas r
                 </div>
               );
             })}
+
+          {participants.length > PARTICIPANTS_DISPLAY_LIMIT && (
+            <button
+              onClick={() => setShowAllParticipants(!showAllParticipants)}
+              className="w-full py-2 text-sm text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-2 fifa-card"
+            >
+              {showAllParticipants ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Mostrar menos
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Ver todos ({participants.length} jogadores)
+                </>
+              )}
+            </button>
+          )}
 
           {participants.length === 0 && (
             <div className="text-center py-6 text-muted-foreground">
