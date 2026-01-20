@@ -6,15 +6,15 @@ import BottomNav from '@/components/BottomNav';
 import AvatarUpload from '@/components/AvatarUpload';
 import NextMatchCard from '@/components/NextMatchCard';
 import SectionCard from '@/components/SectionCard';
-import { Calendar, Plus, LogOut, Loader2 } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
+import HomeSkeleton from '@/components/skeletons/HomeSkeleton';
+import { Calendar, Plus, LogOut } from 'lucide-react';
+import { useProfile } from '@/hooks/useProfile';
+import { useQueryClient } from '@tanstack/react-query';
 
 const Home = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -25,19 +25,7 @@ const Home = () => {
         return;
       }
 
-      const { data: profileData, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (error || !profileData) {
-        navigate('/login');
-        return;
-      }
-
-      setProfile(profileData);
-      setLoading(false);
+      setUserId(session.user.id);
     };
 
     checkAuth();
@@ -51,15 +39,17 @@ const Home = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  const { data: profile, isLoading } = useProfile(userId);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    queryClient.clear();
     navigate('/login');
   };
 
   const handleAvatarUpdate = (url: string) => {
-    if (profile) {
-      setProfile({ ...profile, avatar_url: url });
-    }
+    // Invalidate profile cache to refetch with new avatar
+    queryClient.invalidateQueries({ queryKey: ['profile', userId] });
   };
 
   const getPositionAbbr = (position: string) => {
@@ -75,12 +65,8 @@ const Home = () => {
     return abbrs[position] || position.substring(0, 3).toUpperCase();
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  if (isLoading || !userId) {
+    return <HomeSkeleton />;
   }
 
   if (!profile) {
