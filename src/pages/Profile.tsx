@@ -10,19 +10,17 @@ import PeladaCareerHistory from '@/components/PeladaCareerHistory';
 import DetailedStats from '@/components/DetailedStats';
 import PlayerCard from '@/components/PlayerCard';
 import SectionCard from '@/components/SectionCard';
-import { ChevronLeft, Edit2, Loader2 } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
+import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton';
+import { ChevronLeft, Edit2 } from 'lucide-react';
+import { useProfile } from '@/hooks/useProfile';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -30,32 +28,20 @@ const Profile = () => {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (!error && data) {
-        setProfile(data);
-      }
-
-      setLoading(false);
+      setUserId(session.user.id);
     };
 
-    fetchProfile();
+    fetchSession();
   }, [navigate]);
+
+  const { data: profile, isLoading } = useProfile(userId);
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  if (isLoading || !userId) {
+    return <ProfileSkeleton />;
   }
 
   if (!profile) {

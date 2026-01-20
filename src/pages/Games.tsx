@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/BottomNav';
+import GamesSkeleton from '@/components/skeletons/GamesSkeleton';
 import {
   ChevronLeft,
   CalendarDays,
@@ -10,7 +11,6 @@ import {
   MapPin,
   Users,
   Plus,
-  Loader2,
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
@@ -50,12 +50,8 @@ const Games = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  if (loading || !userId) {
+    return <GamesSkeleton />;
   }
 
   const isEmpty = peladas.length === 0 && invites.length === 0;
@@ -119,7 +115,7 @@ const Games = () => {
                 Minhas Peladas
               </h3>
               <div className="space-y-3">
-                {peladas.map((pelada) => {
+                {peladas.map((pelada, index) => {
                   const status = getStatusDisplay(pelada.userMatchStatus);
                   const StatusIcon = status.icon;
                   
@@ -134,7 +130,11 @@ const Games = () => {
                   }
 
                   return (
-                    <div key={pelada.id} className="fifa-card p-4">
+                    <div 
+                      key={pelada.id} 
+                      className="fifa-card p-4 animate-fade-in"
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                    >
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <h4 className="font-semibold text-foreground">{pelada.name}</h4>
