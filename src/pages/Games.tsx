@@ -14,145 +14,27 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
-import { getWeekdayLabel, formatNextOccurrence, getNextOccurrence } from '@/lib/weekday';
-
-// Types for the new pelada structure
-type Pelada = {
-  id: string;
-  name: string;
-  location: string;
-  weekday: number;
-  time: string;
-  game_type: string;
-  max_players: number;
-  status: string;
-  created_at: string;
-  creator_id: string;
-};
-
-type PeladaMember = {
-  id: string;
-  pelada_id: string;
-  user_id: string;
-  role: 'admin' | 'member';
-  joined_at: string;
-};
-
-type Match = {
-  id: string;
-  pelada_id: string;
-  match_date: string;
-  match_time: string;
-  status: string;
-};
-
-type MatchParticipant = {
-  id: string;
-  match_id: string;
-  user_id: string | null;
-  status: string;
-};
-
-type PeladaWithDetails = Pelada & {
-  member: PeladaMember;
-  nextMatch: Match | null;
-  userMatchStatus: string | null;
-};
+import { getWeekdayLabel, formatNextOccurrence } from '@/lib/weekday';
+import { usePeladas, PeladaWithDetails } from '@/hooks/usePeladas';
 
 const Games = () => {
   const navigate = useNavigate();
-  const [peladas, setPeladas] = useState<PeladaWithDetails[]>([]);
-  const [invites, setInvites] = useState<PeladaWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchPeladas = async () => {
+    const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
       if (!session) {
         navigate('/login');
         return;
       }
-
       setUserId(session.user.id);
-
-      // Fetch peladas where user is a member
-      const { data: memberships, error: memberError } = await supabase
-        .from('pelada_members')
-        .select(`
-          *,
-          pelada:peladas(*)
-        `)
-        .eq('user_id', session.user.id);
-
-      if (memberError) {
-        console.error('Error fetching peladas:', memberError);
-        setLoading(false);
-        return;
-      }
-
-      if (!memberships || memberships.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      // Process each pelada to get next match and user status
-      const peladasWithDetails: PeladaWithDetails[] = await Promise.all(
-        memberships.map(async (membership) => {
-          const pelada = membership.pelada as Pelada;
-          
-          // Get next upcoming match for this pelada
-          const today = new Date().toISOString().split('T')[0];
-          const { data: matches } = await supabase
-            .from('matches')
-            .select('*')
-            .eq('pelada_id', pelada.id)
-            .gte('match_date', today)
-            .in('status', ['scheduled', 'in_progress'])
-            .order('match_date', { ascending: true })
-            .limit(1);
-
-          const nextMatch = matches && matches.length > 0 ? matches[0] as Match : null;
-
-          // Get user's status for next match
-          let userMatchStatus: string | null = null;
-          if (nextMatch) {
-            const { data: participation } = await supabase
-              .from('match_participants')
-              .select('status')
-              .eq('match_id', nextMatch.id)
-              .eq('user_id', session.user.id)
-              .single();
-
-            userMatchStatus = participation?.status || null;
-          }
-
-          return {
-            ...pelada,
-            member: {
-              id: membership.id,
-              pelada_id: membership.pelada_id,
-              user_id: membership.user_id,
-              role: membership.role as 'admin' | 'member',
-              joined_at: membership.joined_at,
-            },
-            nextMatch,
-            userMatchStatus,
-          };
-        })
-      );
-
-      // Separate active peladas from those pending invite
-      // For now, all members are considered accepted (we can add invite flow later)
-      const activePeladas = peladasWithDetails.filter(p => p.status === 'active');
-      
-      setPeladas(activePeladas);
-      setLoading(false);
     };
-
-    fetchPeladas();
+    checkSession();
   }, [navigate]);
+
+  const { data: peladas = [], isLoading: loading } = usePeladas(userId);
+  const invites: PeladaWithDetails[] = []; // For future use
 
   const getStatusDisplay = (userMatchStatus: string | null) => {
     if (!userMatchStatus) {
