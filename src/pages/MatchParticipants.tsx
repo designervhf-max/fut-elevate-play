@@ -1,9 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Users, CheckCircle, XCircle, AlertCircle, Search, X } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Search, X, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import CollapsibleSection from '@/components/CollapsibleSection';
+import PositionBadge from '@/components/PositionBadge';
+import BottomActionBar from '@/components/BottomActionBar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type Participant = {
   id: string;
@@ -29,8 +33,6 @@ type MatchInfo = {
   };
 };
 
-type StatusFilter = 'all' | 'Confirmado' | 'Pendente' | 'Recusado';
-
 const MatchParticipants = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
@@ -38,7 +40,6 @@ const MatchParticipants = () => {
   const [matchInfo, setMatchInfo] = useState<MatchInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,12 +95,6 @@ const MatchParticipants = () => {
           profile: p.user_id ? profiles[p.user_id] : undefined
         }));
 
-        // Sort: Confirmado first, then Pendente, then Recusado
-        enrichedParticipants.sort((a, b) => {
-          const order = { Confirmado: 0, Pendente: 1, Recusado: 2 };
-          return (order[a.status as keyof typeof order] || 2) - (order[b.status as keyof typeof order] || 2);
-        });
-
         setParticipants(enrichedParticipants);
       }
 
@@ -109,54 +104,67 @@ const MatchParticipants = () => {
     fetchData();
   }, [matchId]);
 
-  const filteredParticipants = useMemo(() => {
-    return participants.filter(participant => {
-      const name = participant.user_id 
-        ? participant.profile?.name 
-        : participant.guest_name;
-      
-      const matchesSearch = searchQuery === '' || 
-        name?.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' || 
-        participant.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
+  // Group participants by status
+  const groupedParticipants = useMemo(() => {
+    const filtered = participants.filter(p => {
+      if (!searchQuery) return true;
+      const name = p.user_id ? p.profile?.name : p.guest_name;
+      return name?.toLowerCase().includes(searchQuery.toLowerCase());
     });
-  }, [participants, searchQuery, statusFilter]);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Confirmado':
-        return <CheckCircle className="h-4 w-4 text-primary" />;
-      case 'Recusado':
-        return <XCircle className="h-4 w-4 text-destructive" />;
-      default:
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-    }
+    return {
+      confirmed: filtered.filter(p => p.status === 'Confirmado'),
+      pending: filtered.filter(p => p.status === 'Pendente'),
+      refused: filtered.filter(p => p.status === 'Recusado'),
+    };
+  }, [participants, searchQuery]);
+
+  const renderParticipantCard = (participant: Participant, index: number) => {
+    const isGuest = !participant.user_id;
+    const name = isGuest ? participant.guest_name : participant.profile?.name;
+    const position = isGuest ? participant.guest_position : participant.profile?.position;
+    const avatar = isGuest ? null : participant.profile?.avatar_url;
+    const rating = isGuest ? 50 : participant.profile?.overall_rating;
+    const initials = name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
+
+    return (
+      <div 
+        key={participant.id} 
+        className="flex items-center gap-3 p-3 bg-card/50 rounded-lg hover:bg-card/80 transition-colors animate-fade-in"
+        style={{ animationDelay: `${index * 30}ms` }}
+      >
+        {/* Avatar with Position Badge */}
+        <div className="relative">
+          <Avatar className="h-11 w-11 border-2 border-border">
+            <AvatarImage src={avatar || undefined} alt={name || ''} />
+            <AvatarFallback className="bg-surface text-primary font-bold text-sm">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          {position && (
+            <div className="absolute -bottom-1 -right-1">
+              <PositionBadge position={position} size="sm" />
+            </div>
+          )}
+        </div>
+
+        {/* Player Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-sm truncate">{name}</p>
+            {isGuest && (
+              <span className="flex-shrink-0 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                Convidado
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            OVR <span className="text-primary font-bold">{rating}</span>
+          </p>
+        </div>
+      </div>
+    );
   };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Confirmado':
-        return 'text-primary';
-      case 'Recusado':
-        return 'text-destructive';
-      default:
-        return 'text-yellow-500';
-    }
-  };
-
-  const confirmedCount = participants.filter(p => p.status === 'Confirmado').length;
-  const pendingCount = participants.filter(p => p.status === 'Pendente').length;
-  const refusedCount = participants.filter(p => p.status === 'Recusado').length;
-
-  const statusFilters: { label: string; value: StatusFilter; count: number }[] = [
-    { label: 'Todos', value: 'all', count: participants.length },
-    { label: 'Confirmados', value: 'Confirmado', count: confirmedCount },
-    { label: 'Pendentes', value: 'Pendente', count: pendingCount },
-    { label: 'Recusados', value: 'Recusado', count: refusedCount },
-  ];
 
   if (loading) {
     return (
@@ -166,8 +174,12 @@ const MatchParticipants = () => {
     );
   }
 
+  const confirmedCount = groupedParticipants.confirmed.length;
+  const pendingCount = groupedParticipants.pending.length;
+  const refusedCount = groupedParticipants.refused.length;
+
   return (
-    <div className="min-h-screen bg-background pb-20 animate-fade-in">
+    <div className="min-h-screen bg-background pb-24 animate-fade-in">
       <div className="max-w-md mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
@@ -187,23 +199,31 @@ const MatchParticipants = () => {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="fifa-card p-4 mb-4">
-          <div className="flex items-center justify-between">
+        {/* Stats Summary */}
+        <div className="fifa-card p-4 mb-5">
+          <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
-              <span className="font-medium">Total de jogadores</span>
+              <div>
+                <p className="text-2xl font-bold text-primary">{confirmedCount}</p>
+                <p className="text-xs text-muted-foreground">Confirmados</p>
+              </div>
             </div>
-            <span className="text-xl font-bold text-primary">{participants.length}</span>
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-sm text-muted-foreground">Confirmados</span>
-            <span className="text-sm font-medium text-primary">{confirmedCount}</span>
+            <div className="h-8 w-px bg-border" />
+            <div>
+              <p className="text-lg font-semibold text-warning">{pendingCount}</p>
+              <p className="text-xs text-muted-foreground">Pendentes</p>
+            </div>
+            <div className="h-8 w-px bg-border" />
+            <div>
+              <p className="text-lg font-semibold text-muted-foreground">{refusedCount}</p>
+              <p className="text-xs text-muted-foreground">Fora</p>
+            </div>
           </div>
         </div>
 
         {/* Search */}
-        <div className="relative mb-4">
+        <div className="relative mb-5">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar jogador..."
@@ -221,88 +241,42 @@ const MatchParticipants = () => {
           )}
         </div>
 
-        {/* Status Filters */}
-        <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1">
-          {statusFilters.map((filter) => (
-            <button
-              key={filter.value}
-              onClick={() => setStatusFilter(filter.value)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
-                statusFilter === filter.value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card text-muted-foreground hover:bg-muted'
-              }`}
+        {/* Collapsible Sections */}
+        <div className="space-y-3">
+          {confirmedCount > 0 && (
+            <CollapsibleSection
+              title="Dentro"
+              count={confirmedCount}
+              icon={<CheckCircle className="h-4 w-4 text-primary" />}
+              badgeColor="bg-primary"
+              defaultOpen={true}
             >
-              {filter.label} ({filter.count})
-            </button>
-          ))}
-        </div>
+              {groupedParticipants.confirmed.map((p, i) => renderParticipantCard(p, i))}
+            </CollapsibleSection>
+          )}
 
-        {/* Players List */}
-        <div className="space-y-2">
-          {filteredParticipants.map((participant, index) => {
-            const isGuest = !participant.user_id;
-            const name = isGuest ? participant.guest_name : participant.profile?.name;
-            const position = isGuest ? participant.guest_position : participant.profile?.position;
-            const avatar = isGuest ? null : participant.profile?.avatar_url;
-            const rating = isGuest ? 50 : participant.profile?.overall_rating;
+          {pendingCount > 0 && (
+            <CollapsibleSection
+              title="Pendente"
+              count={pendingCount}
+              icon={<Clock className="h-4 w-4 text-warning" />}
+              badgeColor="bg-warning"
+              defaultOpen={true}
+            >
+              {groupedParticipants.pending.map((p, i) => renderParticipantCard(p, i))}
+            </CollapsibleSection>
+          )}
 
-            return (
-              <div 
-                key={participant.id} 
-                className="fifa-card p-3 flex items-center justify-between animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-surface border-2 border-border flex items-center justify-center">
-                    {avatar ? (
-                      <img src={avatar} alt={name || ''} className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <span className="text-sm font-bold text-primary">
-                        {name?.charAt(0) || '?'}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">{name}</p>
-                      {isGuest && (
-                        <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                          Aleatório
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{position}</span>
-                      <span>•</span>
-                      <span className="text-primary font-bold">{rating}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(participant.status)}
-                  <span className={`text-xs ${getStatusColor(participant.status)}`}>
-                    {participant.status}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-
-          {filteredParticipants.length === 0 && participants.length > 0 && (
-            <div className="text-center py-12 text-muted-foreground animate-fade-in">
-              <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Nenhum jogador encontrado</p>
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('all');
-                }}
-                className="text-primary text-sm mt-2 hover:underline"
-              >
-                Limpar filtros
-              </button>
-            </div>
+          {refusedCount > 0 && (
+            <CollapsibleSection
+              title="Fora"
+              count={refusedCount}
+              icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
+              badgeColor="bg-muted"
+              defaultOpen={false}
+            >
+              {groupedParticipants.refused.map((p, i) => renderParticipantCard(p, i))}
+            </CollapsibleSection>
           )}
 
           {participants.length === 0 && (
@@ -311,8 +285,35 @@ const MatchParticipants = () => {
               <p>Nenhum jogador na partida</p>
             </div>
           )}
+
+          {searchQuery && confirmedCount === 0 && pendingCount === 0 && refusedCount === 0 && participants.length > 0 && (
+            <div className="text-center py-12 text-muted-foreground animate-fade-in">
+              <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>Nenhum jogador encontrado</p>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-primary text-sm mt-2 hover:underline"
+              >
+                Limpar busca
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Bottom Action Bar */}
+      <BottomActionBar
+        secondaryAction={{
+          label: 'Convidar',
+          onClick: () => {/* TODO: Implement invite */},
+          variant: 'outline',
+        }}
+        primaryAction={{
+          label: 'Adicionar Jogador',
+          onClick: () => {/* TODO: Implement add player */},
+          icon: <UserPlus className="h-4 w-4 mr-2" />,
+        }}
+      />
     </div>
   );
 };
