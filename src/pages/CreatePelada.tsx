@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronLeft, CalendarDays, Clock, MapPin, Users, Loader2, Trophy } from 'lucide-react';
+import { ChevronLeft, CalendarDays, Clock, MapPin, Users, Loader2, Trophy, DollarSign } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { WEEKDAYS, getNextOccurrence } from '@/lib/weekday';
 
@@ -36,6 +36,7 @@ const CreatePelada = () => {
     location: '',
     gameType: '' as GameType | '',
     maxPlayers: '',
+    pricePerGame: '',
   });
 
   const handleChange = (field: string, value: string) => {
@@ -79,6 +80,9 @@ const CreatePelada = () => {
       return;
     }
 
+    // Parse price
+    const pricePerGame = formData.pricePerGame ? parseFloat(formData.pricePerGame) : null;
+
     // 1. Create the pelada
     const { data: pelada, error: peladaError } = await supabase
       .from('peladas')
@@ -91,6 +95,7 @@ const CreatePelada = () => {
         game_type: formData.gameType as GameType,
         max_players: maxPlayers,
         status: 'active',
+        price_per_game: pricePerGame,
       })
       .select()
       .single();
@@ -264,6 +269,26 @@ const CreatePelada = () => {
             value={formData.maxPlayers}
             onChange={(e) => handleChange('maxPlayers', e.target.value)}
           />
+        </div>
+
+        {/* Price Per Game (Optional) */}
+        <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <Label htmlFor="pricePerGame" className="text-sm text-muted-foreground flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-lime" />
+            Valor por Jogo (opcional)
+          </Label>
+          <Input
+            id="pricePerGame"
+            type="number"
+            min={0}
+            step={0.01}
+            placeholder="Ex: 25.00"
+            value={formData.pricePerGame}
+            onChange={(e) => handleChange('pricePerGame', e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Deixe vazio se não houver cobrança
+          </p>
         </div>
 
         {/* Submit Button */}

@@ -11,6 +11,7 @@ type Pelada = {
   max_players: number;
   status: string;
   creator_id: string;
+  price_per_game: number | null;
 };
 
 type Match = {
@@ -25,6 +26,7 @@ type Match = {
   best_defender_id: string | null;
   results_determined: boolean;
   ended_at: string | null;
+  started_at: string | null;
 };
 
 type MatchParticipant = {
@@ -36,9 +38,11 @@ type MatchParticipant = {
   status: string;
   goals: number;
   assists: number;
+  saves: number;
   stats_submitted: boolean;
   rating: number | null;
   team: number | null;
+  paid: boolean;
   profile?: {
     id: string;
     name: string;

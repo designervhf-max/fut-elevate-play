@@ -87,6 +87,7 @@ export type Database = {
           guest_position: string | null
           id: string
           match_id: string
+          paid: boolean | null
           rating: number | null
           saves: number | null
           stats_submitted: boolean | null
@@ -102,6 +103,7 @@ export type Database = {
           guest_position?: string | null
           id?: string
           match_id: string
+          paid?: boolean | null
           rating?: number | null
           saves?: number | null
           stats_submitted?: boolean | null
@@ -117,6 +119,7 @@ export type Database = {
           guest_position?: string | null
           id?: string
           match_id?: string
+          paid?: boolean | null
           rating?: number | null
           saves?: number | null
           stats_submitted?: boolean | null
@@ -147,6 +150,7 @@ export type Database = {
           open_for_confirmation: boolean
           pelada_id: string
           results_determined: boolean | null
+          started_at: string | null
           status: Database["public"]["Enums"]["match_status"]
         }
         Insert: {
@@ -161,6 +165,7 @@ export type Database = {
           open_for_confirmation?: boolean
           pelada_id: string
           results_determined?: boolean | null
+          started_at?: string | null
           status?: Database["public"]["Enums"]["match_status"]
         }
         Update: {
@@ -175,6 +180,7 @@ export type Database = {
           open_for_confirmation?: boolean
           pelada_id?: string
           results_determined?: boolean | null
+          started_at?: string | null
           status?: Database["public"]["Enums"]["match_status"]
         }
         Relationships: [
@@ -228,6 +234,7 @@ export type Database = {
           location: string
           max_players: number
           name: string
+          price_per_game: number | null
           status: Database["public"]["Enums"]["pelada_status"]
           time: string
           weekday: number
@@ -240,6 +247,7 @@ export type Database = {
           location: string
           max_players?: number
           name?: string
+          price_per_game?: number | null
           status?: Database["public"]["Enums"]["pelada_status"]
           time: string
           weekday: number
@@ -252,6 +260,7 @@ export type Database = {
           location?: string
           max_players?: number
           name?: string
+          price_per_game?: number | null
           status?: Database["public"]["Enums"]["pelada_status"]
           time?: string
           weekday?: number
@@ -465,7 +474,11 @@ export type Database = {
       game_status: "Confirmado" | "Pendente" | "Cancelado" | "Finalizado"
       game_type: "Futsal" | "Society" | "Campo"
       match_status: "scheduled" | "in_progress" | "finished" | "cancelled"
-      participant_status: "Confirmado" | "Pendente" | "Recusado"
+      participant_status:
+        | "Confirmado"
+        | "Pendente"
+        | "Recusado"
+        | "Lista de Espera"
       pelada_role: "admin" | "member"
       pelada_status: "active" | "inactive"
       player_position:
@@ -607,7 +620,12 @@ export const Constants = {
       game_status: ["Confirmado", "Pendente", "Cancelado", "Finalizado"],
       game_type: ["Futsal", "Society", "Campo"],
       match_status: ["scheduled", "in_progress", "finished", "cancelled"],
-      participant_status: ["Confirmado", "Pendente", "Recusado"],
+      participant_status: [
+        "Confirmado",
+        "Pendente",
+        "Recusado",
+        "Lista de Espera",
+      ],
       pelada_role: ["admin", "member"],
       pelada_status: ["active", "inactive"],
       player_position: [
