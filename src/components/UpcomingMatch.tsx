@@ -129,7 +129,9 @@ const UpcomingMatch = ({
   const matchDate = new Date(match.match_date + 'T00:00:00');
   const userParticipation = participants.find(p => p.user_id === userId);
   const confirmedParticipants = participants.filter(p => p.status === 'Confirmado');
+  const waitlistParticipants = participants.filter(p => p.status === 'Lista de Espera');
   const confirmedCount = confirmedParticipants.length;
+  const waitlistCount = waitlistParticipants.length;
   const userSubmittedStats = userParticipation?.stats_submitted ?? false;
   
   // Check if voting is still open (48h after match ended)
@@ -143,11 +145,13 @@ const UpcomingMatch = ({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'Confirmado':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-lime" />;
+      case 'Lista de Espera':
+        return <AlertCircle className="h-4 w-4 text-sky-400" />;
       case 'Pendente':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+        return <AlertCircle className="h-4 w-4 text-warning" />;
       case 'Recusado':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircle className="h-4 w-4 text-destructive" />;
       default:
         return null;
     }
@@ -156,11 +160,13 @@ const UpcomingMatch = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Confirmado':
-        return 'text-green-500';
+        return 'text-lime';
+      case 'Lista de Espera':
+        return 'text-sky-400';
       case 'Pendente':
-        return 'text-yellow-500';
+        return 'text-warning';
       case 'Recusado':
-        return 'text-red-500';
+        return 'text-destructive';
       default:
         return 'text-muted-foreground';
     }
@@ -170,17 +176,21 @@ const UpcomingMatch = ({
     if (!userId || !match) return;
     setActionLoading(true);
 
+    // Determine status based on capacity
+    const newStatus = isFull ? 'Lista de Espera' : 'Confirmado';
+    const successMessage = isFull ? 'Você está na lista de espera' : 'Presença confirmada!';
+
     if (userParticipation) {
       // Update existing participation
       const { error } = await supabase
         .from('match_participants')
-        .update({ status: 'Confirmado' })
+        .update({ status: newStatus })
         .eq('id', userParticipation.id);
 
       if (error) {
         toast({ title: 'Erro', description: 'Não foi possível confirmar presença', variant: 'destructive' });
       } else {
-        toast({ title: 'Sucesso', description: 'Presença confirmada!' });
+        toast({ title: 'Sucesso', description: successMessage });
         await onRefresh();
       }
     } else {
@@ -190,13 +200,13 @@ const UpcomingMatch = ({
         .insert({
           match_id: match.id,
           user_id: userId,
-          status: 'Confirmado',
+          status: newStatus,
         });
 
       if (error) {
         toast({ title: 'Erro', description: 'Não foi possível confirmar presença', variant: 'destructive' });
       } else {
-        toast({ title: 'Sucesso', description: 'Presença confirmada!' });
+        toast({ title: 'Sucesso', description: successMessage });
         await onRefresh();
       }
     }
@@ -391,9 +401,14 @@ const UpcomingMatch = ({
             <div className="flex items-center gap-2 text-muted-foreground">
               <Users className="h-4 w-4" />
               <span>{confirmedCount}/{pelada.max_players} confirmados</span>
+              {waitlistCount > 0 && (
+                <span className="text-xs text-sky-400">
+                  (+{waitlistCount} na espera)
+                </span>
+              )}
             </div>
             {isFull && (
-              <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded">
+              <span className="text-xs bg-warning/20 text-warning px-2 py-0.5 rounded">
                 LOTADO
               </span>
             )}
@@ -411,7 +426,9 @@ const UpcomingMatch = ({
           <div className="flex items-center gap-2 p-3 bg-surface/50 rounded-lg mb-4">
             {getStatusIcon(userParticipation.status)}
             <span className={`text-sm font-medium ${getStatusColor(userParticipation.status)}`}>
-              Você está {userParticipation.status.toLowerCase()}
+              {userParticipation.status === 'Lista de Espera' 
+                ? `Você está na lista de espera (posição ${waitlistParticipants.findIndex(p => p.user_id === userId) + 1})`
+                : `Você está ${userParticipation.status.toLowerCase()}`}
             </span>
           </div>
         )}
@@ -429,19 +446,19 @@ const UpcomingMatch = ({
         {/* User Actions */}
         {match.status !== 'finished' && match.open_for_confirmation && (
           <div className="flex gap-2">
-            {(!userParticipation || userParticipation.status !== 'Confirmado') && (
+            {(!userParticipation || (userParticipation.status !== 'Confirmado' && userParticipation.status !== 'Lista de Espera')) && (
               <Button
                 variant="sport"
                 className="flex-1"
                 onClick={handleConfirmPresence}
-                disabled={actionLoading || (isFull && userParticipation?.status !== 'Confirmado')}
+                disabled={actionLoading}
               >
                 {actionLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
-                ) : isFull && !userParticipation ? (
+                ) : isFull ? (
                   <>
-                    <XCircle className="h-5 w-5 mr-2" />
-                    Partida Lotada
+                    <AlertCircle className="h-5 w-5 mr-2" />
+                    Entrar na Lista de Espera
                   </>
                 ) : (
                   <>
@@ -451,7 +468,7 @@ const UpcomingMatch = ({
                 )}
               </Button>
             )}
-            {userParticipation && (
+            {userParticipation && (userParticipation.status === 'Confirmado' || userParticipation.status === 'Lista de Espera') && (
               <Button
                 variant="outline"
                 className="flex-1"

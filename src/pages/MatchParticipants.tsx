@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Search, X, UserPlus } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, XCircle, Clock, Search, X, UserPlus, Hourglass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import CollapsibleSection from '@/components/CollapsibleSection';
@@ -114,6 +114,7 @@ const MatchParticipants = () => {
 
     return {
       confirmed: filtered.filter(p => p.status === 'Confirmado'),
+      waitlist: filtered.filter(p => p.status === 'Lista de Espera'),
       pending: filtered.filter(p => p.status === 'Pendente'),
       refused: filtered.filter(p => p.status === 'Recusado'),
     };
@@ -175,6 +176,7 @@ const MatchParticipants = () => {
   }
 
   const confirmedCount = groupedParticipants.confirmed.length;
+  const waitlistCount = groupedParticipants.waitlist.length;
   const pendingCount = groupedParticipants.pending.length;
   const refusedCount = groupedParticipants.refused.length;
 
@@ -201,7 +203,7 @@ const MatchParticipants = () => {
 
         {/* Stats Summary */}
         <div className="fifa-card p-4 mb-5">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
               <div>
@@ -209,6 +211,15 @@ const MatchParticipants = () => {
                 <p className="text-xs text-muted-foreground">Confirmados</p>
               </div>
             </div>
+            {waitlistCount > 0 && (
+              <>
+                <div className="h-8 w-px bg-border" />
+                <div>
+                  <p className="text-lg font-semibold text-sky-400">{waitlistCount}</p>
+                  <p className="text-xs text-muted-foreground">Lista de Espera</p>
+                </div>
+              </>
+            )}
             <div className="h-8 w-px bg-border" />
             <div>
               <p className="text-lg font-semibold text-warning">{pendingCount}</p>
@@ -252,6 +263,18 @@ const MatchParticipants = () => {
               defaultOpen={true}
             >
               {groupedParticipants.confirmed.map((p, i) => renderParticipantCard(p, i))}
+            </CollapsibleSection>
+          )}
+
+          {waitlistCount > 0 && (
+            <CollapsibleSection
+              title="Lista de Espera"
+              count={waitlistCount}
+              icon={<Hourglass className="h-4 w-4 text-sky-400" />}
+              badgeColor="bg-sky-500"
+              defaultOpen={true}
+            >
+              {groupedParticipants.waitlist.map((p, i) => renderParticipantCard(p, i))}
             </CollapsibleSection>
           )}
 
