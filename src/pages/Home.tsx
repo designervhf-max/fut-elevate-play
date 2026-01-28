@@ -102,13 +102,13 @@ const Home = () => {
             <div className="flex-1">
               <div className="text-xs text-muted-foreground uppercase mb-1">{getPositionAbbr(profile.position)}</div>
               <div className="flex items-center gap-3">
-                <span className="text-4xl font-display text-primary">{profile.overall_rating}</span>
+                <span className="text-4xl font-bold text-primary">{profile.overall_rating}</span>
                 <div className="h-8 w-px bg-border" />
                 <div className="flex gap-3 text-center">
-                  <div><div className="text-xs text-muted-foreground">ATA</div><div className="text-sm font-semibold">{profile.attack_rating || 50}</div></div>
-                  <div><div className="text-xs text-muted-foreground">DEF</div><div className="text-sm font-semibold">{profile.defense_rating || 50}</div></div>
-                  <div><div className="text-xs text-muted-foreground">FOR</div><div className="text-sm font-semibold">{profile.strength_rating || 50}</div></div>
-                  <div><div className="text-xs text-muted-foreground">HAB</div><div className="text-sm font-semibold">{profile.skill_rating || 50}</div></div>
+                  <div><div className="text-xs text-muted-foreground">ATA</div><div className="text-sm font-medium">{profile.attack_rating || 50}</div></div>
+                  <div><div className="text-xs text-muted-foreground">DEF</div><div className="text-sm font-medium">{profile.defense_rating || 50}</div></div>
+                  <div><div className="text-xs text-muted-foreground">FOR</div><div className="text-sm font-medium">{profile.strength_rating || 50}</div></div>
+                  <div><div className="text-xs text-muted-foreground">HAB</div><div className="text-sm font-medium">{profile.skill_rating || 50}</div></div>
                 </div>
               </div>
             </div>

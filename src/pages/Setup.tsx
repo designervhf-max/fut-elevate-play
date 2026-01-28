@@ -59,8 +59,8 @@ const Setup = () => {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
       {/* Header */}
       <div className="text-center mb-10 animate-slide-up">
-        <h1 className="text-3xl font-display tracking-wider mb-2">
-          CONFIGURAÇÃO
+        <h1 className="text-3xl font-semibold mb-2">
+          Configuração
         </h1>
         <p className="text-muted-foreground">
           Você prefere jogar:
@@ -81,10 +81,10 @@ const Setup = () => {
             style={{ animationDelay: `${index * 0.1}s` }}
           >
             <div className="flex items-center justify-center">
-              <span className={`font-display text-xl tracking-wider ${
+              <span className={`font-semibold text-lg ${
                 selected === type.value ? 'text-primary' : 'text-foreground'
               }`}>
-                {type.label.toUpperCase()}
+                {type.label}
               </span>
             </div>
           </button>
@@ -103,7 +103,7 @@ const Setup = () => {
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            'PRÓXIMO →'
+            'Próximo →'
           )}
         </Button>
       </div>

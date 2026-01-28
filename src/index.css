@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -52,8 +52,8 @@
     --shadow-subtle: 0 1px 4px hsl(0, 0%, 0%, 0.3);
 
     /* Typography */
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'Inter', sans-serif;
+    --font-display: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
 
     /* Sidebar */
     --sidebar-background: 0 0% 4%;
@@ -139,7 +139,7 @@
   /* Display Text */
   .display-text {
     font-family: var(--font-display);
-    @apply tracking-wider;
+    @apply font-semibold;
   }
 
   /* Stat Item */

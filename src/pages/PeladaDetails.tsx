@@ -188,7 +188,7 @@ const PeladaDetails = () => {
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
-              <h1 className="text-xl font-display tracking-wider">{pelada.name}</h1>
+              <h1 className="text-xl font-semibold">{pelada.name}</h1>
             </div>
             <div className="flex items-center gap-2">
               <button

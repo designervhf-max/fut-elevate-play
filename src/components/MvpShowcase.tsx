@@ -18,7 +18,7 @@ const MvpShowcase = ({ mvpCount, defenderCount }: MvpShowcaseProps) => {
             <Trophy />
           </div>
           <div>
-            <div className="text-lg font-semibold text-foreground">{mvpCount}</div>
+            <div className="text-lg font-medium text-foreground">{mvpCount}</div>
             <div className="text-xs text-muted-foreground">MVP</div>
           </div>
         </div>
@@ -30,7 +30,7 @@ const MvpShowcase = ({ mvpCount, defenderCount }: MvpShowcaseProps) => {
             <Shield />
           </div>
           <div>
-            <div className="text-lg font-semibold text-foreground">{defenderCount}</div>
+            <div className="text-lg font-medium text-foreground">{defenderCount}</div>
             <div className="text-xs text-muted-foreground">Craque da Defesa</div>
           </div>
         </div>
