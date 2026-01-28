@@ -1,187 +1,169 @@
 
-# Plano de Redesign Inspirado no Appito
 
-## Resumo da Analise
+# Plano de Implementacao: Funcionalidades Restantes
 
-Analisei as capturas de tela do app Appito e identifiquei varios elementos de UX/UI que podem melhorar o EleveFut sem copiar o design diretamente.
+## Resumo
 
-## Melhorias Identificadas
+Este plano cobre a implementacao das funcionalidades identificadas como pendentes, continuando o redesign aprovado e adicionando novos recursos:
 
-### 1. Pagina de Detalhes da Pelada (PeladaDetails)
+1. **PeladaDetails com Tabs e Hero Section** (do plano original)
+2. **MatchLive com Cronometro** (do plano original)
+3. **Lista de Espera Automatica** (nova funcionalidade)
+4. **Controle Financeiro** (nova funcionalidade)
+5. **Melhorias nas Notificacoes** (nova funcionalidade)
 
-**Problema atual:** Layout simples sem hero image ou destaque visual
+---
 
-**Inspiracao Appito:**
-- Header com imagem de capa da pelada (hero section com overlay)
-- Abas horizontais (INFO / JOGADORES / ESTATISTICAS) para melhor navegacao
-- Floating action buttons na parte inferior (DENTRO/CONVIDAR)
+## 1. PeladaDetails com Tabs e Hero Section
 
-**Proposta:**
-- Adicionar suporte a imagem de capa da pelada
-- Implementar sistema de tabs horizontal no topo
-- Mover botoes de acao principais para bottom bar fixo
-- Exibir organizador com avatar e badge
+### O que muda:
+- Adicionar sistema de tabs horizontal (INFO / PARTIDA / RANKING)
+- Adicionar BottomActionBar para acoes rapidas (Confirmar / Cancelar)
+- Melhorar visual do header com informacoes mais destacadas
 
-### 2. Lista de Jogadores (MatchParticipants)
+### Componentes:
+- Usar o componente `Tabs` do shadcn/ui ja existente
+- Reutilizar o `BottomActionBar` criado anteriormente
+- Conteudo de cada tab:
+  - **INFO**: Informacoes da pelada (dia, horario, local, tipo de jogo)
+  - **PARTIDA**: Proxima partida, lista de jogadores, acoes de admin
+  - **RANKING**: Ranking dos jogadores da pelada
 
-**Problema atual:** Lista simples sem separacao por status
+---
 
-**Inspiracao Appito:**
-- Secoes colapsaveis: "X Dentro", "X Lista de espera", "X Fora", "X Convidado"
-- Indicador de pagamento ao lado de cada jogador
-- Badge de posicao (VOL, GOL, etc.) no avatar
-- Opcao "INSERIR QUEM NAO ESTA NO APP"
+## 2. MatchLive - Modo Partida ao Vivo
 
-**Proposta:**
-- Reorganizar lista em secoes expandiveis por status
-- Adicionar badge de posicao sobre o avatar
-- Melhorar indicador de ADMIN/organizador
+### O que faz:
+- Cronometro com controles (iniciar, pausar, resetar)
+- Lista de jogadores confirmados com contadores de gols/assists/defesas
+- Botoes de acao rapida para cada jogador (incrementar stats)
 
-### 3. Marcar Estatisticas (PlayerStatsForm)
+### Fluxo:
+1. Admin clica em "Iniciar Partida" no PeladaDetails
+2. Status do match muda para `in_progress`
+3. Redireciona para `/match/:matchId/live`
+4. Cronometro inicia automaticamente
+5. Admin pode pausar/resetar cronometro
+6. Admin pode adicionar stats aos jogadores em tempo real
+7. Ao encerrar, salva stats e muda status para `finished`
 
-**Problema atual:** Formulario simples com inputs
+### Componentes a criar:
+- `MatchTimer.tsx` - Cronometro visual com controles
+- `pages/MatchLive.tsx` - Pagina completa do modo ao vivo
 
-**Inspiracao Appito:**
-- Card FIFA grande no centro com iniciais do jogador
-- Botoes +/- grandes para incrementar/decrementar
-- Icones coloridos por categoria (gols, assists, defesas)
-- Botao "Nao veio" para marcar ausencia
+### Alteracoes no banco:
+- Adicionar coluna `started_at` na tabela `matches` para persistir inicio do cronometro
 
-**Proposta:**
-- Redesenhar o form com card FIFA centralizado
-- Usar botoes +/- circulares ao inves de input numerico
-- Adicionar iconografia colorida padronizada
-- Botao de "Nao veio" para facilitar marcacao de ausencias
+---
 
-### 4. Modo Partida ao Vivo
+## 3. Lista de Espera Automatica
 
-**Problema atual:** Nao existe
+### O que faz:
+- Quando a partida atinge `max_players` confirmados, novos jogadores entram na lista de espera
+- Se alguem cancelar, o primeiro da lista de espera e promovido automaticamente
 
-**Inspiracao Appito:**
-- Cronometro grande no topo
-- Lista de jogadores com stats em tempo real
-- Botoes ZERAR e INICIAR para controle
-- Botoes ENCERRAR E SAIR / SEPARAR TIMES
+### Implementacao:
+- Adicionar novo status `Lista de Espera` ao enum `participant_status`
+- Modificar logica de confirmacao:
+  - Se `confirmedCount >= max_players`, status = 'Lista de Espera'
+  - Senao, status = 'Confirmado'
+- Criar trigger no banco para promover automaticamente quando alguem sair
+- Exibir secao de lista de espera no `MatchParticipants`
 
-**Proposta:**
-- Criar nova pagina "MatchLive" com cronometro integrado
-- Tabela de jogadores com gols/assists/defesas editaveis
-- Controles de cronometro (iniciar/pausar/zerar)
-- Botoes de acao na parte inferior
+### Alteracoes no banco:
+- Adicionar `'Lista de Espera'` ao enum `participant_status`
+- Criar funcao SQL para promocao automatica
 
-### 5. Criar Pelada (CreatePelada)
+---
 
-**Problema atual:** Formulario funcional mas sem extras
+## 4. Controle Financeiro
 
-**Inspiracao Appito:**
-- Campos de preco (avulso e mensal)
-- Slider para faixa de idade
-- Opcoes de privacidade (Publico, Amigos, Apenas Convidados)
-- Switches para configuracoes extras
+### O que faz:
+- Definir preco por jogo na pelada (opcional)
+- Marcar status de pagamento por jogador na partida
+- Exibir resumo financeiro (total arrecadado, pendentes)
 
-**Proposta:**
-- Adicionar campo de preco por jogo (opcional)
-- Implementar seletor de privacidade com icones
-- Adicionar switches de configuracao (aprovar jogadores, mostrar telefone)
+### Implementacao:
+- Adicionar campo `price_per_game` na tabela `peladas`
+- Adicionar campo `paid` (boolean) na tabela `match_participants`
+- Exibir indicador de pagamento na lista de jogadores
+- Permitir admin marcar como pago/nao pago
+- Mostrar resumo financeiro no card da partida
 
-### 6. Bottom Action Bar
+### Alteracoes no banco:
+- `peladas`: adicionar `price_per_game` (decimal, opcional)
+- `match_participants`: adicionar `paid` (boolean, default false)
 
-**Problema atual:** Botoes de acao espalhados pela interface
+---
 
-**Inspiracao Appito:**
-- Barra fixa na parte inferior com 2 botoes principais
-- Cores vibrantes (lime green) para destaque
-- Acao principal a direita, secundaria a esquerda
+## 5. Melhorias nas Notificacoes
 
-**Proposta:**
-- Implementar ActionBar component reutilizavel
-- Usar em PeladaDetails, MatchParticipants, TeamDraw
+### O que faz:
+- Timer visual mostrando tempo restante para confirmar
+- Contador de "falta X dias para a partida"
+- Melhorar botao de lembrete do WhatsApp
 
-### 7. Estatisticas Pos-Jogo
-
-**Problema atual:** Tabela simples
-
-**Inspiracao Appito:**
-- Countdown para fim das avaliacoes
-- Colunas para GOLS, ASSIST, DEF, AVAL
-- Toggle para marcar conclusao de avaliacao
-
-**Proposta:**
-- Adicionar timer visual mostrando tempo restante para votar
-- Melhorar tabela de stats com colunas claras
-- Indicador visual de quem ja foi avaliado
+### Implementacao:
+- Criar `MatchCountdown.tsx` - Exibe tempo ate a partida
+- Adicionar badge visual no card da proxima partida (HOJE, AMANHA, EM X DIAS)
+- Melhorar texto do lembrete WhatsApp para incluir mais informacoes
 
 ---
 
 ## Secao Tecnica
 
-### Novos Componentes a Criar
+### Novos Componentes
 
 ```text
 src/components/
-  PeladaCoverImage.tsx    # Hero image com overlay
-  TabsNavigation.tsx       # Tabs horizontal estilo Appito
-  BottomActionBar.tsx      # Barra inferior com 2 botoes
-  CollapsibleSection.tsx   # Secao expansivel para lista de jogadores
-  StatCounter.tsx          # Botoes +/- para incrementar stats
-  PositionBadge.tsx        # Badge de posicao sobre avatar
-  MatchTimer.tsx           # Cronometro para partida ao vivo
-  VotingCountdown.tsx      # Timer para fim das avaliacoes
+  MatchTimer.tsx          # Cronometro para partida ao vivo
+  MatchCountdown.tsx      # Contador de dias ate a partida
+  PaymentBadge.tsx        # Indicador de pagamento (pago/pendente)
+
+src/pages/
+  MatchLive.tsx           # Pagina de partida ao vivo
 ```
 
 ### Alteracoes de Banco de Dados
 
 ```text
-peladas:
-  + cover_image_url: text (opcional)
-  + price_per_game: decimal (opcional)
-  + privacy_level: enum (public, friends, invite_only)
-  + auto_approve_players: boolean
+-- Migration 1: Adicionar started_at para cronometro
+ALTER TABLE matches ADD COLUMN started_at timestamptz;
 
-matches:
-  + started_at: timestamptz (para cronometro)
+-- Migration 2: Adicionar lista de espera
+ALTER TYPE participant_status ADD VALUE 'Lista de Espera';
+
+-- Migration 3: Adicionar controle financeiro
+ALTER TABLE peladas ADD COLUMN price_per_game decimal(10,2);
+ALTER TABLE match_participants ADD COLUMN paid boolean DEFAULT false;
 ```
 
-### Paginas a Modificar
+### Paginas/Componentes a Modificar
 
-1. **PeladaDetails.tsx**
-   - Adicionar hero section
-   - Implementar tabs (INFO, JOGADORES, ESTATISTICAS)
-   - Adicionar BottomActionBar
-
-2. **MatchParticipants.tsx**
-   - Reorganizar em secoes colapsaveis
-   - Adicionar badges de posicao
-
-3. **PlayerStatsForm.tsx**
-   - Redesenhar com card FIFA central
-   - Usar StatCounter +/- buttons
-
-4. **CreatePelada.tsx**
-   - Adicionar novos campos opcionais
-
-5. **Nova: MatchLive.tsx**
-   - Cronometro + lista de stats editaveis
+| Arquivo | Modificacao |
+|---------|-------------|
+| `PeladaDetails.tsx` | Adicionar tabs, BottomActionBar, botao iniciar partida |
+| `UpcomingMatch.tsx` | Adicionar contador de dias, logica de lista de espera |
+| `MatchParticipants.tsx` | Adicionar secao lista de espera, indicador de pagamento |
+| `CreatePelada.tsx` | Adicionar campo de preco por jogo |
+| `App.tsx` | Adicionar rota `/match/:matchId/live` |
 
 ### Prioridade de Implementacao
 
-| Prioridade | Feature | Complexidade |
-|------------|---------|--------------|
-| Alta | BottomActionBar | Baixa |
-| Alta | Tabs Navigation | Baixa |
-| Alta | StatCounter (+/-) | Baixa |
-| Media | Secoes Colapsaveis | Media |
-| Media | Hero Image | Media |
-| Media | PositionBadge | Baixa |
-| Baixa | MatchLive + Timer | Alta |
-| Baixa | Privacy settings | Media |
+| Ordem | Feature | Complexidade |
+|-------|---------|--------------|
+| 1 | Tabs no PeladaDetails | Baixa |
+| 2 | MatchLive + Timer | Media |
+| 3 | Lista de Espera | Media |
+| 4 | Controle Financeiro | Baixa |
+| 5 | Melhorias Notificacoes | Baixa |
 
-### Ordem de Execucao Sugerida
+### Ordem de Execucao
 
-1. Criar componentes base (BottomActionBar, TabsNavigation, StatCounter)
-2. Refatorar PeladaDetails com tabs e action bar
-3. Refatorar PlayerStatsForm com visual melhorado
-4. Refatorar MatchParticipants com secoes colapsaveis
-5. Adicionar campos opcionais em CreatePelada
-6. Implementar MatchLive (cronometro em tempo real)
+1. Criar migrations para banco de dados
+2. Refatorar PeladaDetails com tabs
+3. Criar MatchTimer e pagina MatchLive
+4. Implementar logica de lista de espera
+5. Adicionar controle financeiro
+6. Melhorar sistema de lembretes
 
