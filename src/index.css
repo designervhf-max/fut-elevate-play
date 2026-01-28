@@ -32,6 +32,10 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
+    /* Warning - Yellow */
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 4%;
+
     --border: 0 0% 14%;
     --input: 0 0% 10%;
     --ring: 78 100% 50%;
