@@ -1,66 +1,101 @@
 
-# Plano de Implementacao: Funcionalidades Restantes
 
-## Status: EM PROGRESSO ✅
+# Plano: Redesign Tipografico Clean
 
-### Concluído:
-- [x] Migration de banco: started_at, Lista de Espera, price_per_game, paid
-- [x] Trigger para promoção automática da lista de espera
-- [x] Componente MatchTimer (cronômetro)
-- [x] Componente MatchCountdown (badge de dias até a partida)
-- [x] Componente PaymentBadge (indicador de pagamento)
-- [x] Componente PeladaInfoTab (aba de informações)
-- [x] Página MatchLive (partida ao vivo com timer e stats)
-- [x] PeladaDetails com sistema de tabs (INFO/PARTIDA/RANKING)
-- [x] BottomActionBar no PeladaDetails
-- [x] Lógica de lista de espera no UpcomingMatch
-- [x] Exibição de lista de espera no MatchParticipants
-- [x] Campo price_per_game no CreatePelada
-- [x] Rota /match/:matchId/live adicionada
+## Objetivo
+Transformar a tipografia do aplicativo de um estilo brutalista/esportivo para um visual moderno, clean e mais fino, mantendo a identidade visual escura e minimalista.
 
-### Pendente:
-- [ ] Integrar PaymentBadge na lista de jogadores (exibir status de pagamento)
-- [ ] Permitir admin marcar jogador como pago/não pago
-- [ ] Resumo financeiro no card da partida
-- [ ] Melhorar texto do lembrete WhatsApp com mais informações
+## Mudancas Propostas
 
----
+### 1. Substituicao da Fonte Display
 
-## Resumo
+**Antes:** Bebas Neue (condensada, pesada, muito esportiva)
 
-Este plano cobre a implementacao das funcionalidades identificadas como pendentes:
+**Depois:** Plus Jakarta Sans ou DM Sans (moderna, geometrica, elegante)
 
-1. **PeladaDetails com Tabs e Hero Section** ✅ CONCLUÍDO
-2. **MatchLive com Cronometro** ✅ CONCLUÍDO  
-3. **Lista de Espera Automatica** ✅ CONCLUÍDO
-4. **Controle Financeiro** 🔄 PARCIALMENTE (falta UI de pagamento)
-5. **Melhorias nas Notificacoes** 🔄 PARCIALMENTE (MatchCountdown criado)
+Ambas sao fontes sans-serif modernas com:
+- Multiplos pesos (de 200 a 800)
+- Excelente legibilidade em telas
+- Estetica contemporanea usada em apps como Linear, Vercel, Nubank
 
----
+### 2. Hierarquia Tipografica Refinada
 
-## Componentes Criados
+| Elemento | Atual | Proposto |
+|----------|-------|----------|
+| Headers principais | Bebas Neue, text-xl, tracking-wider | Plus Jakarta, text-lg, font-semibold |
+| Titulos de secao | font-semibold | font-medium |
+| Rating OVR | text-5xl font-display | text-4xl font-bold |
+| Labels de atributos | font-semibold | font-medium |
+| Textos de botoes | uppercase + tracking-wider | Title case, sem tracking |
+| Subtitulos | font-semibold | font-normal ou font-medium |
 
-```text
-src/components/
-  MatchTimer.tsx          ✅ Cronometro para partida ao vivo
-  MatchCountdown.tsx      ✅ Contador de dias ate a partida
-  PaymentBadge.tsx        ✅ Indicador de pagamento (pago/pendente)
-  PeladaInfoTab.tsx       ✅ Aba de informações da pelada
+### 3. Arquivos a Modificar
 
-src/pages/
-  MatchLive.tsx           ✅ Pagina de partida ao vivo
+**Arquivos de Configuracao (2)**
+- `src/index.css` - Trocar import da fonte e variaveis CSS
+- `tailwind.config.ts` - Atualizar fontFamily
+
+**Componentes de UI (6)**
+- `src/components/ui/button.tsx` - Remover uppercase e tracking de variantes sport
+- `src/components/ui/card.tsx` - Ajustar pesos
+- `src/components/SectionCard.tsx` - Reduzir peso do titulo
+- `src/components/PlayerCard.tsx` - Refinar tipografia do card FIFA
+- `src/components/OverallStats.tsx` - Ajustar tamanhos
+- `src/components/MvpShowcase.tsx` - Reduzir peso
+
+**Paginas Principais (8)**
+- `src/pages/Index.tsx` - Logo loading
+- `src/pages/Login.tsx` - Botoes e labels
+- `src/pages/Home.tsx` - Header e stats
+- `src/pages/Profile.tsx` - Titulos de secao
+- `src/pages/PeladaDetails.tsx` - Nome da pelada e tabs
+- `src/pages/TeamDraw.tsx` - Titulos de times
+- `src/pages/Setup.tsx` - Titulo e opcoes
+- `src/pages/MatchLive.tsx` - Timer e placares
+
+**Componentes Secundarios (estimativa: 10-15)**
+- Diversos componentes que usam `font-display`, `font-semibold`, `font-bold`
+
+### 4. Detalhes Tecnicos
+
+**Alteracao em index.css:**
+```css
+/* Antes */
+@import url('...Bebas+Neue&family=Inter...');
+--font-display: 'Bebas Neue', sans-serif;
+
+/* Depois */
+@import url('...Plus+Jakarta+Sans:wght@400;500;600;700...');
+--font-display: 'Plus Jakarta Sans', sans-serif;
 ```
 
-## Alterações de Banco de Dados Aplicadas
-
-```sql
--- ✅ Concluído
-ALTER TABLE matches ADD COLUMN started_at timestamptz;
-ALTER TYPE participant_status ADD VALUE 'Lista de Espera';
-ALTER TABLE peladas ADD COLUMN price_per_game decimal(10,2);
-ALTER TABLE match_participants ADD COLUMN paid boolean DEFAULT false;
-
--- Trigger para promoção automática ✅
-CREATE FUNCTION promote_from_waitlist() ...
-CREATE TRIGGER trigger_promote_from_waitlist ...
+**Alteracao em tailwind.config.ts:**
+```typescript
+fontFamily: {
+  display: ['Plus Jakarta Sans', 'sans-serif'],
+  body: ['Plus Jakarta Sans', 'sans-serif'], // unificar
+}
 ```
+
+**Padrao de reducao de peso:**
+- `font-bold` (700) vira `font-semibold` (600) ou `font-medium` (500)
+- `font-semibold` (600) vira `font-medium` (500)
+- Remover `tracking-wider` de titulos
+
+### 5. Ordem de Implementacao
+
+1. Atualizar fontes nos arquivos de configuracao
+2. Ajustar componentes de UI base (button, card)
+3. Refinar PlayerCard (elemento visual principal)
+4. Atualizar paginas uma por uma
+5. Revisar componentes secundarios
+6. Testar em diferentes telas
+
+### 6. Resultado Esperado
+
+- Visual mais sofisticado e moderno
+- Leitura mais confortavel
+- Consistencia tipografica em todo o app
+- Manutencao da hierarquia visual
+- Estetica similar a apps premium como Nubank, Strava, Linear
+
