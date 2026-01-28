@@ -7,7 +7,10 @@ import { Input } from '@/components/ui/input';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import PositionBadge from '@/components/PositionBadge';
 import BottomActionBar from '@/components/BottomActionBar';
+import PaymentBadge from '@/components/PaymentBadge';
+import FinancialSummary from '@/components/FinancialSummary';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 type Participant = {
   id: string;
@@ -15,6 +18,7 @@ type Participant = {
   guest_name: string | null;
   guest_position: string | null;
   status: string;
+  paid: boolean;
   profile?: {
     id: string;
     name: string;
@@ -30,44 +34,67 @@ type MatchInfo = {
   pelada: {
     id: string;
     name: string;
+    price_per_game: number | null;
   };
 };
 
 const MatchParticipants = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [matchInfo, setMatchInfo] = useState<MatchInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!matchId) return;
 
-      // Fetch match info
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setUserId(session.user.id);
+      }
+
+      // Fetch match info with pelada details including price
       const { data: match } = await supabase
         .from('matches')
         .select(`
           id,
           match_date,
-          pelada:peladas(id, name)
+          pelada:peladas(id, name, price_per_game)
         `)
         .eq('id', matchId)
         .single();
 
       if (match) {
+        const peladaData = Array.isArray(match.pelada) ? match.pelada[0] : match.pelada;
         setMatchInfo({
           id: match.id,
           match_date: match.match_date,
-          pelada: Array.isArray(match.pelada) ? match.pelada[0] : match.pelada
+          pelada: peladaData
         });
+
+        // Check if user is admin of this pelada
+        if (session) {
+          const { data: membership } = await supabase
+            .from('pelada_members')
+            .select('role')
+            .eq('pelada_id', peladaData.id)
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          
+          setIsAdmin(membership?.role === 'admin');
+        }
       }
 
-      // Fetch participants
+      // Fetch participants including paid status
       const { data: participantsData } = await supabase
         .from('match_participants')
-        .select('id, user_id, guest_name, guest_position, status')
+        .select('id, user_id, guest_name, guest_position, status, paid')
         .eq('match_id', matchId);
 
       if (participantsData) {
@@ -92,6 +119,7 @@ const MatchParticipants = () => {
 
         const enrichedParticipants = participantsData.map(p => ({
           ...p,
+          paid: p.paid ?? false,
           profile: p.user_id ? profiles[p.user_id] : undefined
         }));
 
@@ -120,6 +148,28 @@ const MatchParticipants = () => {
     };
   }, [participants, searchQuery]);
 
+  const handleTogglePaid = async (participantId: string, currentPaid: boolean) => {
+    if (!isAdmin) return;
+
+    const { error } = await supabase
+      .from('match_participants')
+      .update({ paid: !currentPaid })
+      .eq('id', participantId);
+
+    if (error) {
+      toast({ title: 'Erro', description: 'Não foi possível atualizar pagamento', variant: 'destructive' });
+    } else {
+      toast({ title: !currentPaid ? 'Pagamento confirmado' : 'Pagamento removido' });
+      // Update local state
+      setParticipants(prev => prev.map(p => 
+        p.id === participantId ? { ...p, paid: !currentPaid } : p
+      ));
+    }
+  };
+
+  const pricePerGame = matchInfo?.pelada?.price_per_game ?? 0;
+  const showPaymentFeature = pricePerGame > 0;
+
   const renderParticipantCard = (participant: Participant, index: number) => {
     const isGuest = !participant.user_id;
     const name = isGuest ? participant.guest_name : participant.profile?.name;
@@ -127,6 +177,7 @@ const MatchParticipants = () => {
     const avatar = isGuest ? null : participant.profile?.avatar_url;
     const rating = isGuest ? 50 : participant.profile?.overall_rating;
     const initials = name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
+    const showPayment = showPaymentFeature && participant.status === 'Confirmado';
 
     return (
       <div 
@@ -163,6 +214,16 @@ const MatchParticipants = () => {
             OVR <span className="text-primary font-bold">{rating}</span>
           </p>
         </div>
+
+        {/* Payment Badge */}
+        {showPayment && (
+          <PaymentBadge
+            paid={participant.paid}
+            price={pricePerGame}
+            onClick={isAdmin ? () => handleTogglePaid(participant.id, participant.paid) : undefined}
+            interactive={isAdmin}
+          />
+        )}
       </div>
     );
   };
@@ -179,6 +240,7 @@ const MatchParticipants = () => {
   const waitlistCount = groupedParticipants.waitlist.length;
   const pendingCount = groupedParticipants.pending.length;
   const refusedCount = groupedParticipants.refused.length;
+  const paidCount = groupedParticipants.confirmed.filter(p => p.paid).length;
 
   return (
     <div className="min-h-screen bg-background pb-24 animate-fade-in">
@@ -232,6 +294,17 @@ const MatchParticipants = () => {
             </div>
           </div>
         </div>
+
+        {/* Financial Summary - only show if price is set */}
+        {showPaymentFeature && confirmedCount > 0 && (
+          <div className="mb-5">
+            <FinancialSummary
+              pricePerGame={pricePerGame}
+              confirmedCount={confirmedCount}
+              paidCount={paidCount}
+            />
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative mb-5">

@@ -11,6 +11,8 @@ import PlayerStatsForm from './PlayerStatsForm';
 import MatchVoting from './MatchVoting';
 import PlayerRatingsForm from './PlayerRatingsForm';
 import MatchReminderButton from './MatchReminderButton';
+import PaymentBadge from './PaymentBadge';
+import FinancialSummary from './FinancialSummary';
 import {
   CalendarDays,
   Clock,
@@ -58,6 +60,7 @@ type MatchParticipant = {
   stats_submitted: boolean;
   rating: number | null;
   team: number | null;
+  paid: boolean;
   profile?: {
     id: string;
     name: string;
@@ -75,6 +78,7 @@ type Pelada = {
   time: string;
   game_type: string;
   max_players: number;
+  price_per_game: number | null;
 };
 
 interface UpcomingMatchProps {
@@ -132,6 +136,7 @@ const UpcomingMatch = ({
   const waitlistParticipants = participants.filter(p => p.status === 'Lista de Espera');
   const confirmedCount = confirmedParticipants.length;
   const waitlistCount = waitlistParticipants.length;
+  const paidCount = confirmedParticipants.filter(p => p.paid).length;
   const userSubmittedStats = userParticipation?.stats_submitted ?? false;
   
   // Check if voting is still open (48h after match ended)
@@ -293,6 +298,22 @@ const UpcomingMatch = ({
 
   const handleDataRefresh = async () => {
     await onRefresh();
+  };
+
+  const handleTogglePaid = async (participantId: string, currentPaid: boolean) => {
+    if (!isAdmin) return;
+
+    const { error } = await supabase
+      .from('match_participants')
+      .update({ paid: !currentPaid })
+      .eq('id', participantId);
+
+    if (error) {
+      toast({ title: 'Erro', description: 'Não foi possível atualizar pagamento', variant: 'destructive' });
+    } else {
+      toast({ title: !currentPaid ? 'Pagamento confirmado' : 'Pagamento removido' });
+      await onRefresh();
+    }
   };
 
   const handleRemoveParticipant = async () => {
@@ -666,6 +687,15 @@ ${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas r
         </div>
       )}
 
+      {/* Financial Summary - only show if price is set and there are confirmed players */}
+      {pelada.price_per_game && pelada.price_per_game > 0 && confirmedCount > 0 && (
+        <FinancialSummary
+          pricePerGame={pelada.price_per_game}
+          confirmedCount={confirmedCount}
+          paidCount={paidCount}
+        />
+      )}
+
       {/* Players List */}
       <div>
         <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
@@ -684,6 +714,7 @@ ${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas r
               const position = isGuest ? participant.guest_position : participant.profile?.position;
               const avatar = isGuest ? null : participant.profile?.avatar_url;
               const rating = isGuest ? 50 : participant.profile?.overall_rating;
+              const showPayment = pelada.price_per_game && pelada.price_per_game > 0 && participant.status === 'Confirmado';
 
               return (
                 <div key={participant.id} className="fifa-card p-3 flex items-center justify-between">
@@ -714,10 +745,21 @@ ${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas r
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {getStatusIcon(participant.status)}
-                    <span className={`text-xs ${getStatusColor(participant.status)}`}>
-                      {participant.status}
-                    </span>
+                    {/* Payment Badge - only for confirmed players when price is set */}
+                    {showPayment && (
+                      <PaymentBadge
+                        paid={participant.paid}
+                        price={pelada.price_per_game || undefined}
+                        onClick={isAdmin ? () => handleTogglePaid(participant.id, participant.paid) : undefined}
+                        interactive={isAdmin}
+                      />
+                    )}
+                    {!showPayment && getStatusIcon(participant.status)}
+                    {!showPayment && (
+                      <span className={`text-xs ${getStatusColor(participant.status)}`}>
+                        {participant.status}
+                      </span>
+                    )}
                     {isAdmin && match.status !== 'finished' && (
                       <button
                         onClick={() => openRemoveDialog(participant.id)}
