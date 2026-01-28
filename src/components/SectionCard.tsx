@@ -30,7 +30,7 @@ const SectionCard = ({
         onClick={onClick}
         disabled={!onClick}
       >
-        <h3 className="text-base font-semibold text-foreground">{title}</h3>
+        <h3 className="text-base font-medium text-foreground">{title}</h3>
         <div className="flex items-center gap-2 text-muted-foreground">
           {rightLabel && <span className="text-sm">{rightLabel}</span>}
           {showArrow && (

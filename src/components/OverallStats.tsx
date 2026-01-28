@@ -18,7 +18,7 @@ const OverallStats = ({ profile }: OverallStatsProps) => {
     <div className="flex items-center gap-4">
       {/* Overall */}
       <div className="flex items-center gap-2">
-        <span className="text-4xl font-display text-primary">{profile.overall_rating}</span>
+        <span className="text-4xl font-bold text-primary">{profile.overall_rating}</span>
       </div>
       
       {/* Divider */}
@@ -29,7 +29,7 @@ const OverallStats = ({ profile }: OverallStatsProps) => {
         {attributes.map((attr) => (
           <div key={attr.label} className="text-center">
             <div className="text-xs text-muted-foreground">{attr.label}</div>
-            <div className="text-sm font-semibold text-foreground">{attr.value}</div>
+            <div className="text-sm font-medium text-foreground">{attr.value}</div>
           </div>
         ))}
       </div>

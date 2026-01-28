@@ -133,7 +133,7 @@ const Login = () => {
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              'ENTRAR'
+              'Entrar'
             )}
           </Button>
         </form>
@@ -153,7 +153,7 @@ const Login = () => {
           className="w-full"
           onClick={() => navigate('/register')}
         >
-          CRIAR CONTA
+          Criar Conta
         </Button>
       </div>
 

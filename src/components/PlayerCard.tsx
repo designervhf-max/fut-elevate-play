@@ -38,10 +38,10 @@ const PlayerCard = ({ profile, showShareButton = false, onShare }: PlayerCardPro
         {/* Top Section - Rating & Position */}
         <div className="flex items-start justify-between mb-4">
           <div>
-            <div className="text-5xl font-display text-primary leading-none">
+            <div className="text-5xl font-bold text-primary leading-none">
               {profile.overall_rating}
             </div>
-            <div className="text-lg font-display text-primary/80 mt-1">
+            <div className="text-lg font-medium text-primary/80 mt-1">
               {getPositionAbbr(profile.position)}
             </div>
           </div>
@@ -60,7 +60,7 @@ const PlayerCard = ({ profile, showShareButton = false, onShare }: PlayerCardPro
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-3xl font-display text-muted-foreground">
+              <span className="text-3xl font-semibold text-muted-foreground">
                 {getInitials(profile.name)}
               </span>
             )}
@@ -69,8 +69,8 @@ const PlayerCard = ({ profile, showShareButton = false, onShare }: PlayerCardPro
 
         {/* Player Name */}
         <div className="text-center mb-4">
-          <h2 className="text-xl font-display tracking-wider text-foreground">
-            {profile.name.toUpperCase()}
+          <h2 className="text-xl font-semibold text-foreground">
+            {profile.name}
           </h2>
         </div>
 
@@ -78,19 +78,19 @@ const PlayerCard = ({ profile, showShareButton = false, onShare }: PlayerCardPro
         <div className="flex justify-center gap-6 pt-2 border-t border-border">
           <div className="text-center">
             <div className="text-xs text-muted-foreground mb-1">ATA</div>
-            <div className="text-lg font-semibold text-foreground">{profile.attack_rating || 50}</div>
+            <div className="text-lg font-medium text-foreground">{profile.attack_rating || 50}</div>
           </div>
           <div className="text-center">
             <div className="text-xs text-muted-foreground mb-1">DEF</div>
-            <div className="text-lg font-semibold text-foreground">{profile.defense_rating || 50}</div>
+            <div className="text-lg font-medium text-foreground">{profile.defense_rating || 50}</div>
           </div>
           <div className="text-center">
             <div className="text-xs text-muted-foreground mb-1">FOR</div>
-            <div className="text-lg font-semibold text-foreground">{profile.strength_rating || 50}</div>
+            <div className="text-lg font-medium text-foreground">{profile.strength_rating || 50}</div>
           </div>
           <div className="text-center">
             <div className="text-xs text-muted-foreground mb-1">HAB</div>
-            <div className="text-lg font-semibold text-foreground">{profile.skill_rating || 50}</div>
+            <div className="text-lg font-medium text-foreground">{profile.skill_rating || 50}</div>
           </div>
         </div>
       </div>

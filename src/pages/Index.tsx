@@ -44,7 +44,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
       <div className="text-center animate-scale-in w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
-        <h1 className="text-6xl sm:text-7xl md:text-8xl font-display tracking-wider text-primary mb-6">
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-primary mb-6">
           ELEVEFUT
         </h1>
         <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-primary mx-auto" />

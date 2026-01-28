@@ -269,7 +269,7 @@ const MatchLive = () => {
               <ChevronLeft className="h-6 w-6" />
             </button>
             <div>
-              <h1 className="text-lg font-display tracking-wider">{pelada.name}</h1>
+              <h1 className="text-lg font-semibold">{pelada.name}</h1>
               <p className="text-xs text-muted-foreground">Partida ao Vivo</p>
             </div>
           </div>

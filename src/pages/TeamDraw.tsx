@@ -213,7 +213,7 @@ ${teamBNames}
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <h1 className="text-xl font-display tracking-wider">SORTEAR TIMES</h1>
+          <h1 className="text-xl font-semibold">Sortear Times</h1>
         </div>
       </header>
 
@@ -240,7 +240,7 @@ ${teamBNames}
               >
                 <Minus className="h-4 w-4" />
               </Button>
-              <div className="text-4xl font-display text-primary min-w-[60px] text-center">
+              <div className="text-4xl font-bold text-primary min-w-[60px] text-center">
                 {playersPerTeam}
               </div>
               <Button
@@ -273,7 +273,7 @@ ${teamBNames}
             {/* Team A */}
             <div className="fifa-card p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-display text-lg tracking-wider text-primary">TIME A</h3>
+                <h3 className="font-semibold text-lg text-primary">Time A</h3>
                 <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
                   OVR {getTeamAverage(teamA)}
                 </span>
@@ -300,7 +300,7 @@ ${teamBNames}
             {/* Team B */}
             <div className="fifa-card p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-display text-lg tracking-wider text-primary">TIME B</h3>
+                <h3 className="font-semibold text-lg text-primary">Time B</h3>
                 <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
                   OVR {getTeamAverage(teamB)}
                 </span>

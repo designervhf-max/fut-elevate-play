@@ -64,7 +64,7 @@ const Profile = () => {
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
-              <h1 className="text-lg font-semibold">{profile.name}</h1>
+              <h1 className="text-lg font-medium">{profile.name}</h1>
             </div>
             <button 
               onClick={() => navigate('/profile/edit')}
