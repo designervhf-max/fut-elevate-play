@@ -61,8 +61,8 @@ serve(async (req) => {
         const authClient = createClient(supabaseUrl, supabaseAnonKey, {
           global: { headers: { Authorization: authHeader } },
         });
-        const { data, error } = await authClient.auth.getClaims(token);
-        if (!error && data?.claims) {
+        const { data: { user }, error } = await authClient.auth.getUser();
+        if (!error && user) {
           isAuthenticated = true;
           console.log('Authenticated via user JWT');
         }
