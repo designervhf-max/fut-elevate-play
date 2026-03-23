@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,6 +39,7 @@ const PeladaSettingsDialog = ({
   matchDate,
 }: PeladaSettingsDialogProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -65,6 +67,7 @@ const PeladaSettingsDialog = ({
     }
 
     toast({ title: 'Pelada excluida' });
+    await queryClient.invalidateQueries({ queryKey: ['peladas'] });
     navigate('/games');
   };
 
