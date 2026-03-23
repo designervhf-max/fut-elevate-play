@@ -17,7 +17,7 @@ const MatchTimer = ({
 }: MatchTimerProps) => {
   const [seconds, setSeconds] = useState(initialTime);
   const [isRunning, setIsRunning] = useState(externalIsRunning ?? false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Sync with external running state
   useEffect(() => {

@@ -67,6 +67,7 @@ const PeladaSettingsDialog = ({
     }
 
     toast({ title: 'Pelada excluida' });
+    await queryClient.invalidateQueries({ queryKey: ['peladas'] });
     navigate('/games');
   };
 
