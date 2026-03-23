@@ -39,6 +39,7 @@ const PeladaSettingsDialog = ({
   matchDate,
 }: PeladaSettingsDialogProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
