@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { getSetupRoute } from '@/lib/checkUserSetup';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -11,18 +12,8 @@ const Index = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        // Check if user has completed setup
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('preferred_game_type')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (profile && !profile.preferred_game_type) {
-          navigate('/setup');
-        } else {
-          navigate('/home');
-        }
+        const route = await getSetupRoute(session.user.id);
+        navigate(route);
       } else {
         navigate('/login');
       }
@@ -30,9 +21,10 @@ const Index = () => {
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
-        navigate('/home');
+        const route = await getSetupRoute(session.user.id);
+        navigate(route);
       } else {
         navigate('/login');
       }

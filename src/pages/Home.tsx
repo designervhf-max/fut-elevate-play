@@ -10,6 +10,7 @@ import HomeSkeleton from '@/components/skeletons/HomeSkeleton';
 import { Calendar, Plus, LogOut } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { useQueryClient } from '@tanstack/react-query';
+import { getSetupRoute } from '@/lib/checkUserSetup';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -22,6 +23,12 @@ const Home = () => {
       
       if (!session) {
         navigate('/login');
+        return;
+      }
+
+      const route = await getSetupRoute(session.user.id);
+      if (route !== '/home') {
+        navigate(route);
         return;
       }
 
@@ -48,7 +55,6 @@ const Home = () => {
   };
 
   const handleAvatarUpdate = (url: string) => {
-    // Invalidate profile cache to refetch with new avatar
     queryClient.invalidateQueries({ queryKey: ['profile', userId] });
   };
 

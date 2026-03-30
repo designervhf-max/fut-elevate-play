@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 import elevefutLogo from '@/assets/elevefut-logo.gif';
 import { lovable } from '@/integrations/lovable/index';
+import { getSetupRoute } from '@/lib/checkUserSetup';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -53,7 +54,13 @@ const Login = () => {
       sessionStorage.removeItem('joinGameId');
       navigate(`/join/${joinGameId}`);
     } else {
-      navigate('/home');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const route = await getSetupRoute(user.id);
+        navigate(route);
+      } else {
+        navigate('/home');
+      }
     }
   };
 
