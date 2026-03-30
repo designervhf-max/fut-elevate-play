@@ -10,6 +10,7 @@ import HomeSkeleton from '@/components/skeletons/HomeSkeleton';
 import { Calendar, Plus, LogOut } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { useQueryClient } from '@tanstack/react-query';
+import { getSetupRoute } from '@/lib/checkUserSetup';
 
 const Home = () => {
   const navigate = useNavigate();
