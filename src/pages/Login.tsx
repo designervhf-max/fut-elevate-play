@@ -54,7 +54,13 @@ const Login = () => {
       sessionStorage.removeItem('joinGameId');
       navigate(`/join/${joinGameId}`);
     } else {
-      navigate('/home');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const route = await getSetupRoute(user.id);
+        navigate(route);
+      } else {
+        navigate('/home');
+      }
     }
   };
 

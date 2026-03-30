@@ -12,18 +12,8 @@ const Index = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        // Check if user has completed setup
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('preferred_game_type')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (profile && !profile.preferred_game_type) {
-          navigate('/setup');
-        } else {
-          navigate('/home');
-        }
+        const route = await getSetupRoute(session.user.id);
+        navigate(route);
       } else {
         navigate('/login');
       }

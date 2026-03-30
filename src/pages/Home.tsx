@@ -26,6 +26,12 @@ const Home = () => {
         return;
       }
 
+      const route = await getSetupRoute(session.user.id);
+      if (route !== '/home') {
+        navigate(route);
+        return;
+      }
+
       setUserId(session.user.id);
     };
 
@@ -49,7 +55,6 @@ const Home = () => {
   };
 
   const handleAvatarUpdate = (url: string) => {
-    // Invalidate profile cache to refetch with new avatar
     queryClient.invalidateQueries({ queryKey: ['profile', userId] });
   };
 
