@@ -31,9 +31,10 @@ const Index = () => {
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
-        navigate('/home');
+        const route = await getSetupRoute(session.user.id);
+        navigate(route);
       } else {
         navigate('/login');
       }
