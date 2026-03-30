@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 import elevefutLogo from '@/assets/elevefut-logo.gif';
+import { lovable } from '@/integrations/lovable/index';
 
 const Login = () => {
   const navigate = useNavigate();
