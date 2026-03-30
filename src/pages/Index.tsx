@@ -8,29 +8,34 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        const route = await getSetupRoute(session.user.id);
-        navigate(route);
-      } else {
+    let mounted = true;
+
+    const routeUser = async (session: { user: { id: string } } | null) => {
+      if (!mounted) return;
+      if (!session) {
         navigate('/login');
+        return;
       }
+      const route = await getSetupRoute(session.user.id);
+      if (mounted) navigate(route);
     };
 
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        const route = await getSetupRoute(session.user.id);
-        navigate(route);
-      } else {
-        navigate('/login');
+    // Set up listener FIRST so we catch OAuth redirects
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        routeUser(session);
       }
+    );
+
+    // Then check existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      routeUser(session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   return (
