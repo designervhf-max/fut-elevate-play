@@ -19,6 +19,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Calibration from "./pages/Calibration";
 import MatchParticipants from "./pages/MatchParticipants";
 import MatchLive from "./pages/MatchLive";
+import Plans from "./pages/Plans";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
