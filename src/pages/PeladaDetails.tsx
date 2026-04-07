@@ -260,7 +260,9 @@ const PeladaDetails = () => {
                 <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
                   Jogos Anteriores
                 </h3>
-                <PastMatchesList matches={pastMatches} peladaId={pelada.id} />
+                <ProFeatureGate feature="match_history" fallbackTitle="Histórico de Partidas">
+                  <PastMatchesList matches={pastMatches} peladaId={pelada.id} />
+                </ProFeatureGate>
               </section>
             )}
           </TabsContent>
