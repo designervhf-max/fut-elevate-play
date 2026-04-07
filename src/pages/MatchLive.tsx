@@ -8,6 +8,7 @@ import MatchTimer from '@/components/MatchTimer';
 import StatCounter from '@/components/StatCounter';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import PositionBadge from '@/components/PositionBadge';
+import ProFeatureGate from '@/components/ProFeatureGate';
 import {
   ChevronLeft,
   Flag,
@@ -317,58 +318,60 @@ const MatchLive = () => {
             Jogadores ({participants.length})
           </h3>
 
-          <div className="space-y-3">
-            {participants.map((participant) => {
-              const stats = localStats[participant.id] || { goals: 0, assists: 0, saves: 0 };
+          <ProFeatureGate feature="goals_assists" fallbackTitle="Registro de Gols e Assistências">
+            <div className="space-y-3">
+              {participants.map((participant) => {
+                const stats = localStats[participant.id] || { goals: 0, assists: 0, saves: 0 };
 
-              return (
-                <div key={participant.id} className="fifa-card p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={getAvatar(participant) || undefined} />
-                        <AvatarFallback className="bg-primary/20 text-primary text-sm">
-                          {getName(participant).charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <PositionBadge
-                        position={getPosition(participant)}
-                        size="sm"
-                        className="absolute -bottom-1 -right-1"
-                      />
+                return (
+                  <div key={participant.id} className="fifa-card p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="relative">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={getAvatar(participant) || undefined} />
+                          <AvatarFallback className="bg-primary/20 text-primary text-sm">
+                            {getName(participant).charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <PositionBadge
+                          position={getPosition(participant)}
+                          size="sm"
+                          className="absolute -bottom-1 -right-1"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{getName(participant)}</p>
+                        <p className="text-xs text-muted-foreground">{getPosition(participant)}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{getName(participant)}</p>
-                      <p className="text-xs text-muted-foreground">{getPosition(participant)}</p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center justify-around">
-                    <StatCounter
-                      value={stats.goals}
-                      onChange={(v) => updateStat(participant.id, 'goals', v)}
-                      icon={<Target className="h-4 w-4 text-lime" />}
-                      label="Gols"
-                    />
-                    <StatCounter
-                      value={stats.assists}
-                      onChange={(v) => updateStat(participant.id, 'assists', v)}
-                      icon={<Sparkles className="h-4 w-4 text-primary" />}
-                      label="Assists"
-                    />
-                    {isGoalkeeper(participant) && (
+                    <div className="flex items-center justify-around">
                       <StatCounter
-                        value={stats.saves}
-                        onChange={(v) => updateStat(participant.id, 'saves', v)}
-                        icon={<Shield className="h-4 w-4 text-sky-400" />}
-                        label="Defesas"
+                        value={stats.goals}
+                        onChange={(v) => updateStat(participant.id, 'goals', v)}
+                        icon={<Target className="h-4 w-4 text-lime" />}
+                        label="Gols"
                       />
-                    )}
+                      <StatCounter
+                        value={stats.assists}
+                        onChange={(v) => updateStat(participant.id, 'assists', v)}
+                        icon={<Sparkles className="h-4 w-4 text-primary" />}
+                        label="Assists"
+                      />
+                      {isGoalkeeper(participant) && (
+                        <StatCounter
+                          value={stats.saves}
+                          onChange={(v) => updateStat(participant.id, 'saves', v)}
+                          icon={<Shield className="h-4 w-4 text-sky-400" />}
+                          label="Defesas"
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </ProFeatureGate>
         </section>
       </main>
 

@@ -11,6 +11,7 @@ import { Calendar, Plus, LogOut } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { useQueryClient } from '@tanstack/react-query';
 import { getSetupRoute } from '@/lib/checkUserSetup';
+import TrialBanner from '@/components/TrialBanner';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -94,6 +95,9 @@ const Home = () => {
             </button>
           </div>
         </header>
+
+        {/* Trial Banner */}
+        <TrialBanner />
 
         {/* Content */}
         <main className="p-4 space-y-4">

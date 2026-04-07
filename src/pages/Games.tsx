@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getWeekdayLabel, formatNextOccurrence } from '@/lib/weekday';
 import { usePeladas, PeladaWithDetails } from '@/hooks/usePeladas';
+import ProFeatureGate from '@/components/ProFeatureGate';
 
 const Games = () => {
   const navigate = useNavigate();

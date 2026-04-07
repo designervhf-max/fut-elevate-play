@@ -6,6 +6,7 @@ import UpcomingMatch from '@/components/UpcomingMatch';
 import PastMatchesList from '@/components/PastMatchesList';
 import PeladaSettingsDialog from '@/components/PeladaSettingsDialog';
 import PeladaRanking from '@/components/PeladaRanking';
+import ProFeatureGate from '@/components/ProFeatureGate';
 import PeladaInfoTab from '@/components/PeladaInfoTab';
 import PeladaDetailsSkeleton from '@/components/skeletons/PeladaDetailsSkeleton';
 import BottomActionBar from '@/components/BottomActionBar';
@@ -259,14 +260,18 @@ const PeladaDetails = () => {
                 <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
                   Jogos Anteriores
                 </h3>
-                <PastMatchesList matches={pastMatches} peladaId={pelada.id} />
+                <ProFeatureGate feature="match_history" fallbackTitle="Histórico de Partidas">
+                  <PastMatchesList matches={pastMatches} peladaId={pelada.id} />
+                </ProFeatureGate>
               </section>
             )}
           </TabsContent>
 
           {/* Ranking Tab */}
           <TabsContent value="ranking" className="animate-slide-up">
-            <PeladaRanking peladaId={pelada.id} />
+            <ProFeatureGate feature="ranking" fallbackTitle="Ranking da Pelada">
+              <PeladaRanking peladaId={pelada.id} />
+            </ProFeatureGate>
           </TabsContent>
         </Tabs>
 
