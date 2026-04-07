@@ -13,6 +13,8 @@ import SectionCard from '@/components/SectionCard';
 import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton';
 import { ChevronLeft, Edit2 } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
+import TrialBanner from '@/components/TrialBanner';
+import ProFeatureGate from '@/components/ProFeatureGate';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -75,6 +77,9 @@ const Profile = () => {
           </div>
         </header>
 
+        {/* Trial Banner */}
+        <TrialBanner />
+
         <main className="p-4 space-y-4">
           {/* Player Card */}
           <section className="animate-slide-up">
@@ -83,40 +88,42 @@ const Profile = () => {
 
           {/* Estatísticas Section */}
           <section className="animate-slide-up" style={{ animationDelay: '0.05s' }}>
-            <SectionCard 
-              title="Estatísticas" 
-              rightLabel={String(currentYear)}
-              onClick={() => toggleSection('stats')}
-              isExpanded={expandedSection === 'stats'}
-              collapsedContent={
-                <CareerStats
-                  totalGames={profile.total_games || 0}
-                  totalGoals={profile.total_goals || 0}
-                  totalAssists={profile.total_assists || 0}
-                  totalParticipations={profile.total_participations || 0}
-                  totalMvps={profile.total_mvps || 0}
-                  totalBestDefender={profile.total_best_defender || 0}
-                  totalSaves={profile.total_saves || 0}
-                  isGoalkeeper={isGoalkeeper}
-                />
-              }
-            >
-              <div className="space-y-4">
-                <CareerStats
-                  totalGames={profile.total_games || 0}
-                  totalGoals={profile.total_goals || 0}
-                  totalAssists={profile.total_assists || 0}
-                  totalParticipations={profile.total_participations || 0}
-                  totalMvps={profile.total_mvps || 0}
-                  totalBestDefender={profile.total_best_defender || 0}
-                  totalSaves={profile.total_saves || 0}
-                  isGoalkeeper={isGoalkeeper}
-                />
-                <div className="pt-4 border-t border-border">
-                  <DetailedStats userId={profile.id} />
+            <ProFeatureGate feature="detailed_stats" fallbackTitle="Estatísticas Pro">
+              <SectionCard 
+                title="Estatísticas" 
+                rightLabel={String(currentYear)}
+                onClick={() => toggleSection('stats')}
+                isExpanded={expandedSection === 'stats'}
+                collapsedContent={
+                  <CareerStats
+                    totalGames={profile.total_games || 0}
+                    totalGoals={profile.total_goals || 0}
+                    totalAssists={profile.total_assists || 0}
+                    totalParticipations={profile.total_participations || 0}
+                    totalMvps={profile.total_mvps || 0}
+                    totalBestDefender={profile.total_best_defender || 0}
+                    totalSaves={profile.total_saves || 0}
+                    isGoalkeeper={isGoalkeeper}
+                  />
+                }
+              >
+                <div className="space-y-4">
+                  <CareerStats
+                    totalGames={profile.total_games || 0}
+                    totalGoals={profile.total_goals || 0}
+                    totalAssists={profile.total_assists || 0}
+                    totalParticipations={profile.total_participations || 0}
+                    totalMvps={profile.total_mvps || 0}
+                    totalBestDefender={profile.total_best_defender || 0}
+                    totalSaves={profile.total_saves || 0}
+                    isGoalkeeper={isGoalkeeper}
+                  />
+                  <div className="pt-4 border-t border-border">
+                    <DetailedStats userId={profile.id} />
+                  </div>
                 </div>
-              </div>
-            </SectionCard>
+              </SectionCard>
+            </ProFeatureGate>
           </section>
 
           {/* Conquistas Section */}
