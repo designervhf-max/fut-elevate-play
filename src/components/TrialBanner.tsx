@@ -1,7 +1,9 @@
+import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 
 const TrialBanner = () => {
   const { isAdmin, isPro, isFree, trialDaysLeft, trialActive, isLoading } = useSubscription();
+  const navigate = useNavigate();
 
   if (isLoading || isAdmin) return null;
 
@@ -17,7 +19,10 @@ const TrialBanner = () => {
 
   if (isFree) {
     return (
-      <div className="mx-4 mt-2 px-4 py-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-center">
+      <div
+        className="mx-4 mt-2 px-4 py-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-center cursor-pointer hover:bg-destructive/15 transition-colors"
+        onClick={() => navigate('/plans')}
+      >
         <p className="text-sm text-destructive font-medium">
           🔒 Seu trial expirou. Assine o Pro para continuar.
         </p>

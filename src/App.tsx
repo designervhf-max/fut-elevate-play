@@ -19,6 +19,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Calibration from "./pages/Calibration";
 import MatchParticipants from "./pages/MatchParticipants";
 import MatchLive from "./pages/MatchLive";
+import Plans from "./pages/Plans";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/team-draw/:matchId" element={<TeamDraw />} />
           <Route path="/match/:matchId/participants" element={<MatchParticipants />} />
           <Route path="/match/:matchId/live" element={<MatchLive />} />
+          <Route path="/plans" element={<Plans />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />
           {/* Legacy routes - redirect to new structure */}
