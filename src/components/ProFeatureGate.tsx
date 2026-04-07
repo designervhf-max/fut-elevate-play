@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Trophy, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ const ProFeatureGate = ({
   fallbackTitle,
 }: ProFeatureGateProps) => {
   const { hasAccess, isLoading } = useSubscription();
+  const navigate = useNavigate();
 
   if (isLoading) return null;
 
@@ -47,7 +49,7 @@ const ProFeatureGate = ({
       <Button
         variant="sport"
         className="w-full"
-        onClick={() => {}}
+        onClick={() => navigate('/plans')}
       >
         Quero ser Pro
       </Button>
