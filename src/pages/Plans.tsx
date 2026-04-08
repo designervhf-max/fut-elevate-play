@@ -25,7 +25,7 @@ const Plans = () => {
 
   const monthlyPrice = 9.9;
   const yearlyPrice = 79.9;
-  const yearlyMonthly = (yearlyPrice / 12).toFixed(2).replace('.', ',');
+  const yearlyMonthly = (Math.floor((yearlyPrice / 12) * 100) / 100).toFixed(2).replace('.', ',');
 
   const freeFeatures = [
     { icon: Target, label: 'Criar e gerenciar peladas' },
