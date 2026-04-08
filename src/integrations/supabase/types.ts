@@ -456,6 +456,7 @@ export type Database = {
           created_at: string | null
           id: string
           role: string
+          subscription_status: string
           trial_ends_at: string | null
           trial_started_at: string | null
           user_id: string
@@ -464,6 +465,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: string
+          subscription_status?: string
           trial_ends_at?: string | null
           trial_started_at?: string | null
           user_id: string
@@ -472,6 +474,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: string
+          subscription_status?: string
           trial_ends_at?: string | null
           trial_started_at?: string | null
           user_id?: string
