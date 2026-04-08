@@ -158,14 +158,17 @@ const Plans = () => {
               <p className="text-xs text-muted-foreground">Experiência completa</p>
             </div>
             <div className="text-right">
-              {billing === 'yearly' ? (
+            {billing === 'yearly' ? (
                 <>
                   <p className="text-2xl font-bold text-primary">
-                    R${yearlyMonthly}
+                    R${yearlyPrice.toFixed(2).replace('.', ',')}
                   </p>
-                  <p className="text-xs text-muted-foreground">/mês · cobrado anualmente</p>
+                  <p className="text-xs text-muted-foreground">/ano</p>
+                  <p className="text-xs text-primary font-medium">
+                    R${yearlyMonthly}/mês
+                  </p>
                   <p className="text-xs text-muted-foreground line-through">
-                    R${monthlyPrice.toFixed(2).replace('.', ',')}
+                    R${monthlyPrice.toFixed(2).replace('.', ',')}/mês
                   </p>
                 </>
               ) : (
