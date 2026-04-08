@@ -161,7 +161,7 @@ const Home = () => {
           <section className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
             <SectionCard 
               title="Criar Partida" 
-              onClick={() => navigate('/create-game')}
+              onClick={() => navigate('/create-pelada')}
             >
               <div className="flex items-center gap-3">
                 <div className="stat-icon">

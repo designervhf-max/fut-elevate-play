@@ -16,7 +16,7 @@ interface SubscriptionData {
 }
 
 async function fetchSubscription(userId: string): Promise<SubscriptionData | null> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('user_subscriptions')
     .select('role, trial_started_at, trial_ends_at')
     .eq('user_id', userId)
