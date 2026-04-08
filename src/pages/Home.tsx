@@ -18,6 +18,7 @@ const Home = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  useMatchReminders();
 
   useEffect(() => {
     const checkAuth = async () => {
