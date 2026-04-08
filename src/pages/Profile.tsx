@@ -11,7 +11,8 @@ import DetailedStats from '@/components/DetailedStats';
 import PlayerCard from '@/components/PlayerCard';
 import SectionCard from '@/components/SectionCard';
 import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton';
-import { ChevronLeft, Edit2 } from 'lucide-react';
+import { ChevronLeft, Edit2, Crown, Settings } from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useProfile } from '@/hooks/useProfile';
 import TrialBanner from '@/components/TrialBanner';
 import ProFeatureGate from '@/components/ProFeatureGate';
@@ -37,6 +38,7 @@ const Profile = () => {
   }, [navigate]);
 
   const { data: profile, isLoading } = useProfile(userId);
+  const { isPro, isAdmin } = useSubscription();
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -67,13 +69,24 @@ const Profile = () => {
                 <ChevronLeft className="h-6 w-6" />
               </button>
               <h1 className="text-lg font-medium">{profile.name}</h1>
+              {(isPro || isAdmin) && (
+                <Crown className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+              )}
             </div>
-            <button 
-              onClick={() => navigate('/profile/edit')}
-              className="p-2 text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Edit2 className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={() => navigate('/profile/edit')}
+                className="p-2 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Edit2 className="h-5 w-5" />
+              </button>
+              <button 
+                onClick={() => navigate('/settings')}
+                className="p-2 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </header>
 
