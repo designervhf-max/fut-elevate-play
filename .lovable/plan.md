@@ -1,44 +1,69 @@
 
 
-# Plano: Redirecionar novos usuários Google para Setup/Calibração
+# Plano de Correção - Auditoria Completa EleveFut
 
-## Problema
+## Problemas Encontrados
 
-Há dois problemas no fluxo atual:
+### 1. CORS incorreto na Edge Function `delete-account` (CRÍTICO)
+A função importa `corsHeaders` de `@supabase/supabase-js@2.95.0/cors` mas cria o client com `@supabase/supabase-js@2.89.0`. Essas versões conflitantes podem causar falhas de import no Deno runtime. Além disso, o import do CORS via esm.sh usa uma versão diferente do client principal.
 
-1. **`Index.tsx`**: O listener `onAuthStateChange` redireciona direto para `/home` sem verificar se o usuário completou o setup (`preferred_game_type`).
-2. **`Login.tsx`**: Após login com e-mail, redireciona direto para `/home` sem verificar setup.
-3. **`Home.tsx`**: Não verifica se o setup foi completado — exibe a home mesmo para usuários novos.
+**Correção**: Unificar as versões e usar import consistente.
 
-Quando um novo usuário entra via Google, o `handle_new_user` trigger cria o perfil com `preferred_game_type = NULL`, mas ninguém verifica isso antes de enviar para `/home`.
+### 2. Edge Function `determine-game-results` usa API inexistente (CRÍTICO)
+Na linha 64, chama `authClient.auth.getClaims(token)` que **não existe** no Supabase JS SDK. Isso causará erro 500 quando chamado via JWT de usuário.
 
-## Solução
+**Correção**: Substituir por `authClient.auth.getUser()`.
 
-Criar uma função utilitária de verificação de setup e aplicá-la em 3 pontos:
+### 3. Rota quebrada no Home.tsx (BUG)
+Na linha 164, o botão "Criar Partida" navega para `/create-game`, que é uma rota legada que redireciona para `/games` (não para `/create-pelada`). O usuário nunca chega à tela de criação.
 
-### 1. Criar helper `checkUserSetup` (novo arquivo ou inline)
-Função que recebe `userId` e retorna a rota correta (`/setup`, `/calibration`, ou `/home`).
+**Correção**: Alterar para `/create-pelada`.
 
-### 2. Atualizar `src/pages/Index.tsx`
-- No `onAuthStateChange`, ao receber sessão, verificar `preferred_game_type` do perfil antes de navegar (igual ao `checkAuth` já faz no load inicial).
+### 4. `useSubscription` usa cast `as any` desnecessário (MENOR)
+O hook faz `(supabase as any).from('user_subscriptions')` porque o tipo talvez não esteja atualizado. Porém, `user_subscriptions` **já existe** no types.ts gerado, então o `as any` é desnecessário e perde type-safety.
 
-### 3. Atualizar `src/pages/Login.tsx`
-- Após login com e-mail (no `handleLogin`), verificar `preferred_game_type` antes de navegar para `/home`.
-- O fluxo do Google já redireciona para `/` (Index), que fará a verificação.
+**Correção**: Remover o `as any`.
 
-### 4. Atualizar `src/pages/Home.tsx`
-- No `checkAuth`, após obter sessão, verificar se `preferred_game_type` existe. Se não, redirecionar para `/setup`.
+### 5. NextMatchCard faz queries em cascata (PERFORMANCE)
+O componente faz 4 queries sequenciais (memberships → matches com join → count participants → user participation). Pode ser otimizado.
 
-## Detalhes técnicos
+**Correção**: Combinar queries onde possível.
 
-Lógica de redirecionamento:
-```
-se preferred_game_type == null → /setup
-senão → /home
-```
+### 6. Trigger `on_profile_created_subscription` pode causar subscription duplicada
+O trigger `handle_new_subscription` dispara no INSERT de `profiles`, não no INSERT de `auth.users`. Se um perfil for recriado (edge case), pode falhar com unique constraint em `user_subscriptions`. O trigger deveria usar `ON CONFLICT`.
 
-Arquivos a modificar:
-- `src/pages/Index.tsx` — corrigir onAuthStateChange para verificar setup
-- `src/pages/Login.tsx` — adicionar verificação após login por e-mail
-- `src/pages/Home.tsx` — adicionar guard de setup no checkAuth
+**Correção**: Atualizar a function para usar `INSERT ... ON CONFLICT DO NOTHING`.
+
+### 7. TrialBanner mostra "trial expirou" para usuários Pro pagos (BUG LÓGICO)
+No `useSubscription`, `isPro` só é `true` se `trialActive` for `true`. Isso significa que quando alguém paga pelo Pro mas o trial expira, `isPro` fica `false` e `isFree` fica `true`. Não há distinção entre "Pro pago" e "Pro trial".
+
+**Correção**: Adicionar lógica para Pro pago (sem depender do trial). Requer novo campo `subscription_status` ou ajuste na lógica.
+
+### 8. Console warnings de `forwardRef` no CreatePelada (MENOR)
+Warnings no console indicam que componentes Select do Radix UI recebem refs sem suporte. É cosmético, não funcional.
+
+**Correção**: Baixa prioridade, atualização de lib resolveria.
+
+---
+
+## Resumo de Prioridades
+
+| # | Problema | Severidade | Arquivo(s) |
+|---|----------|-----------|------------|
+| 1 | CORS/versão no `delete-account` | Alta | `supabase/functions/delete-account/index.ts` |
+| 2 | API inexistente `getClaims` | Alta | `supabase/functions/determine-game-results/index.ts` |
+| 3 | Rota `/create-game` quebrada | Média | `src/pages/Home.tsx` |
+| 4 | Cast `as any` no useSubscription | Baixa | `src/hooks/useSubscription.ts` |
+| 5 | Queries cascata NextMatchCard | Baixa | `src/components/NextMatchCard.tsx` |
+| 6 | Trigger subscription duplicada | Média | Migration SQL |
+| 7 | Lógica Pro pago vs trial | Alta | `src/hooks/useSubscription.ts` + migration |
+| 8 | Console warnings forwardRef | Baixa | Sem ação necessária |
+
+## Plano de Implementação
+
+1. **Corrigir Edge Functions** (itens 1 e 2) - Unificar imports e corrigir `getClaims`
+2. **Corrigir rota Home** (item 3) - Trocar `/create-game` por `/create-pelada`
+3. **Corrigir lógica freemium** (item 7) - Adicionar campo `subscription_status` (valores: `trialing`, `active`, `expired`) via migration e ajustar `useSubscription`
+4. **Corrigir trigger** (item 6) - Usar `ON CONFLICT DO NOTHING`
+5. **Limpar tipo** (item 4) - Remover `as any`
 
