@@ -68,11 +68,11 @@ const Login = () => {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 safe-top">
       <div className="w-full max-w-sm mx-auto">
       {/* Logo */}
-      <div className="mb-8 text-center animate-scale-in w-full">
+      <div className="mb-4 text-center animate-scale-in w-full">
         <img 
           src={elevefutLogo} 
           alt="EleveFut" 
-          className="w-full h-auto mx-auto mb-4"
+          className="w-3/4 h-auto mx-auto mb-1"
         />
         <p className="text-muted-foreground text-sm animate-fade-in" style={{ animationDelay: '0.2s' }}>
           Eleve seu jogo
@@ -80,7 +80,7 @@ const Login = () => {
       </div>
 
       {/* Login Form */}
-      <div className="w-full max-w-sm space-y-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+      <div className="w-full max-w-sm space-y-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm text-muted-foreground">
