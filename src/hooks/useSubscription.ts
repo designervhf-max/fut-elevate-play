@@ -13,17 +13,18 @@ interface SubscriptionData {
   role: string;
   trial_started_at: string | null;
   trial_ends_at: string | null;
+  subscription_status: string;
 }
 
 async function fetchSubscription(userId: string): Promise<SubscriptionData | null> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('user_subscriptions')
-    .select('role, trial_started_at, trial_ends_at')
+    .select('role, trial_started_at, trial_ends_at, subscription_status')
     .eq('user_id', userId)
     .maybeSingle();
 
   if (error) throw error;
-  return data;
+  return data as SubscriptionData | null;
 }
 
 export function useSubscription() {
@@ -44,23 +45,25 @@ export function useSubscription() {
   });
 
   const role = subscription?.role ?? 'free';
+  const subscriptionStatus = subscription?.subscription_status ?? 'trialing';
   const isAdmin = role === 'admin';
+  
   const trialEndsAt = subscription?.trial_ends_at
     ? new Date(subscription.trial_ends_at)
     : null;
   const now = new Date();
   const trialActive = trialEndsAt ? trialEndsAt > now : false;
-  const isPro = role === 'pro' && trialActive;
-  const isFree = !isAdmin && !isPro;
+  
+  // Pro is true if: admin, active subscription, or trial still active
+  const isPro = isAdmin || subscriptionStatus === 'active' || (role === 'pro' && trialActive);
+  const isFree = !isPro;
 
-  const trialDaysLeft = trialEndsAt
+  const trialDaysLeft = trialActive && trialEndsAt
     ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
 
   const hasAccess = (feature: PremiumFeature): boolean => {
-    if (isAdmin) return true;
-    if (isPro) return true;
-    return false;
+    return isPro;
   };
 
   return {
@@ -73,5 +76,6 @@ export function useSubscription() {
     hasAccess,
     isLoading,
     role,
+    subscriptionStatus,
   };
 }
