@@ -59,33 +59,33 @@ const Plans = () => {
         </div>
       </header>
 
-      <main className="p-4 pb-8 space-y-6 max-w-lg mx-auto">
-        {/* Hero */}
-        <section className="text-center space-y-2 animate-slide-up">
-          <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto">
-            <Crown className="h-8 w-8 text-primary" />
+      <main className="p-4 pb-6 space-y-3 max-w-lg mx-auto">
+        {/* Hero — compact */}
+        <section className="text-center space-y-1 animate-slide-up">
+          <div className="flex items-center justify-center gap-2">
+            <Crown className="h-6 w-6 text-primary" />
+            <h2 className="text-xl font-bold">Eleve seu jogo</h2>
           </div>
-          <h2 className="text-2xl font-bold">Eleve seu jogo</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Desbloqueie todas as funcionalidades do EleveFut
           </p>
         </section>
 
         {/* Trial Banner */}
         {trialActive && currentPlan === 'pro' && (
-          <div className="px-4 py-3 rounded-xl bg-primary/10 border border-primary/20 text-center animate-slide-up">
-            <p className="text-sm text-primary font-medium">
-              ⚽ Seu trial Pro expira em {trialDaysLeft} {trialDaysLeft === 1 ? 'dia' : 'dias'}
+          <div className="px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 text-center animate-slide-up">
+            <p className="text-xs text-primary font-medium">
+              ⚽ Trial Pro expira em {trialDaysLeft} {trialDaysLeft === 1 ? 'dia' : 'dias'}
             </p>
           </div>
         )}
 
         {/* Billing Toggle */}
         <section className="flex justify-center animate-slide-up">
-          <div className="flex items-center bg-surface-elevated rounded-xl p-1 border border-border">
+          <div className="flex items-center bg-surface-elevated rounded-lg p-0.5 border border-border">
             <button
               onClick={() => setBilling('monthly')}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
                 billing === 'monthly'
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -95,7 +95,7 @@ const Plans = () => {
             </button>
             <button
               onClick={() => setBilling('yearly')}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
                 billing === 'yearly'
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -110,21 +110,21 @@ const Plans = () => {
         </section>
 
         {/* Free Plan */}
-        <section className="fifa-card p-5 space-y-4 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+        <section className="fifa-card p-4 space-y-3 animate-slide-up" style={{ animationDelay: '0.05s' }}>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold">Free</h3>
+              <h3 className="text-base font-bold">Free</h3>
               <p className="text-xs text-muted-foreground">Funcionalidades básicas</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold">R$0</p>
+              <p className="text-xl font-bold">R$0</p>
               <p className="text-xs text-muted-foreground">/mês</p>
             </div>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {freeFeatures.map((f, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
+              <div key={i} className="flex items-center gap-2.5 text-sm text-muted-foreground">
                 <f.icon className="h-4 w-4 text-primary shrink-0" />
                 <span>{f.label}</span>
               </div>
@@ -132,20 +132,18 @@ const Plans = () => {
           </div>
 
           {currentPlan === 'free' && (
-            <div className="pt-1">
-              <Button variant="dark" className="w-full" disabled>
-                Plano atual
-              </Button>
-            </div>
+            <Button variant="dark" className="w-full" disabled>
+              Plano atual
+            </Button>
           )}
         </section>
 
         {/* Pro Plan */}
         <section
-          className="fifa-card p-5 space-y-4 border-2 border-primary/40 relative animate-slide-up"
+          className="fifa-card p-4 space-y-3 border-2 border-primary/40 relative animate-slide-up"
           style={{ animationDelay: '0.1s' }}
         >
-          <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3">
+          <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-2.5 text-xs">
             Mais popular
           </Badge>
 
@@ -183,11 +181,11 @@ const Plans = () => {
           </div>
 
           {/* All Free features */}
-          <div className="space-y-2.5">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Tudo do Free, mais:</p>
+          <div className="space-y-2">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Tudo do Free, mais:</p>
             {proFeatures.map((f, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm">
-                <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+              <div key={i} className="flex items-center gap-2.5 text-sm">
+                <div className="h-4.5 w-4.5 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                   <Check className="h-3 w-3 text-primary" />
                 </div>
                 <span>{f.label}</span>
@@ -196,14 +194,14 @@ const Plans = () => {
           </div>
 
           {billing === 'yearly' && (
-            <div className="bg-primary/10 rounded-lg px-3 py-2 text-center">
+            <div className="bg-primary/10 rounded-lg px-3 py-1.5 text-center">
               <p className="text-xs text-primary font-medium">
                 💰 Economia de R${((monthlyPrice * 12) - yearlyPrice).toFixed(2).replace('.', ',')} por ano
               </p>
             </div>
           )}
 
-          <div className="pt-1">
+          <div>
             {currentPlan === 'pro' && !trialActive ? (
               <Button variant="sport" className="w-full" disabled>
                 Plano atual
@@ -221,11 +219,9 @@ const Plans = () => {
         </section>
 
         {/* FAQ-like info */}
-        <section className="space-y-3 text-center animate-slide-up" style={{ animationDelay: '0.15s' }}>
-          <p className="text-xs text-muted-foreground">
-            Cancele a qualquer momento. Sem multas ou taxas extras.
-          </p>
-        </section>
+        <p className="text-xs text-muted-foreground text-center animate-slide-up" style={{ animationDelay: '0.15s' }}>
+          Cancele a qualquer momento. Sem multas ou taxas extras.
+        </p>
       </main>
     </div>
   );
