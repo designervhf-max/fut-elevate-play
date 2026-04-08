@@ -12,11 +12,13 @@ import { useProfile } from '@/hooks/useProfile';
 import { useQueryClient } from '@tanstack/react-query';
 import { getSetupRoute } from '@/lib/checkUserSetup';
 import TrialBanner from '@/components/TrialBanner';
+import { useMatchReminders } from '@/hooks/useMatchReminders';
 
 const Home = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  useMatchReminders();
 
   useEffect(() => {
     const checkAuth = async () => {
