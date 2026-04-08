@@ -80,7 +80,7 @@ const Login = () => {
       </div>
 
       {/* Login Form */}
-      <div className="w-full max-w-sm space-y-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+      <div className="w-full max-w-sm space-y-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm text-muted-foreground">
