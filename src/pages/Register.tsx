@@ -166,7 +166,7 @@ const Register = () => {
           position: formData.position,
           shirt_number: parseInt(formData.shirtNumber),
           dominant_foot: formData.dominantFoot,
-          phone: formData.phone,
+          phone: formData.phone.replace(/\D/g, ''),
         },
       },
     });
