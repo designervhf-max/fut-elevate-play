@@ -158,7 +158,7 @@ const EditProfile = () => {
         shirt_number: parseInt(shirtNumber),
         dominant_foot: dominantFoot as Database['public']['Enums']['dominant_foot'],
         preferred_game_type: preferredGameType as Database['public']['Enums']['game_type'] || null,
-        phone: phone.trim(),
+        phone: phone.replace(/\D/g, ''),
         avatar_url: avatarUrl,
       } as any)
       .eq('id', profile.id);
