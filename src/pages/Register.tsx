@@ -174,19 +174,24 @@ const Register = () => {
     setLoading(false);
 
     if (error) {
-      if (error.message.includes('already registered')) {
-        toast({
-          title: "Erro",
-          description: "Este e-mail já está cadastrado",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Erro no cadastro",
-          description: error.message,
-          variant: "destructive",
-        });
+      const msg = error.message.toLowerCase();
+      let description = error.message;
+
+      if (msg.includes('already registered') || msg.includes('already been registered')) {
+        description = 'Este e-mail já está cadastrado';
+      } else if (msg.includes('weak') || msg.includes('pwned') || msg.includes('known to be')) {
+        description = 'Esta senha é muito comum ou apareceu em vazamentos. Escolha uma senha mais forte.';
+      } else if (msg.includes('password should be at least')) {
+        description = 'A senha deve ter no mínimo 6 caracteres';
+      } else if (msg.includes('invalid email')) {
+        description = 'E-mail inválido';
       }
+
+      toast({
+        title: 'Erro no cadastro',
+        description,
+        variant: 'destructive',
+      });
       return;
     }
 
