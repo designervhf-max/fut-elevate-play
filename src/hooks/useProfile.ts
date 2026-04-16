@@ -21,7 +21,7 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
     .maybeSingle();
 
   if (error) throw error;
-  return data as Profile | null;
+  return data as unknown as Profile | null;
 }
 
 export function useProfile(userId: string | null) {
