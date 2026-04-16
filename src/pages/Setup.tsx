@@ -62,9 +62,12 @@ const Setup = () => {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('name, age, position, shirt_number, dominant_foot, phone')
+        .select('name, age, position, shirt_number, dominant_foot')
         .eq('id', session.user.id)
         .maybeSingle();
+
+      // Fetch own phone via secure RPC
+      const { data: phoneData } = await supabase.rpc('get_my_phone');
 
       if (profile) {
         // Check if profile has default/placeholder values (Google user)
@@ -72,7 +75,7 @@ const Setup = () => {
           profile.position === 'Meia' &&
           profile.shirt_number === 10 &&
           profile.dominant_foot === 'Destro' &&
-          !profile.phone;
+          !phoneData;
 
         if (isGoogleDefault) {
           setNeedsProfileData(true);
