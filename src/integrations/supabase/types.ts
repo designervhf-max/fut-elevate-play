@@ -494,6 +494,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_phone: { Args: never; Returns: string }
       has_pelada_role: {
         Args: {
           _pelada_id: string
