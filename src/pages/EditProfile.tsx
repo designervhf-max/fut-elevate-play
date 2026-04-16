@@ -50,19 +50,22 @@ const EditProfile = () => {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, name, age, position, shirt_number, dominant_foot, avatar_url, preferred_game_type, overall_rating, attack_rating, defense_rating, skill_rating, strength_rating, total_goals, total_assists, total_saves, total_mvps, total_best_defender, total_games, total_participations, calibration_completed, created_at')
         .eq('id', session.user.id)
         .maybeSingle();
 
+      // Fetch own phone via secure RPC (phone is not exposed via direct select)
+      const { data: phoneData } = await supabase.rpc('get_my_phone');
+
       if (!error && data) {
-        setProfile(data);
+        setProfile(data as any);
         setName(data.name);
         setAge(data.age.toString());
         setPosition(data.position);
         setShirtNumber(data.shirt_number.toString());
         setDominantFoot(data.dominant_foot);
         setPreferredGameType(data.preferred_game_type || '');
-        setPhone((data as any).phone || '');
+        setPhone(phoneData || '');
         setAvatarUrl(data.avatar_url);
       }
 
