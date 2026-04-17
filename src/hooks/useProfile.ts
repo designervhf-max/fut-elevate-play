@@ -4,8 +4,8 @@ import type { Database } from '@/integrations/supabase/types';
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
-// Note: 'phone' column is not selectable directly via RLS for privacy.
-// Users can fetch their own phone via the get_my_phone() RPC.
+// Note: phone numbers are stored in a separate `user_contact_info` table
+// (owner-only RLS). Use the get_my_phone() RPC to fetch your own phone.
 const PROFILE_COLUMNS =
   'id, name, age, position, shirt_number, dominant_foot, avatar_url, ' +
   'preferred_game_type, overall_rating, attack_rating, defense_rating, ' +

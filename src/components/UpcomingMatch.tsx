@@ -377,7 +377,6 @@ const UpcomingMatch = ({
       age: 25,
       dominant_foot: 'Destro',
       shirt_number: 10,
-      phone: null,
       total_goals: 0,
       total_assists: 0,
       calibration_completed: false,

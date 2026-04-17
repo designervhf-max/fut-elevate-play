@@ -314,7 +314,6 @@ export type Database = {
           id: string
           name: string
           overall_rating: number | null
-          phone: string | null
           position: Database["public"]["Enums"]["player_position"]
           preferred_game_type: Database["public"]["Enums"]["game_type"] | null
           shirt_number: number
@@ -339,7 +338,6 @@ export type Database = {
           id: string
           name: string
           overall_rating?: number | null
-          phone?: string | null
           position: Database["public"]["Enums"]["player_position"]
           preferred_game_type?: Database["public"]["Enums"]["game_type"] | null
           shirt_number: number
@@ -364,7 +362,6 @@ export type Database = {
           id?: string
           name?: string
           overall_rating?: number | null
-          phone?: string | null
           position?: Database["public"]["Enums"]["player_position"]
           preferred_game_type?: Database["public"]["Enums"]["game_type"] | null
           shirt_number?: number
@@ -446,6 +443,32 @@ export type Database = {
             foreignKeyName: "rating_history_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_contact_info: {
+        Row: {
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_contact_info_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },

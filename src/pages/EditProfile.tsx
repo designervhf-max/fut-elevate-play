@@ -186,14 +186,21 @@ const EditProfile = () => {
         shirt_number: parseInt(shirtNumber),
         dominant_foot: dominantFoot as Database['public']['Enums']['dominant_foot'],
         preferred_game_type: preferredGameType as Database['public']['Enums']['game_type'] || null,
-        phone: phone.replace(/\D/g, ''),
         avatar_url: avatarUrl,
-      } as any)
+      })
       .eq('id', profile.id);
+
+    // Phone is stored in a separate, owner-only table for privacy
+    const { error: phoneError } = await supabase
+      .from('user_contact_info')
+      .upsert({
+        user_id: profile.id,
+        phone: phone.replace(/\D/g, ''),
+      }, { onConflict: 'user_id' });
 
     setSaving(false);
 
-    if (error) {
+    if (error || phoneError) {
       toast({
         title: 'Erro',
         description: 'Não foi possível salvar as alterações',
