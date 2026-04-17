@@ -37,7 +37,8 @@ const MatchReminderButton = ({ pelada, match, confirmedCount }: MatchReminderBut
     if (isTomorrow) dayText = 'AMANHÃ';
     
     const vagasRestantes = pelada.max_players - confirmedCount;
-    const rsvpUrl = `${window.location.origin}/m/${match.id}`;
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const rsvpUrl = `https://${projectId}.supabase.co/functions/v1/match-preview/${match.id}`;
     
     const message = `⚠️ *LEMBRETE DE PARTIDA*
 
