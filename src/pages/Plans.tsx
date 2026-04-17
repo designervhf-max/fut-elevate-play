@@ -102,7 +102,14 @@ const Plans = () => {
               }`}
             >
               Anual
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-primary/20 text-primary border-0">
+              <Badge
+                variant="secondary"
+                className={`text-[10px] px-1.5 py-0 border-0 ${
+                  billing === 'yearly'
+                    ? 'bg-background text-primary'
+                    : 'bg-primary/20 text-primary'
+                }`}
+              >
                 -33%
               </Badge>
             </button>
