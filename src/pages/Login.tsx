@@ -40,11 +40,23 @@ const Login = () => {
     setLoading(false);
 
     if (error) {
-      toast({
-        title: "Erro no login",
-        description: "E-mail ou senha incorretos",
-        variant: "destructive",
-      });
+      let title = "Erro no login";
+      let description = "E-mail ou senha incorretos";
+
+      const code = (error as { code?: string }).code;
+      const msg = error.message?.toLowerCase() ?? "";
+
+      if (code === "email_not_confirmed" || msg.includes("not confirmed")) {
+        title = "E-mail não confirmado";
+        description = "Verifique sua caixa de entrada (e spam) e clique no link de confirmação antes de entrar.";
+      } else if (code === "invalid_credentials" || msg.includes("invalid login")) {
+        description = "E-mail ou senha incorretos.";
+      } else if (msg.includes("rate") || msg.includes("too many")) {
+        title = "Muitas tentativas";
+        description = "Aguarde alguns instantes antes de tentar novamente.";
+      }
+
+      toast({ title, description, variant: "destructive" });
       return;
     }
 
