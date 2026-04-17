@@ -147,10 +147,10 @@ const Plans = () => {
 
         {/* Pro Plan */}
         <section
-          className="fifa-card p-4 space-y-3 border-2 border-primary/40 relative animate-slide-up"
+          className="fifa-card p-4 pt-6 space-y-3 border-2 border-primary/40 relative animate-slide-up overflow-visible mt-3"
           style={{ animationDelay: '0.1s' }}
         >
-          <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-2.5 text-xs">
+          <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-2.5 text-xs whitespace-nowrap z-10 shadow-md">
             Mais popular
           </Badge>
 
