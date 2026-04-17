@@ -16,6 +16,7 @@ import { ChevronLeft, Camera, Loader2, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 import { Constants } from '@/integrations/supabase/types';
+import { editProfileSchema } from '@/lib/profileSchema';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -138,10 +139,21 @@ const EditProfile = () => {
   const handleSave = async () => {
     if (!profile) return;
 
-    if (!name.trim() || !age || !position || !shirtNumber || !dominantFoot || !phone.trim()) {
+    const parsed = editProfileSchema.safeParse({
+      name,
+      age: parseInt(age),
+      position,
+      shirtNumber: parseInt(shirtNumber),
+      dominantFoot,
+      phone,
+      preferredGameType,
+    });
+
+    if (!parsed.success) {
+      const first = parsed.error.issues[0];
       toast({
         title: 'Erro',
-        description: 'Preencha todos os campos obrigatórios',
+        description: first?.message || 'Verifique os campos',
         variant: 'destructive',
       });
       return;
