@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Mail, Lock, User, Hash, ChevronLeft, Loader2, Phone } from 'lucide-react';
+import { registerSchema } from '@/lib/profileSchema';
 import {
   Select,
   SelectContent,
@@ -87,60 +88,24 @@ const Register = () => {
   };
 
   const validateForm = () => {
-    if (!formData.name || !formData.age || !formData.position || 
-        !formData.shirtNumber || !formData.dominantFoot || 
-        !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos",
-        variant: "destructive",
-      });
-      return false;
-    }
+    const result = registerSchema.safeParse({
+      name: formData.name,
+      age: parseInt(formData.age),
+      position: formData.position,
+      shirtNumber: parseInt(formData.shirtNumber),
+      dominantFoot: formData.dominantFoot,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+    });
 
-    const age = parseInt(formData.age);
-    if (isNaN(age) || age < 10) {
+    if (!result.success) {
+      const first = result.error.issues[0];
       toast({
-        title: "Erro",
-        description: "Idade mínima é 10 anos",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    const shirtNumber = parseInt(formData.shirtNumber);
-    if (isNaN(shirtNumber) || shirtNumber < 1 || shirtNumber > 99) {
-      toast({
-        title: "Erro",
-        description: "Número da camisa deve ser entre 1 e 99",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    if (!formData.phone.trim()) {
-      toast({
-        title: "Erro",
-        description: "Telefone é obrigatório",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    if (formData.password.length < 6) {
-      toast({
-        title: "Erro",
-        description: "Senha deve ter no mínimo 6 caracteres",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Erro",
-        description: "As senhas não coincidem",
-        variant: "destructive",
+        title: 'Erro',
+        description: first?.message || 'Verifique os campos',
+        variant: 'destructive',
       });
       return false;
     }
