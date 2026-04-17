@@ -504,23 +504,48 @@ const UpcomingMatch = ({
         )}
 
         {/* WhatsApp Share Button */}
-        {confirmedCount > 0 && (
-          <Button
-            variant="outline"
-            className="w-full mt-3"
-            onClick={() => {
-              const confirmedNames = confirmedParticipants
-                .map(p => `• ${p.profile?.name || p.guest_name}`)
-                .join('\n');
+        {confirmedCount > 0 && match.status !== 'finished' && (
+          !match.open_for_confirmation ? (
+            <div className="mt-3 p-3 rounded-lg border border-warning/30 bg-warning/10 space-y-2">
+              <div className="flex items-start gap-2">
+                <Lock className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-foreground">
+                  Confirmações estão <span className="font-semibold">fechadas</span>. Libere antes de compartilhar para que os jogadores consigam confirmar pelo link.
+                </p>
+              </div>
+              {isAdmin && (
+                <Button
+                  variant="sport"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleToggleConfirmations}
+                  disabled={actionLoading}
+                >
+                  <Unlock className="h-4 w-4 mr-1" />
+                  Liberar confirmações agora
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full mt-3"
+              onClick={() => {
+                const confirmedNames = confirmedParticipants
+                  .map(p => `• ${p.profile?.name || p.guest_name}`)
+                  .join('\n');
 
-              const dateStr = matchDate.toLocaleDateString('pt-BR', {
-                weekday: 'long',
-                day: '2-digit',
-                month: 'long',
-              });
+                const dateStr = matchDate.toLocaleDateString('pt-BR', {
+                  weekday: 'long',
+                  day: '2-digit',
+                  month: 'long',
+                });
 
-              const rsvpUrl = `${window.location.origin}/m/${match.id}`;
-              const message = `⚽ *${pelada.name}*
+                // Use edge function URL so WhatsApp gets dynamic OG preview;
+                // real users are 302-redirected to /m/:matchId.
+                const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+                const rsvpUrl = `https://${projectId}.supabase.co/functions/v1/match-preview/${match.id}`;
+                const message = `⚽ *${pelada.name}*
 📅 ${dateStr}
 🕐 ${match.match_time.slice(0, 5)}
 📍 ${match.location || pelada.location}
@@ -533,13 +558,14 @@ ${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas r
 👉 Confirme sua presença:
 ${rsvpUrl}`;
 
-              const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-              window.open(whatsappUrl, '_blank');
-            }}
-          >
-            <MessageCircle className="h-5 w-5 mr-2" />
-            Compartilhar no WhatsApp
-          </Button>
+                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+              }}
+            >
+              <MessageCircle className="h-5 w-5 mr-2" />
+              Compartilhar no WhatsApp
+            </Button>
+          )
         )}
       </div>
 
