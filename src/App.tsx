@@ -18,7 +18,7 @@ import TeamDraw from "./pages/TeamDraw";
 import ForgotPassword from "./pages/ForgotPassword";
 import Calibration from "./pages/Calibration";
 import MatchParticipants from "./pages/MatchParticipants";
-import MatchLive from "./pages/MatchLive";
+
 import Plans from "./pages/Plans";
 import Settings from "./pages/Settings";
 import PublicMatchRsvp from "./pages/PublicMatchRsvp";
@@ -45,7 +45,7 @@ const App = () => (
           <Route path="/join-pelada/:id" element={<JoinPelada />} />
           <Route path="/team-draw/:matchId" element={<TeamDraw />} />
           <Route path="/match/:matchId/participants" element={<MatchParticipants />} />
-          <Route path="/match/:matchId/live" element={<MatchLive />} />
+          
           <Route path="/plans" element={<Plans />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />
