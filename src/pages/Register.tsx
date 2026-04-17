@@ -174,18 +174,18 @@ const Register = () => {
     }
 
     toast({
-      title: "Conta criada!",
-      description: "Vamos calibrar seu perfil",
+      title: 'Confirme seu e-mail',
+      description: 'Enviamos um link de confirmação para o seu e-mail. Confirme antes de entrar.',
     });
 
-    // Check if user came from pelada invite
-    const joinPeladaId = localStorage.getItem('join_pelada_id');
-    if (joinPeladaId) {
-      localStorage.removeItem('join_pelada_id');
-      navigate(`/join-pelada/${joinPeladaId}`);
-    } else {
-      navigate('/calibration');
-    }
+    // Sign out any session that may have been created (when email confirmation
+    // is required Supabase doesn't return a session, but we make sure).
+    await supabase.auth.signOut();
+
+    navigate('/login', {
+      state: { pendingConfirmationEmail: formData.email },
+      replace: true,
+    });
   };
 
   return (
