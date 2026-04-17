@@ -39,6 +39,15 @@ const EditProfile = () => {
   const [preferredGameType, setPreferredGameType] = useState('');
   const [phone, setPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const clearError = (field: string) =>
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -150,14 +159,21 @@ const EditProfile = () => {
     });
 
     if (!parsed.success) {
-      const first = parsed.error.issues[0];
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? '');
+        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
       toast({
-        title: 'Erro',
-        description: first?.message || 'Verifique os campos',
+        title: 'Verifique os campos',
+        description: 'Há informações inválidas no formulário',
         variant: 'destructive',
       });
       return;
     }
+
+    setErrors({});
 
     setSaving(true);
 
