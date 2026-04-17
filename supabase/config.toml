@@ -2,3 +2,6 @@ project_id = "brywlaqddkspxmkttwlb"
 
 [functions.determine-game-results]
 verify_jwt = false
+
+[functions.public-match-rsvp]
+verify_jwt = false
