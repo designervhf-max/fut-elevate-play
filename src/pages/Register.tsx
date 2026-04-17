@@ -108,15 +108,21 @@ const Register = () => {
     });
 
     if (!result.success) {
-      const first = result.error.issues[0];
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0] ?? '');
+        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
       toast({
-        title: 'Erro',
-        description: first?.message || 'Verifique os campos',
+        title: 'Verifique os campos',
+        description: 'Há informações inválidas no formulário',
         variant: 'destructive',
       });
       return false;
     }
 
+    setErrors({});
     return true;
   };
 
