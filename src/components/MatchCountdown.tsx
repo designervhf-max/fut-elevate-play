@@ -32,7 +32,7 @@ const MatchCountdown = ({ matchDate, matchTime, variant = 'badge' }: MatchCountd
     }
 
     if (diffDays === 1) {
-      return { label: 'AMANHÃ', color: 'bg-lime text-lime-foreground', daysUntil: 1 };
+      return { label: 'AMANHÃ', color: 'bg-lime text-background', daysUntil: 1 };
     }
 
     if (diffDays <= 7) {
