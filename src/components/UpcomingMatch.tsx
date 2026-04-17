@@ -519,6 +519,7 @@ const UpcomingMatch = ({
                 month: 'long',
               });
 
+              const rsvpUrl = `${window.location.origin}/m/${match.id}`;
               const message = `⚽ *${pelada.name}*
 📅 ${dateStr}
 🕐 ${match.match_time.slice(0, 5)}
@@ -527,7 +528,10 @@ const UpcomingMatch = ({
 ✅ *CONFIRMADOS (${confirmedCount}/${pelada.max_players})*
 ${confirmedNames}
 
-${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas restantes`}`;
+${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas restantes`}
+
+👉 Confirme sua presença:
+${rsvpUrl}`;
 
               const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
               window.open(whatsappUrl, '_blank');

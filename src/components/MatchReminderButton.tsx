@@ -37,6 +37,7 @@ const MatchReminderButton = ({ pelada, match, confirmedCount }: MatchReminderBut
     if (isTomorrow) dayText = 'AMANHÃ';
     
     const vagasRestantes = pelada.max_players - confirmedCount;
+    const rsvpUrl = `${window.location.origin}/m/${match.id}`;
     
     const message = `⚠️ *LEMBRETE DE PARTIDA*
 
@@ -48,7 +49,8 @@ const MatchReminderButton = ({ pelada, match, confirmedCount }: MatchReminderBut
 👥 ${confirmedCount}/${pelada.max_players} confirmados
 ${vagasRestantes > 0 ? `\n⚡ Restam ${vagasRestantes} vagas!` : '🔴 LOTADO!'}
 
-Confirme sua presença no app!`;
+👉 Confirme sua presença:
+${rsvpUrl}`;
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');

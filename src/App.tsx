@@ -21,6 +21,7 @@ import MatchParticipants from "./pages/MatchParticipants";
 import MatchLive from "./pages/MatchLive";
 import Plans from "./pages/Plans";
 import Settings from "./pages/Settings";
+import PublicMatchRsvp from "./pages/PublicMatchRsvp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/m/:matchId" element={<PublicMatchRsvp />} />
           {/* Legacy routes - redirect to new structure */}
           <Route path="/game/:id" element={<Navigate to="/games" replace />} />
           <Route path="/create-game" element={<Navigate to="/create-pelada" replace />} />
