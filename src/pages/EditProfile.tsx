@@ -39,6 +39,15 @@ const EditProfile = () => {
   const [preferredGameType, setPreferredGameType] = useState('');
   const [phone, setPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const clearError = (field: string) =>
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -150,14 +159,21 @@ const EditProfile = () => {
     });
 
     if (!parsed.success) {
-      const first = parsed.error.issues[0];
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? '');
+        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
       toast({
-        title: 'Erro',
-        description: first?.message || 'Verifique os campos',
+        title: 'Verifique os campos',
+        description: 'Há informações inválidas no formulário',
         variant: 'destructive',
       });
       return;
     }
+
+    setErrors({});
 
     setSaving(true);
 
@@ -270,9 +286,12 @@ const EditProfile = () => {
             <Input
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); clearError('name'); }}
               placeholder="Seu nome"
+              aria-invalid={!!errors.name}
+              className={errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
+            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -282,11 +301,14 @@ const EditProfile = () => {
                 id="age"
                 type="number"
                 value={age}
-                onChange={(e) => setAge(e.target.value)}
+                onChange={(e) => { setAge(e.target.value); clearError('age'); }}
                 placeholder="25"
                 min="10"
                 max="99"
+                aria-invalid={!!errors.age}
+                className={errors.age ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
+              {errors.age && <p className="text-xs text-destructive">{errors.age}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="shirtNumber">Camisa *</Label>
@@ -294,18 +316,21 @@ const EditProfile = () => {
                 id="shirtNumber"
                 type="number"
                 value={shirtNumber}
-                onChange={(e) => setShirtNumber(e.target.value)}
+                onChange={(e) => { setShirtNumber(e.target.value); clearError('shirtNumber'); }}
                 placeholder="10"
                 min="1"
                 max="99"
+                aria-invalid={!!errors.shirtNumber}
+                className={errors.shirtNumber ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
+              {errors.shirtNumber && <p className="text-xs text-destructive">{errors.shirtNumber}</p>}
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Posição *</Label>
-            <Select value={position} onValueChange={setPosition}>
-              <SelectTrigger>
+            <Select value={position} onValueChange={(v) => { setPosition(v); clearError('position'); }}>
+              <SelectTrigger className={errors.position ? 'border-destructive' : ''}>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
@@ -316,12 +341,13 @@ const EditProfile = () => {
                 ))}
               </SelectContent>
             </Select>
+            {errors.position && <p className="text-xs text-destructive">{errors.position}</p>}
           </div>
 
           <div className="space-y-2">
             <Label>Pé Dominante *</Label>
-            <Select value={dominantFoot} onValueChange={setDominantFoot}>
-              <SelectTrigger>
+            <Select value={dominantFoot} onValueChange={(v) => { setDominantFoot(v); clearError('dominantFoot'); }}>
+              <SelectTrigger className={errors.dominantFoot ? 'border-destructive' : ''}>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
@@ -332,6 +358,7 @@ const EditProfile = () => {
                 ))}
               </SelectContent>
             </Select>
+            {errors.dominantFoot && <p className="text-xs text-destructive">{errors.dominantFoot}</p>}
           </div>
 
           <div className="space-y-2">
@@ -340,9 +367,12 @@ const EditProfile = () => {
               id="phone"
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => { setPhone(e.target.value); clearError('phone'); }}
               placeholder="(11) 99999-9999"
+              aria-invalid={!!errors.phone}
+              className={errors.phone ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
+            {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
           </div>
 
           <div className="space-y-2">

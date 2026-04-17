@@ -54,6 +54,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     name: '',
@@ -68,6 +69,12 @@ const Register = () => {
   });
 
   const handleChange = (field: string, value: string) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
     if (field === 'phone') {
       // Apply phone mask (XX) XXXXX-XXXX
       const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -101,15 +108,21 @@ const Register = () => {
     });
 
     if (!result.success) {
-      const first = result.error.issues[0];
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0] ?? '');
+        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
       toast({
-        title: 'Erro',
-        description: first?.message || 'Verifique os campos',
+        title: 'Verifique os campos',
+        description: 'Há informações inválidas no formulário',
         variant: 'destructive',
       });
       return false;
     }
 
+    setErrors({});
     return true;
   };
 
@@ -201,9 +214,11 @@ const Register = () => {
               placeholder="Seu nome"
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
-              className="pl-12"
+              aria-invalid={!!errors.name}
+              className={`pl-12 ${errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
           </div>
+          {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
         </div>
 
         {/* Age */}
@@ -216,14 +231,17 @@ const Register = () => {
             placeholder="Mínimo 10 anos"
             value={formData.age}
             onChange={(e) => handleChange('age', e.target.value)}
+            aria-invalid={!!errors.age}
+            className={errors.age ? 'border-destructive focus-visible:ring-destructive' : ''}
           />
+          {errors.age && <p className="text-xs text-destructive">{errors.age}</p>}
         </div>
 
         {/* Position */}
         <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <Label className="text-sm text-muted-foreground">Posição</Label>
           <Select value={formData.position} onValueChange={(v) => handleChange('position', v)}>
-            <SelectTrigger className="h-12 bg-surface border-border">
+            <SelectTrigger className={`h-12 bg-surface border-border ${errors.position ? 'border-destructive' : ''}`}>
               <SelectValue placeholder="Selecione sua posição" />
             </SelectTrigger>
             <SelectContent>
@@ -232,6 +250,7 @@ const Register = () => {
               ))}
             </SelectContent>
           </Select>
+          {errors.position && <p className="text-xs text-destructive">{errors.position}</p>}
         </div>
 
         {/* Shirt Number */}
@@ -247,16 +266,18 @@ const Register = () => {
               placeholder="1 a 99"
               value={formData.shirtNumber}
               onChange={(e) => handleChange('shirtNumber', e.target.value)}
-              className="pl-12"
+              aria-invalid={!!errors.shirtNumber}
+              className={`pl-12 ${errors.shirtNumber ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
           </div>
+          {errors.shirtNumber && <p className="text-xs text-destructive">{errors.shirtNumber}</p>}
         </div>
 
         {/* Dominant Foot */}
         <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <Label className="text-sm text-muted-foreground">Pé Dominante</Label>
           <Select value={formData.dominantFoot} onValueChange={(v) => handleChange('dominantFoot', v)}>
-            <SelectTrigger className="h-12 bg-surface border-border">
+            <SelectTrigger className={`h-12 bg-surface border-border ${errors.dominantFoot ? 'border-destructive' : ''}`}>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
@@ -265,6 +286,7 @@ const Register = () => {
               ))}
             </SelectContent>
           </Select>
+          {errors.dominantFoot && <p className="text-xs text-destructive">{errors.dominantFoot}</p>}
         </div>
 
         {/* Email */}
@@ -278,9 +300,11 @@ const Register = () => {
               placeholder="seu@email.com"
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
-              className="pl-12"
+              aria-invalid={!!errors.email}
+              className={`pl-12 ${errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
           </div>
+          {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
         </div>
 
         {/* Phone */}
@@ -294,9 +318,11 @@ const Register = () => {
               placeholder="(11) 99999-9999"
               value={formData.phone}
               onChange={(e) => handleChange('phone', e.target.value)}
-              className="pl-12"
+              aria-invalid={!!errors.phone}
+              className={`pl-12 ${errors.phone ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
           </div>
+          {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
         </div>
 
         {/* Password */}
@@ -310,7 +336,8 @@ const Register = () => {
               placeholder="Mínimo 6 caracteres"
               value={formData.password}
               onChange={(e) => handleChange('password', e.target.value)}
-              className="pl-12 pr-12"
+              aria-invalid={!!errors.password}
+              className={`pl-12 pr-12 ${errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
             <button
               type="button"
@@ -320,6 +347,7 @@ const Register = () => {
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
+          {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
           {/* Password Strength Indicator */}
           {formData.password && (
             <div className="space-y-1">
@@ -359,7 +387,8 @@ const Register = () => {
               placeholder="Repita a senha"
               value={formData.confirmPassword}
               onChange={(e) => handleChange('confirmPassword', e.target.value)}
-              className="pl-12 pr-12"
+              aria-invalid={!!errors.confirmPassword}
+              className={`pl-12 pr-12 ${errors.confirmPassword ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
             <button
               type="button"
@@ -369,6 +398,7 @@ const Register = () => {
               {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
+          {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
         </div>
 
         {/* Submit Button */}
