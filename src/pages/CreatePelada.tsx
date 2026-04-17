@@ -15,6 +15,7 @@ import {
 import { ChevronLeft, CalendarDays, Clock, MapPin, Users, Loader2, Trophy, DollarSign } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { WEEKDAYS, getNextOccurrence } from '@/lib/weekday';
+import { peladaSchema } from '@/lib/peladaSchema';
 
 type GameType = Database['public']['Enums']['game_type'];
 
@@ -28,6 +29,7 @@ const CreatePelada = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     name: '',
@@ -40,31 +42,44 @@ const CreatePelada = () => {
   });
 
   const handleChange = (field: string, value: string) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim() || !formData.weekday || !formData.time || !formData.location || !formData.gameType || !formData.maxPlayers) {
+    const parsed = peladaSchema.safeParse({
+      name: formData.name,
+      weekday: formData.weekday,
+      time: formData.time,
+      location: formData.location,
+      gameType: formData.gameType,
+      maxPlayers: formData.maxPlayers === '' ? NaN : parseInt(formData.maxPlayers),
+      pricePerGame: formData.pricePerGame === '' ? '' : parseFloat(formData.pricePerGame),
+    });
+
+    if (!parsed.success) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? '');
+        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
       toast({
-        title: "Erro",
-        description: "Preencha todos os campos",
-        variant: "destructive",
+        title: 'Verifique os campos',
+        description: 'Há informações inválidas no formulário',
+        variant: 'destructive',
       });
       return;
     }
 
-    const maxPlayers = parseInt(formData.maxPlayers);
-    if (isNaN(maxPlayers) || maxPlayers < 2 || maxPlayers > 30) {
-      toast({
-        title: "Erro",
-        description: "Número de jogadores deve ser entre 2 e 30",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    setErrors({});
     setLoading(true);
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -80,8 +95,8 @@ const CreatePelada = () => {
       return;
     }
 
-    // Parse price
     const pricePerGame = formData.pricePerGame ? parseFloat(formData.pricePerGame) : null;
+    const maxPlayers = parseInt(formData.maxPlayers);
 
     // 1. Create the pelada
     const { data: pelada, error: peladaError } = await supabase
@@ -91,7 +106,7 @@ const CreatePelada = () => {
         name: formData.name.trim(),
         weekday: parseInt(formData.weekday),
         time: formData.time,
-        location: formData.location,
+        location: formData.location.trim(),
         game_type: formData.gameType as GameType,
         max_players: maxPlayers,
         status: 'active',
@@ -133,7 +148,7 @@ const CreatePelada = () => {
         pelada_id: pelada.id,
         match_date: matchDateStr,
         match_time: formData.time,
-        location: formData.location,
+        location: formData.location.trim(),
         status: 'scheduled',
       })
       .select()
@@ -190,7 +205,10 @@ const CreatePelada = () => {
             placeholder="Ex: Pelada dos Amigos"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
+            aria-invalid={!!errors.name}
+            className={errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
           />
+          {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
         </div>
 
         {/* Weekday */}
@@ -200,7 +218,7 @@ const CreatePelada = () => {
             Dia da Semana
           </Label>
           <Select value={formData.weekday} onValueChange={(v) => handleChange('weekday', v)}>
-            <SelectTrigger className="h-12 bg-surface border-border">
+            <SelectTrigger className={`h-12 bg-surface border-border ${errors.weekday ? 'border-destructive' : ''}`}>
               <SelectValue placeholder="Selecione o dia" />
             </SelectTrigger>
             <SelectContent>
@@ -209,6 +227,7 @@ const CreatePelada = () => {
               ))}
             </SelectContent>
           </Select>
+          {errors.weekday && <p className="text-xs text-destructive">{errors.weekday}</p>}
         </div>
 
         {/* Time */}
@@ -222,7 +241,10 @@ const CreatePelada = () => {
             type="time"
             value={formData.time}
             onChange={(e) => handleChange('time', e.target.value)}
+            aria-invalid={!!errors.time}
+            className={errors.time ? 'border-destructive focus-visible:ring-destructive' : ''}
           />
+          {errors.time && <p className="text-xs text-destructive">{errors.time}</p>}
         </div>
 
         {/* Location */}
@@ -236,14 +258,17 @@ const CreatePelada = () => {
             placeholder="Nome do campo ou endereço"
             value={formData.location}
             onChange={(e) => handleChange('location', e.target.value)}
+            aria-invalid={!!errors.location}
+            className={errors.location ? 'border-destructive focus-visible:ring-destructive' : ''}
           />
+          {errors.location && <p className="text-xs text-destructive">{errors.location}</p>}
         </div>
 
         {/* Game Type */}
         <div className="space-y-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <Label className="text-sm text-muted-foreground">Tipo de Jogo</Label>
           <Select value={formData.gameType} onValueChange={(v) => handleChange('gameType', v)}>
-            <SelectTrigger className="h-12 bg-surface border-border">
+            <SelectTrigger className={`h-12 bg-surface border-border ${errors.gameType ? 'border-destructive' : ''}`}>
               <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>
             <SelectContent>
@@ -252,6 +277,7 @@ const CreatePelada = () => {
               ))}
             </SelectContent>
           </Select>
+          {errors.gameType && <p className="text-xs text-destructive">{errors.gameType}</p>}
         </div>
 
         {/* Max Players */}
@@ -268,7 +294,10 @@ const CreatePelada = () => {
             placeholder="Ex: 14"
             value={formData.maxPlayers}
             onChange={(e) => handleChange('maxPlayers', e.target.value)}
+            aria-invalid={!!errors.maxPlayers}
+            className={errors.maxPlayers ? 'border-destructive focus-visible:ring-destructive' : ''}
           />
+          {errors.maxPlayers && <p className="text-xs text-destructive">{errors.maxPlayers}</p>}
         </div>
 
         {/* Price Per Game (Optional) */}
@@ -285,10 +314,16 @@ const CreatePelada = () => {
             placeholder="Ex: 25.00"
             value={formData.pricePerGame}
             onChange={(e) => handleChange('pricePerGame', e.target.value)}
+            aria-invalid={!!errors.pricePerGame}
+            className={errors.pricePerGame ? 'border-destructive focus-visible:ring-destructive' : ''}
           />
-          <p className="text-xs text-muted-foreground">
-            Deixe vazio se não houver cobrança
-          </p>
+          {errors.pricePerGame ? (
+            <p className="text-xs text-destructive">{errors.pricePerGame}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Deixe vazio se não houver cobrança
+            </p>
+          )}
         </div>
 
         {/* Submit Button */}
