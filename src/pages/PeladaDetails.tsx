@@ -20,7 +20,6 @@ import {
   Trophy,
   CheckCircle,
   XCircle,
-  Play,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getWeekdayLabel } from '@/lib/weekday';
@@ -281,13 +280,7 @@ const PeladaDetails = () => {
         {canShowActions && (
           <BottomActionBar
             primaryAction={
-              isAdmin && nextMatch.status === 'scheduled'
-                ? {
-                    label: 'Iniciar Partida',
-                    onClick: handleStartMatch,
-                    icon: <Play className="h-5 w-5" />,
-                  }
-                : isConfirmed || isWaitlist
+              isConfirmed || isWaitlist
                 ? {
                     label: 'Cancelar',
                     onClick: handleCancelPresence,
