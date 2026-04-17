@@ -1,22 +1,60 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Loader2, MailCheck } from 'lucide-react';
 import elevefutLogo from '@/assets/elevefut-logo.gif';
 import { lovable } from '@/integrations/lovable/index';
 import { getSetupRoute } from '@/lib/checkUserSetup';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
-  const [email, setEmail] = useState('');
+  const pendingEmail = (location.state as { pendingConfirmationEmail?: string } | null)?.pendingConfirmationEmail;
+  const [email, setEmail] = useState(pendingEmail ?? '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState<string | null>(pendingEmail ?? null);
+  const [resending, setResending] = useState(false);
+
+  const handleResendConfirmation = async () => {
+    const target = needsConfirmation || email;
+    if (!target) {
+      toast({
+        title: 'Informe o e-mail',
+        description: 'Digite seu e-mail para reenviar a confirmação.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: target,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    setResending(false);
+    if (error) {
+      const msg = error.message?.toLowerCase() ?? '';
+      toast({
+        title: 'Não foi possível reenviar',
+        description: msg.includes('rate') || msg.includes('too many')
+          ? 'Aguarde alguns instantes antes de tentar novamente.'
+          : 'Tente novamente em instantes.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    toast({
+      title: 'E-mail reenviado',
+      description: `Verifique a caixa de entrada de ${target} (e a pasta de spam).`,
+    });
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +87,7 @@ const Login = () => {
       if (code === "email_not_confirmed" || msg.includes("not confirmed")) {
         title = "E-mail não confirmado";
         description = "Verifique sua caixa de entrada (e spam) e clique no link de confirmação antes de entrar.";
+        setNeedsConfirmation(email);
       } else if (code === "invalid_credentials" || msg.includes("invalid login")) {
         description = "E-mail ou senha incorretos.";
       } else if (msg.includes("rate") || msg.includes("too many")) {
@@ -59,6 +98,8 @@ const Login = () => {
       toast({ title, description, variant: "destructive" });
       return;
     }
+
+    setNeedsConfirmation(null);
 
     // Check if there's a pending game join
     const joinGameId = sessionStorage.getItem('joinGameId');
@@ -93,6 +134,36 @@ const Login = () => {
 
       {/* Login Form */}
       <div className="w-full max-w-sm space-y-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        {needsConfirmation && (
+          <div className="rounded-lg border border-primary/40 bg-primary/10 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <MailCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">Confirme seu e-mail</p>
+                <p className="text-xs text-muted-foreground">
+                  Enviamos um link de confirmação para{' '}
+                  <span className="text-foreground font-medium break-all">{needsConfirmation}</span>.
+                  Clique no link antes de entrar. Cheque também a pasta de spam.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="sport-outline"
+              size="sm"
+              className="w-full"
+              onClick={handleResendConfirmation}
+              disabled={resending}
+            >
+              {resending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Reenviar e-mail de confirmação'
+              )}
+            </Button>
+          </div>
+        )}
+
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm text-muted-foreground">
