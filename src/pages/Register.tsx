@@ -54,6 +54,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     name: '',
@@ -68,6 +69,12 @@ const Register = () => {
   });
 
   const handleChange = (field: string, value: string) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
     if (field === 'phone') {
       // Apply phone mask (XX) XXXXX-XXXX
       const digits = value.replace(/\D/g, '').slice(0, 11);
