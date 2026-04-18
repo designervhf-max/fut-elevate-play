@@ -58,15 +58,23 @@ const PeladaRanking = ({ peladaId }: PeladaRankingProps) => {
         return;
       }
 
-      // Create MVP and defender maps
+      // Create MVP and defender maps — only count players confirmed in that match
+      const confirmedByMatch: Record<string, Set<string>> = {};
+      for (const p of participations) {
+        if (!p.user_id) continue;
+        if (!confirmedByMatch[p.match_id]) confirmedByMatch[p.match_id] = new Set();
+        confirmedByMatch[p.match_id].add(p.user_id);
+      }
+
       const mvpMap: Record<string, number> = {};
       const defenderMap: Record<string, number> = {};
-      
+
       matches.forEach(m => {
-        if (m.mvp_id) {
+        const confirmed = confirmedByMatch[m.id];
+        if (m.mvp_id && confirmed?.has(m.mvp_id)) {
           mvpMap[m.mvp_id] = (mvpMap[m.mvp_id] || 0) + 1;
         }
-        if (m.best_defender_id) {
+        if (m.best_defender_id && confirmed?.has(m.best_defender_id)) {
           defenderMap[m.best_defender_id] = (defenderMap[m.best_defender_id] || 0) + 1;
         }
       });

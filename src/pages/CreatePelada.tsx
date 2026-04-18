@@ -135,7 +135,14 @@ const CreatePelada = () => {
       });
 
     if (memberError) {
-      console.error('Error adding member:', memberError);
+      toast({
+        title: 'Aviso',
+        description: 'Pelada criada, mas houve um problema ao registrar você como administrador.',
+        variant: 'destructive',
+      });
+      setLoading(false);
+      navigate('/games');
+      return;
     }
 
     // 3. Create first match for the next occurrence
@@ -155,18 +162,33 @@ const CreatePelada = () => {
       .single();
 
     if (matchError) {
-      console.error('Error creating first match:', matchError);
+      toast({
+        title: 'Aviso',
+        description: 'Pelada criada, mas não foi possível criar a primeira partida.',
+        variant: 'destructive',
+      });
+      setLoading(false);
+      navigate('/games');
+      return;
     }
 
     // 4. Add creator as confirmed participant in the first match
     if (match) {
-      await supabase
+      const { error: participantError } = await supabase
         .from('match_participants')
         .insert({
           match_id: match.id,
           user_id: user.id,
           status: 'Confirmado',
         });
+
+      if (participantError) {
+        toast({
+          title: 'Aviso',
+          description: 'Partida criada, mas você não foi adicionado como participante.',
+          variant: 'destructive',
+        });
+      }
     }
 
     setLoading(false);

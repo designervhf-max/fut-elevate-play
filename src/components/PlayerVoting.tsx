@@ -95,7 +95,14 @@ const PlayerVoting = ({
         voted_for_id: mvpVote,
       });
 
-      if (mvpError) throw mvpError;
+      if (mvpError) {
+        if (mvpError.code === '23505') {
+          setHasVoted(true);
+          onVoteSubmitted();
+          return;
+        }
+        throw mvpError;
+      }
 
       // Save defender vote
       const { error: defenderError } = await supabase
@@ -106,7 +113,14 @@ const PlayerVoting = ({
           voted_for_id: defenderVote,
         });
 
-      if (defenderError) throw defenderError;
+      if (defenderError) {
+        if (defenderError.code === '23505') {
+          setHasVoted(true);
+          onVoteSubmitted();
+          return;
+        }
+        throw defenderError;
+      }
 
       toast({
         title: 'Voto registrado!',
@@ -116,7 +130,6 @@ const PlayerVoting = ({
       setHasVoted(true);
       onVoteSubmitted();
     } catch (error) {
-      console.error('Error submitting vote:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível registrar seu voto',

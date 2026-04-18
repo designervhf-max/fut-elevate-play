@@ -54,8 +54,11 @@ export function useSubscription() {
   const now = new Date();
   const trialActive = trialEndsAt ? trialEndsAt > now : false;
   
-  // Pro is true if: admin, active subscription, or trial still active
-  const isPro = isAdmin || subscriptionStatus === 'active' || (role === 'pro' && trialActive);
+  // Pro if: admin, paid active subscription, or trial still running
+  const isPro =
+    isAdmin ||
+    (subscriptionStatus === 'active' && role !== 'free') ||
+    (subscriptionStatus === 'trialing' && trialActive);
   const isFree = !isPro;
 
   const trialDaysLeft = trialActive && trialEndsAt

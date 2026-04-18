@@ -121,8 +121,20 @@ const TeamDraw = () => {
     // Limit to total players needed
     const availablePlayers = confirmed.slice(0, totalPlayers);
 
-    // Sort by overall rating (descending)
-    const sorted = [...availablePlayers].sort((a, b) => getPlayerRating(b) - getPlayerRating(a));
+    if (confirmed.length > totalPlayers) {
+      const excluded = confirmed.length - totalPlayers;
+      toast({
+        title: 'Aviso',
+        description: `${excluded} jogador${excluded > 1 ? 'es' : ''} não ${excluded > 1 ? 'serão incluídos' : 'será incluído'} no sorteio por exceder o total configurado.`,
+      });
+    }
+
+    // Sort by overall rating descending; use stable id tiebreaker to ensure reproducibility
+    const sorted = [...availablePlayers].sort((a, b) => {
+      const diff = getPlayerRating(b) - getPlayerRating(a);
+      if (diff !== 0) return diff;
+      return a.id.localeCompare(b.id);
+    });
 
     // Snake draft for balanced teams
     const newTeamA: MatchParticipant[] = [];
@@ -173,18 +185,16 @@ const TeamDraw = () => {
   };
 
   const shareOnWhatsApp = () => {
-    const teamANames = teamA.map(p => `• ${getPlayerName(p)} (${getPlayerRating(p)})`).join('\n');
-    const teamBNames = teamB.map(p => `• ${getPlayerName(p)} (${getPlayerRating(p)})`).join('\n');
-    
+    const teamANames = teamA.map(p => `• ${getPlayerName(p)}`).join('\n');
+    const teamBNames = teamB.map(p => `• ${getPlayerName(p)}`).join('\n');
+
     const message = `⚽ *TIMES SORTEADOS* ⚽
 
-🟢 *TIME A* (OVR ${getTeamAverage(teamA)})
+🟢 *TIME A*
 ${teamANames}
 
-🔵 *TIME B* (OVR ${getTeamAverage(teamB)})
-${teamBNames}
-
-🎯 Diferença: ${Math.abs(getTeamAverage(teamA) - getTeamAverage(teamB))} pontos`;
+🔵 *TIME B*
+${teamBNames}`;
 
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;

@@ -114,13 +114,18 @@ Deno.serve(async (req) => {
 
       const { data: match } = await supabase
         .from("matches")
-        .select("id, status, open_for_confirmation, pelada_id")
+        .select("id, status, open_for_confirmation, pelada_id, match_date, match_time")
         .eq("id", matchId)
         .maybeSingle();
 
       if (!match) return json({ error: "Partida não encontrada" }, 404);
       if (match.status !== "scheduled" || !match.open_for_confirmation) {
         return json({ error: "Confirmações encerradas para esta partida" }, 400);
+      }
+
+      const matchDateTime = new Date(`${match.match_date}T${match.match_time}`);
+      if (matchDateTime < new Date()) {
+        return json({ error: "Essa partida já passou" }, 400);
       }
 
       const { data: pelada } = await supabase

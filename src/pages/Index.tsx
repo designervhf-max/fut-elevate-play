@@ -9,25 +9,32 @@ const Index = () => {
 
   useEffect(() => {
     let mounted = true;
+    // Garante que a navegação acontece no máximo uma vez por montagem,
+    // mesmo que onAuthStateChange e getSession disparem em paralelo.
+    let routed = false;
 
     const routeUser = async (session: { user: { id: string } } | null) => {
-      if (!mounted) return;
+      if (!mounted || routed) return;
       if (!session) {
+        routed = true;
         navigate('/login');
         return;
       }
       const route = await getSetupRoute(session.user.id);
-      if (mounted) navigate(route);
+      if (mounted && !routed) {
+        routed = true;
+        navigate(route);
+      }
     };
 
-    // Set up listener FIRST so we catch OAuth redirects
+    // Listener ANTES para capturar o callback do OAuth redirect
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         routeUser(session);
       }
     );
 
-    // Then check existing session
+    // Sessão existente (usuário que já estava logado)
     supabase.auth.getSession().then(({ data: { session } }) => {
       routeUser(session);
     });
