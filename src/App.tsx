@@ -52,6 +52,7 @@ const App = () => (
           <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/m/:matchId" element={<PublicMatchRsvp />} />
+          <Route path="/p/:matchId" element={<PublicRsvp />} />
           {/* Legacy routes - redirect to new structure */}
           <Route path="/game/:id" element={<Navigate to="/games" replace />} />
           <Route path="/create-game" element={<Navigate to="/create-pelada" replace />} />
