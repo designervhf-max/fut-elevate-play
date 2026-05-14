@@ -164,8 +164,9 @@ Deno.serve(async (req) => {
         .insert({
           match_id: matchId,
           guest_name: name,
-          guest_position: position,
+          guest_position: position || null,
           status,
+          confirmed_via_link: true,
         });
 
       if (insertErr) {
