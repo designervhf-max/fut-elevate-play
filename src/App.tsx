@@ -55,6 +55,8 @@ const App = () => (
           <Route path="/settings" element={<Settings />} />
           <Route path="/m/:matchId" element={<PublicMatchRsvp />} />
           <Route path="/p/:matchId" element={<PublicRsvp />} />
+          <Route path="/search" element={<SearchPeladas />} />
+          <Route path="/join-requests" element={<JoinRequests />} />
           {/* Legacy routes - redirect to new structure */}
           <Route path="/game/:id" element={<Navigate to="/games" replace />} />
           <Route path="/create-game" element={<Navigate to="/create-pelada" replace />} />
