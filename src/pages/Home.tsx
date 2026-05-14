@@ -7,7 +7,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import NextMatchCard from '@/components/NextMatchCard';
 import SectionCard from '@/components/SectionCard';
 import HomeSkeleton from '@/components/skeletons/HomeSkeleton';
-import { Calendar, Plus, LogOut } from 'lucide-react';
+import { Calendar, Plus, LogOut, MapPin } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { useQueryClient } from '@tanstack/react-query';
 import { getSetupRoute } from '@/lib/checkUserSetup';
