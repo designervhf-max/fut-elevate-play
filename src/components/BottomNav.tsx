@@ -1,9 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, User } from 'lucide-react';
+import { Home, Calendar, User, Search } from 'lucide-react';
 
 const navItems = [
   { path: '/home', icon: Home, label: 'Home' },
   { path: '/games', icon: Calendar, label: 'Jogos' },
+  { path: '/search', icon: Search, label: 'Buscar' },
   { path: '/profile', icon: User, label: 'Perfil' },
 ];
 
