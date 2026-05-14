@@ -7,7 +7,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import NextMatchCard from '@/components/NextMatchCard';
 import SectionCard from '@/components/SectionCard';
 import HomeSkeleton from '@/components/skeletons/HomeSkeleton';
-import { Calendar, Plus, LogOut } from 'lucide-react';
+import { Calendar, Plus, LogOut, MapPin } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { useQueryClient } from '@tanstack/react-query';
 import { getSetupRoute } from '@/lib/checkUserSetup';
@@ -136,6 +136,35 @@ const Home = () => {
               onClick={() => navigate('/profile')}
             >
               Ver perfil completo
+            </Button>
+          </section>
+
+          {/* Search Peladas Card */}
+          <section
+            className="animate-slide-up rounded-2xl p-4 cursor-pointer transition-transform active:scale-[0.98]"
+            style={{
+              animationDelay: '0.08s',
+              background: 'linear-gradient(135deg, hsl(78 100% 50%) 0%, hsl(78 100% 40%) 100%)',
+            }}
+            onClick={() => navigate('/search')}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center">
+                <MapPin className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-primary-foreground">Procurando uma pelada?</h3>
+                <p className="text-xs text-primary-foreground/80">Encontre jogos perto de você</p>
+              </div>
+            </div>
+            <Button
+              className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-semibold"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate('/search');
+              }}
+            >
+              Buscar pelada perto de mim
             </Button>
           </section>
 
