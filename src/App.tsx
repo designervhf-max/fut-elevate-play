@@ -22,6 +22,7 @@ import MatchParticipants from "./pages/MatchParticipants";
 import Plans from "./pages/Plans";
 import Settings from "./pages/Settings";
 import PublicMatchRsvp from "./pages/PublicMatchRsvp";
+import PublicRsvp from "./pages/PublicRsvp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
