@@ -23,6 +23,8 @@ import Plans from "./pages/Plans";
 import Settings from "./pages/Settings";
 import PublicMatchRsvp from "./pages/PublicMatchRsvp";
 import PublicRsvp from "./pages/PublicRsvp";
+import SearchPeladas from "./pages/SearchPeladas";
+import JoinRequests from "./pages/JoinRequests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
