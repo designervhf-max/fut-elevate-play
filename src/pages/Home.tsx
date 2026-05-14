@@ -104,6 +104,7 @@ const Home = () => {
 
         {/* Content */}
         <main className="p-4 space-y-3">
+          <JoinRequestsBanner />
           {/* Profile Summary */}
           <section className="flex items-center gap-4 animate-slide-up">
             <AvatarUpload
