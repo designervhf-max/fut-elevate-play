@@ -196,6 +196,47 @@ export type Database = {
           },
         ]
       }
+      pelada_join_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          pelada_id: string
+          responded_at: string | null
+          responded_by: string | null
+          status: Database["public"]["Enums"]["join_request_status"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          pelada_id: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: Database["public"]["Enums"]["join_request_status"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          pelada_id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: Database["public"]["Enums"]["join_request_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pelada_join_requests_pelada_id_fkey"
+            columns: ["pelada_id"]
+            isOneToOne: false
+            referencedRelation: "peladas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pelada_members: {
         Row: {
           id: string
@@ -230,42 +271,54 @@ export type Database = {
       }
       peladas: {
         Row: {
+          address: string | null
           created_at: string
           creator_id: string
           game_type: Database["public"]["Enums"]["game_type"]
           id: string
+          latitude: number | null
           location: string
+          longitude: number | null
           max_players: number
           name: string
           price_per_game: number | null
           status: Database["public"]["Enums"]["pelada_status"]
           time: string
+          visibility: Database["public"]["Enums"]["pelada_visibility"]
           weekday: number
         }
         Insert: {
+          address?: string | null
           created_at?: string
           creator_id: string
           game_type: Database["public"]["Enums"]["game_type"]
           id?: string
+          latitude?: number | null
           location: string
+          longitude?: number | null
           max_players?: number
           name?: string
           price_per_game?: number | null
           status?: Database["public"]["Enums"]["pelada_status"]
           time: string
+          visibility?: Database["public"]["Enums"]["pelada_visibility"]
           weekday: number
         }
         Update: {
+          address?: string | null
           created_at?: string
           creator_id?: string
           game_type?: Database["public"]["Enums"]["game_type"]
           id?: string
+          latitude?: number | null
           location?: string
+          longitude?: number | null
           max_players?: number
           name?: string
           price_per_game?: number | null
           status?: Database["public"]["Enums"]["pelada_status"]
           time?: string
+          visibility?: Database["public"]["Enums"]["pelada_visibility"]
           weekday?: number
         }
         Relationships: []
@@ -538,6 +591,7 @@ export type Database = {
       dominant_foot: "Destro" | "Canhoto" | "Ambos"
       game_status: "Confirmado" | "Pendente" | "Cancelado" | "Finalizado"
       game_type: "Futsal" | "Society" | "Campo"
+      join_request_status: "pending" | "approved" | "rejected"
       match_status: "scheduled" | "in_progress" | "finished" | "cancelled"
       participant_status:
         | "Confirmado"
@@ -546,6 +600,7 @@ export type Database = {
         | "Lista de Espera"
       pelada_role: "admin" | "member"
       pelada_status: "active" | "inactive"
+      pelada_visibility: "public" | "private"
       player_position:
         | "Goleiro"
         | "Fixo"
@@ -684,6 +739,7 @@ export const Constants = {
       dominant_foot: ["Destro", "Canhoto", "Ambos"],
       game_status: ["Confirmado", "Pendente", "Cancelado", "Finalizado"],
       game_type: ["Futsal", "Society", "Campo"],
+      join_request_status: ["pending", "approved", "rejected"],
       match_status: ["scheduled", "in_progress", "finished", "cancelled"],
       participant_status: [
         "Confirmado",
@@ -693,6 +749,7 @@ export const Constants = {
       ],
       pelada_role: ["admin", "member"],
       pelada_status: ["active", "inactive"],
+      pelada_visibility: ["public", "private"],
       player_position: [
         "Goleiro",
         "Fixo",
