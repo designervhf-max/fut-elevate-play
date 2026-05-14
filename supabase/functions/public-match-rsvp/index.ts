@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       if (name.length < 2 || name.length > 60) {
         return json({ error: "Informe um nome válido (2 a 60 caracteres)" }, 400);
       }
-      if (!ALLOWED_POSITIONS.includes(position)) {
+      if (position && !ALLOWED_POSITIONS.includes(position)) {
         return json({ error: "Posição inválida" }, 400);
       }
 
