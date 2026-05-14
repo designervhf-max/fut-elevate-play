@@ -20,7 +20,11 @@ export const peladaSchema = z.object({
     .string()
     .trim()
     .min(2, { message: 'Informe o local' })
-    .max(120, { message: 'Local deve ter no máximo 120 caracteres' }),
+    .max(200, { message: 'Local deve ter no máximo 200 caracteres' }),
+  address: z.string().trim().max(300).optional().or(z.literal('')),
+  latitude: z.number().min(-90).max(90).optional().nullable(),
+  longitude: z.number().min(-180).max(180).optional().nullable(),
+  visibility: z.enum(['public', 'private']).default('private'),
   gameType: z.enum(['Futsal', 'Society', 'Campo'], {
     errorMap: () => ({ message: 'Selecione o tipo de jogo' }),
   }),

@@ -12,6 +12,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useQueryClient } from '@tanstack/react-query';
 import { getSetupRoute } from '@/lib/checkUserSetup';
 import TrialBanner from '@/components/TrialBanner';
+import JoinRequestsBanner from '@/components/JoinRequestsBanner';
 import { useMatchReminders } from '@/hooks/useMatchReminders';
 
 const Home = () => {
@@ -103,6 +104,7 @@ const Home = () => {
 
         {/* Content */}
         <main className="p-4 space-y-3">
+          <JoinRequestsBanner />
           {/* Profile Summary */}
           <section className="flex items-center gap-4 animate-slide-up">
             <AvatarUpload
