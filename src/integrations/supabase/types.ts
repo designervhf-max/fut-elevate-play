@@ -81,6 +81,7 @@ export type Database = {
       match_participants: {
         Row: {
           assists: number | null
+          confirmed_via_link: boolean
           created_at: string
           goals: number | null
           guest_name: string | null
@@ -97,6 +98,7 @@ export type Database = {
         }
         Insert: {
           assists?: number | null
+          confirmed_via_link?: boolean
           created_at?: string
           goals?: number | null
           guest_name?: string | null
@@ -113,6 +115,7 @@ export type Database = {
         }
         Update: {
           assists?: number | null
+          confirmed_via_link?: boolean
           created_at?: string
           goals?: number | null
           guest_name?: string | null
