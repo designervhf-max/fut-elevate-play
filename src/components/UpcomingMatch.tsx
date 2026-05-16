@@ -357,9 +357,20 @@ ${rsvpUrl}`;
 
     if (phase === 'em_andamento') {
       return (
-        <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => navigate(`/team-draw/${match.id}`)}>
-          <ListChecks className="h-5 w-5 mr-2" />Registrar gols
-        </Button>
+        <div className="space-y-2">
+          <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => navigate(`/team-draw/${match.id}`)}>
+            <ListChecks className="h-5 w-5 mr-2" />Registrar gols
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full h-12 border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setShowEndMatchDialog(true)}
+            disabled={actionLoading}
+          >
+            <Flag className="h-5 w-5 mr-2" />Encerrar partida
+          </Button>
+        </div>
       );
     }
 
@@ -397,8 +408,8 @@ ${rsvpUrl}`;
 
   const renderOverflowMenu = () => {
     if (!isAdmin) return null;
-    const showEnd = phase !== 'encerrada' && phase !== 'criada';
-    const showReminder = phase === 'confirmacoes_abertas' || phase === 'times_sorteados' || phase === 'em_andamento';
+    const showEnd = phase === 'times_sorteados';
+    const showReminder = phase === 'confirmacoes_abertas' || phase === 'times_sorteados';
     const showFin = !!pelada.price_per_game && pelada.price_per_game > 0 && confirmedCount > 0 && phase !== 'encerrada';
     if (!showEnd && !showReminder && !showFin) return null;
 
@@ -683,7 +694,7 @@ ${rsvpUrl}`;
         </div>
       </div>
 
-      <ConfirmDialog open={showEndMatchDialog} onOpenChange={setShowEndMatchDialog} title="Encerrar partida?" description="Após encerrar, você poderá registrar as estatísticas dos jogadores." confirmText="Encerrar" onConfirm={handleEndMatch} variant="destructive" />
+      <ConfirmDialog open={showEndMatchDialog} onOpenChange={setShowEndMatchDialog} title="Encerrar partida?" description="Tem certeza que deseja encerrar a partida? Essa ação não pode ser desfeita." confirmText="Encerrar" cancelText="Cancelar" onConfirm={handleEndMatch} variant="destructive" />
       <ConfirmDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog} title="Remover jogador?" description="Tem certeza que deseja remover este jogador da partida?" confirmText="Remover" onConfirm={handleRemoveParticipant} variant="destructive" />
     </div>
   );
