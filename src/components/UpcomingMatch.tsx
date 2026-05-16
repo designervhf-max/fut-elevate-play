@@ -194,12 +194,17 @@ const UpcomingMatch = ({
     if (ok) toast({ title: 'Confirmações liberadas!' });
   };
 
-  const handleStartMatch = async () => {
-    const ok = await updateStatus('em_andamento', { started_at: new Date().toISOString() });
+  const handleDrawTeams = async () => {
+    const ok = await updateStatus('times_sorteados');
     if (ok) {
-      toast({ title: 'Partida iniciada' });
+      toast({ title: 'Times sorteados!' });
       navigate(`/team-draw/${match.id}`);
     }
+  };
+
+  const handleStartMatch = async () => {
+    const ok = await updateStatus('em_andamento', { started_at: new Date().toISOString() });
+    if (ok) toast({ title: 'Partida iniciada' });
   };
 
   const handleEndMatch = async () => {
