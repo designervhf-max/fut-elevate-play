@@ -306,9 +306,14 @@ ${rsvpUrl}`;
 
     if (phase === 'criada') {
       return (
-        <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={handleOpenConfirmations} disabled={actionLoading}>
-          {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Unlock className="h-5 w-5 mr-2" />Liberar confirmações</>}
-        </Button>
+        <div className="space-y-2">
+          <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={handleOpenConfirmations} disabled={actionLoading}>
+            {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Unlock className="h-5 w-5 mr-2" />Liberar confirmações</>}
+          </Button>
+          <Button variant="outline" size="lg" className="w-full h-12" onClick={shareOnWhatsApp}>
+            <MessageCircle className="h-5 w-5 mr-2" />Convidar jogadores
+          </Button>
+        </div>
       );
     }
 
