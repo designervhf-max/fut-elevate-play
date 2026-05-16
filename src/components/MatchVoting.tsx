@@ -54,7 +54,7 @@ const MatchVoting = ({
 
   // Eligible players: confirmed, with user_id, not the current user
   const eligiblePlayers = participants.filter(
-    (p) => p.status === 'Confirmado' && p.user_id && p.user_id !== currentUserId && p.profile
+    (p) => p.status === 'Confirmado' && p.user_id && p.user_id !== currentUserId
   );
 
   // Check if user already voted
