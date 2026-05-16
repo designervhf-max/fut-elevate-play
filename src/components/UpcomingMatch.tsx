@@ -606,6 +606,13 @@ ${rsvpUrl}`;
                 participantId={userParticipation.id}
                 currentGoals={userParticipation.goals}
                 currentAssists={userParticipation.assists}
+                playerName={userParticipation.profile?.name}
+                playerInitials={userParticipation.profile?.name
+                  ?.split(' ')
+                  .map(n => n[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase()}
                 onSubmit={onRefresh}
               />
             </div>

@@ -54,7 +54,7 @@ const MatchVoting = ({
 
   // Eligible players: confirmed, with user_id, not the current user
   const eligiblePlayers = participants.filter(
-    (p) => p.status === 'Confirmado' && p.user_id && p.user_id !== currentUserId && p.profile
+    (p) => p.status === 'Confirmado' && p.user_id && p.user_id !== currentUserId
   );
 
   // Check if user already voted
@@ -174,10 +174,12 @@ const MatchVoting = ({
             {eligiblePlayers.map((player) => (
               <SelectItem key={player.user_id!} value={player.user_id!}>
                 <div className="flex items-center gap-2">
-                  <span>{player.profile!.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    ({player.profile!.position})
-                  </span>
+                  <span>{player.profile?.name || player.guest_name || 'Jogador'}</span>
+                  {player.profile?.position && (
+                    <span className="text-xs text-muted-foreground">
+                      ({player.profile.position})
+                    </span>
+                  )}
                 </div>
               </SelectItem>
             ))}
