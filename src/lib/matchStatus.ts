@@ -1,5 +1,10 @@
 // Normalizes legacy match statuses to the new lifecycle values
-export type MatchPhase = 'criada' | 'confirmacoes_abertas' | 'em_andamento' | 'encerrada';
+export type MatchPhase =
+  | 'criada'
+  | 'confirmacoes_abertas'
+  | 'times_sorteados'
+  | 'em_andamento'
+  | 'encerrada';
 
 export function getMatchPhase(status: string | null | undefined, openForConfirmation?: boolean): MatchPhase {
   switch (status) {
@@ -7,6 +12,8 @@ export function getMatchPhase(status: string | null | undefined, openForConfirma
       return 'criada';
     case 'confirmacoes_abertas':
       return 'confirmacoes_abertas';
+    case 'times_sorteados':
+      return 'times_sorteados';
     case 'em_andamento':
     case 'in_progress':
       return 'em_andamento';

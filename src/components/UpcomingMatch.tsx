@@ -194,12 +194,17 @@ const UpcomingMatch = ({
     if (ok) toast({ title: 'Confirmações liberadas!' });
   };
 
-  const handleStartMatch = async () => {
-    const ok = await updateStatus('em_andamento', { started_at: new Date().toISOString() });
+  const handleDrawTeams = async () => {
+    const ok = await updateStatus('times_sorteados');
     if (ok) {
-      toast({ title: 'Partida iniciada' });
+      toast({ title: 'Times sorteados!' });
       navigate(`/team-draw/${match.id}`);
     }
+  };
+
+  const handleStartMatch = async () => {
+    const ok = await updateStatus('em_andamento', { started_at: new Date().toISOString() });
+    if (ok) toast({ title: 'Partida iniciada' });
   };
 
   const handleEndMatch = async () => {
@@ -327,7 +332,7 @@ ${rsvpUrl}`;
             variant="outline"
             size="lg"
             className="w-full h-12"
-            onClick={handleStartMatch}
+            onClick={handleDrawTeams}
             disabled={confirmedCount < 4 || actionLoading}
           >
             <Shuffle className="h-5 w-5 mr-2" />
@@ -337,30 +342,63 @@ ${rsvpUrl}`;
       );
     }
 
+    if (phase === 'times_sorteados') {
+      return (
+        <div className="space-y-2">
+          <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => navigate(`/team-draw/${match.id}`)}>
+            <ListChecks className="h-5 w-5 mr-2" />Ver times
+          </Button>
+          <Button variant="outline" size="lg" className="w-full h-12" onClick={handleStartMatch} disabled={actionLoading}>
+            {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Flag className="h-5 w-5 mr-2" />Iniciar partida</>}
+          </Button>
+        </div>
+      );
+    }
+
     if (phase === 'em_andamento') {
       return (
         <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => navigate(`/team-draw/${match.id}`)}>
-          <ListChecks className="h-5 w-5 mr-2" />Ver times / Registrar gols
+          <ListChecks className="h-5 w-5 mr-2" />Registrar gols
         </Button>
       );
     }
 
     // encerrada
+    const canVote = hasAccess('mvp_voting');
     return (
-      <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => {
-        const el = document.getElementById('match-summary');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        else toast({ title: 'Resumo ainda não disponível', description: 'Aguardando registro de estatísticas.' });
-      }}>
-        <Trophy className="h-5 w-5 mr-2" />Ver resumo
-      </Button>
+      <div className="space-y-2">
+        <Button
+          variant="sport"
+          size="lg"
+          className="w-full h-14 text-base font-semibold"
+          onClick={() => {
+            if (!canVote) {
+              toast({ title: 'Recurso Pro', description: 'A votação de MVP é exclusiva para assinantes Pro.' });
+              return;
+            }
+            const el = document.getElementById('mvp-voting');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            else toast({ title: 'Votação indisponível', description: 'A janela de votação expirou ou ainda não está aberta.' });
+          }}
+        >
+          {canVote ? <Trophy className="h-5 w-5 mr-2" /> : <Lock className="h-5 w-5 mr-2" />}
+          Votar MVP
+        </Button>
+        <Button variant="outline" size="lg" className="w-full h-12" onClick={() => {
+          const el = document.getElementById('match-summary');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          else toast({ title: 'Resumo ainda não disponível', description: 'Aguardando registro de estatísticas.' });
+        }}>
+          <ListChecks className="h-5 w-5 mr-2" />Ver resumo
+        </Button>
+      </div>
     );
   };
 
   const renderOverflowMenu = () => {
     if (!isAdmin) return null;
-    const showEnd = phase !== 'encerrada';
-    const showReminder = phase === 'confirmacoes_abertas' || phase === 'em_andamento';
+    const showEnd = phase !== 'encerrada' && phase !== 'criada';
+    const showReminder = phase === 'confirmacoes_abertas' || phase === 'times_sorteados' || phase === 'em_andamento';
     const showFin = !!pelada.price_per_game && pelada.price_per_game > 0 && confirmedCount > 0 && phase !== 'encerrada';
     if (!showEnd && !showReminder && !showFin) return null;
 
@@ -424,6 +462,7 @@ ${rsvpUrl}`;
   const phaseLabel: Record<string, { text: string; cls: string }> = {
     criada: { text: 'Criada', cls: 'bg-muted text-muted-foreground' },
     confirmacoes_abertas: { text: 'Confirmações abertas', cls: 'bg-primary/20 text-primary' },
+    times_sorteados: { text: 'Times sorteados', cls: 'bg-amber-500/20 text-amber-400' },
     em_andamento: { text: 'Em andamento', cls: 'bg-sky-500/20 text-sky-400' },
     encerrada: { text: 'Encerrada', cls: 'bg-destructive/20 text-destructive' },
   };
@@ -540,7 +579,7 @@ ${rsvpUrl}`;
             </div>
           )}
           {userParticipation?.status === 'Confirmado' && isVotingOpen && (
-            <div>
+            <div id="mvp-voting">
               <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">Votação MVP</h4>
               <ProFeatureGate feature="mvp_voting" fallbackTitle="Votação MVP">
                 <MatchVoting
