@@ -332,7 +332,7 @@ ${rsvpUrl}`;
             variant="outline"
             size="lg"
             className="w-full h-12"
-            onClick={handleStartMatch}
+            onClick={handleDrawTeams}
             disabled={confirmedCount < 4 || actionLoading}
           >
             <Shuffle className="h-5 w-5 mr-2" />
@@ -342,23 +342,56 @@ ${rsvpUrl}`;
       );
     }
 
+    if (phase === 'times_sorteados') {
+      return (
+        <div className="space-y-2">
+          <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => navigate(`/team-draw/${match.id}`)}>
+            <ListChecks className="h-5 w-5 mr-2" />Ver times
+          </Button>
+          <Button variant="outline" size="lg" className="w-full h-12" onClick={handleStartMatch} disabled={actionLoading}>
+            {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Flag className="h-5 w-5 mr-2" />Iniciar partida</>}
+          </Button>
+        </div>
+      );
+    }
+
     if (phase === 'em_andamento') {
       return (
         <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => navigate(`/team-draw/${match.id}`)}>
-          <ListChecks className="h-5 w-5 mr-2" />Ver times / Registrar gols
+          <ListChecks className="h-5 w-5 mr-2" />Registrar gols
         </Button>
       );
     }
 
     // encerrada
+    const canVote = hasAccess('mvp_voting');
     return (
-      <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => {
-        const el = document.getElementById('match-summary');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        else toast({ title: 'Resumo ainda não disponível', description: 'Aguardando registro de estatísticas.' });
-      }}>
-        <Trophy className="h-5 w-5 mr-2" />Ver resumo
-      </Button>
+      <div className="space-y-2">
+        <Button
+          variant="sport"
+          size="lg"
+          className="w-full h-14 text-base font-semibold"
+          onClick={() => {
+            if (!canVote) {
+              toast({ title: 'Recurso Pro', description: 'A votação de MVP é exclusiva para assinantes Pro.' });
+              return;
+            }
+            const el = document.getElementById('mvp-voting');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            else toast({ title: 'Votação indisponível', description: 'A janela de votação expirou ou ainda não está aberta.' });
+          }}
+        >
+          {canVote ? <Trophy className="h-5 w-5 mr-2" /> : <Lock className="h-5 w-5 mr-2" />}
+          Votar MVP
+        </Button>
+        <Button variant="outline" size="lg" className="w-full h-12" onClick={() => {
+          const el = document.getElementById('match-summary');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          else toast({ title: 'Resumo ainda não disponível', description: 'Aguardando registro de estatísticas.' });
+        }}>
+          <ListChecks className="h-5 w-5 mr-2" />Ver resumo
+        </Button>
+      </div>
     );
   };
 
