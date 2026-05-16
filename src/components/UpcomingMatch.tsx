@@ -694,7 +694,7 @@ ${rsvpUrl}`;
         </div>
       </div>
 
-      <ConfirmDialog open={showEndMatchDialog} onOpenChange={setShowEndMatchDialog} title="Encerrar partida?" description="Após encerrar, você poderá registrar as estatísticas dos jogadores." confirmText="Encerrar" onConfirm={handleEndMatch} variant="destructive" />
+      <ConfirmDialog open={showEndMatchDialog} onOpenChange={setShowEndMatchDialog} title="Encerrar partida?" description="Tem certeza que deseja encerrar a partida? Essa ação não pode ser desfeita." confirmText="Encerrar" cancelText="Cancelar" onConfirm={handleEndMatch} variant="destructive" />
       <ConfirmDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog} title="Remover jogador?" description="Tem certeza que deseja remover este jogador da partida?" confirmText="Remover" onConfirm={handleRemoveParticipant} variant="destructive" />
     </div>
   );
