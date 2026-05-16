@@ -4,15 +4,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import TeamDrawResult from './TeamDrawResult';
 import GameSummary from './GameSummary';
 import AddPlayerDialog from './AddPlayerDialog';
 import PlayerStatsForm from './PlayerStatsForm';
 import MatchVoting from './MatchVoting';
 import PlayerRatingsForm from './PlayerRatingsForm';
-import MatchReminderButton from './MatchReminderButton';
 import PaymentBadge from './PaymentBadge';
 import FinancialSummary from './FinancialSummary';
+import ProFeatureGate from './ProFeatureGate';
+import { useSubscription } from '@/hooks/useSubscription';
+import { getMatchPhase } from '@/lib/matchStatus';
 import {
   CalendarDays,
   Clock,
@@ -27,9 +36,13 @@ import {
   X,
   Trash2,
   Unlock,
-  Lock,
   MessageCircle,
   ChevronDown,
+  MoreVertical,
+  Bell,
+  Trophy,
+  ListChecks,
+  Lock,
 } from 'lucide-react';
 
 const PARTICIPANTS_DISPLAY_LIMIT = 3;
@@ -100,13 +113,13 @@ const UpcomingMatch = ({
 }: UpcomingMatchProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { hasAccess } = useSubscription();
   const [actionLoading, setActionLoading] = useState(false);
   const [showTeamDraw, setShowTeamDraw] = useState(false);
   const [teamA, setTeamA] = useState<MatchParticipant[]>([]);
   const [teamB, setTeamB] = useState<MatchParticipant[]>([]);
-  
-  // Dialog states
   const [showEndMatchDialog, setShowEndMatchDialog] = useState(false);
+  const [showFinancial, setShowFinancial] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [participantToRemove, setParticipantToRemove] = useState<string | null>(null);
 
@@ -121,15 +134,11 @@ const UpcomingMatch = ({
         <p className="text-sm text-muted-foreground mt-2">
           Nenhuma partida marcada para os próximos dias.
         </p>
-        {isAdmin && (
-          <Button variant="sport" className="mt-4" onClick={() => {/* TODO: Create match */}}>
-            Agendar Partida
-          </Button>
-        )}
       </div>
     );
   }
 
+  const phase = getMatchPhase(match.status, match.open_for_confirmation);
   const matchDate = new Date(match.match_date + 'T00:00:00');
   const userParticipation = participants.find(p => p.user_id === userId);
   const confirmedParticipants = participants.filter(p => p.status === 'Confirmado');
@@ -138,591 +147,432 @@ const UpcomingMatch = ({
   const waitlistCount = waitlistParticipants.length;
   const paidCount = confirmedParticipants.filter(p => p.paid).length;
   const userSubmittedStats = userParticipation?.stats_submitted ?? false;
-  
-  // Check if voting is still open (48h after match ended)
-  const isVotingOpen = match.ended_at 
-    ? new Date().getTime() - new Date(match.ended_at).getTime() < 48 * 60 * 60 * 1000 
+  const slotsFull = confirmedCount === pelada.max_players;
+  const progressPct = Math.min((confirmedCount / pelada.max_players) * 100, 100);
+
+  const isVotingOpen = match.ended_at
+    ? new Date().getTime() - new Date(match.ended_at).getTime() < 48 * 60 * 60 * 1000
     : false;
-  
-  // Check if confirmed slots are full (first come first served)
-  const isFull = confirmedCount >= pelada.max_players;
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Confirmado':
-        return <CheckCircle className="h-4 w-4 text-lime" />;
-      case 'Lista de Espera':
-        return <AlertCircle className="h-4 w-4 text-sky-400" />;
-      case 'Pendente':
-        return <AlertCircle className="h-4 w-4 text-warning" />;
-      case 'Recusado':
-        return <XCircle className="h-4 w-4 text-destructive" />;
-      default:
-        return null;
+      case 'Confirmado': return <CheckCircle className="h-4 w-4 text-lime" />;
+      case 'Lista de Espera': return <AlertCircle className="h-4 w-4 text-sky-400" />;
+      case 'Pendente': return <AlertCircle className="h-4 w-4 text-warning" />;
+      case 'Recusado': return <XCircle className="h-4 w-4 text-destructive" />;
+      default: return null;
     }
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Confirmado':
-        return 'text-lime';
-      case 'Lista de Espera':
-        return 'text-sky-400';
-      case 'Pendente':
-        return 'text-warning';
-      case 'Recusado':
-        return 'text-destructive';
-      default:
-        return 'text-muted-foreground';
+      case 'Confirmado': return 'text-lime';
+      case 'Lista de Espera': return 'text-sky-400';
+      case 'Pendente': return 'text-warning';
+      case 'Recusado': return 'text-destructive';
+      default: return 'text-muted-foreground';
     }
   };
 
-  const handleConfirmPresence = async () => {
-    if (!userId || !match) return;
+  const updateStatus = async (newStatus: string, extra: Record<string, any> = {}) => {
     setActionLoading(true);
-
-    // Determine status based on capacity
-    const newStatus = isFull ? 'Lista de Espera' : 'Confirmado';
-    const successMessage = isFull ? 'Você está na lista de espera' : 'Presença confirmada!';
-
-    if (userParticipation) {
-      // Update existing participation
-      const { error } = await supabase
-        .from('match_participants')
-        .update({ status: newStatus })
-        .eq('id', userParticipation.id);
-
-      if (error) {
-        toast({ title: 'Erro', description: 'Não foi possível confirmar presença', variant: 'destructive' });
-      } else {
-        toast({ title: 'Sucesso', description: successMessage });
-        await onRefresh();
-      }
-    } else {
-      // Create new participation
-      const { error } = await supabase
-        .from('match_participants')
-        .insert({
-          match_id: match.id,
-          user_id: userId,
-          status: newStatus,
-        });
-
-      if (error) {
-        toast({ title: 'Erro', description: 'Não foi possível confirmar presença', variant: 'destructive' });
-      } else {
-        toast({ title: 'Sucesso', description: successMessage });
-        await onRefresh();
-      }
-    }
-
+    const { error } = await supabase
+      .from('matches')
+      .update({ status: newStatus as any, ...extra })
+      .eq('id', match.id);
     setActionLoading(false);
+    if (error) {
+      toast({ title: 'Erro', description: 'Não foi possível atualizar a partida', variant: 'destructive' });
+      return false;
+    }
+    await onRefresh();
+    return true;
+  };
+
+  // === Phase transitions ===
+  const handleOpenConfirmations = async () => {
+    const ok = await updateStatus('confirmacoes_abertas', { open_for_confirmation: true });
+    if (ok) toast({ title: 'Confirmações liberadas!' });
+  };
+
+  const handleStartMatch = async () => {
+    const ok = await updateStatus('em_andamento', { started_at: new Date().toISOString() });
+    if (ok) {
+      toast({ title: 'Partida iniciada' });
+      navigate(`/team-draw/${match.id}`);
+    }
+  };
+
+  const handleEndMatch = async () => {
+    setShowEndMatchDialog(false);
+    const ok = await updateStatus('encerrada', { ended_at: new Date().toISOString() });
+    if (ok) toast({ title: 'Partida encerrada!', description: 'Registre as estatísticas dos jogadores' });
+  };
+
+  // === Other actions ===
+  const handleConfirmPresence = async () => {
+    if (!userId) return;
+    setActionLoading(true);
+    const newStatus = slotsFull ? 'Lista de Espera' : 'Confirmado';
+    const op = userParticipation
+      ? supabase.from('match_participants').update({ status: newStatus }).eq('id', userParticipation.id)
+      : supabase.from('match_participants').insert({ match_id: match.id, user_id: userId, status: newStatus });
+    const { error } = await op;
+    setActionLoading(false);
+    if (error) toast({ title: 'Erro', description: 'Não foi possível confirmar presença', variant: 'destructive' });
+    else { toast({ title: slotsFull ? 'Você está na lista de espera' : 'Presença confirmada!' }); await onRefresh(); }
   };
 
   const handleCancelPresence = async () => {
     if (!userId || !userParticipation) return;
     setActionLoading(true);
-
-    const { error } = await supabase
-      .from('match_participants')
-      .delete()
-      .eq('id', userParticipation.id);
-
+    const { error } = await supabase.from('match_participants').delete().eq('id', userParticipation.id);
     setActionLoading(false);
-
-    if (error) {
-      toast({ title: 'Erro', description: 'Não foi possível cancelar presença', variant: 'destructive' });
-    } else {
-      toast({ title: 'Sucesso', description: 'Presença cancelada' });
-      await onRefresh();
-    }
-  };
-
-  const getPlayerRating = (participant: MatchParticipant) => {
-    if (!participant.user_id) return 50;
-    return participant.profile?.overall_rating || 50;
-  };
-
-  const shuffleTeams = () => {
-    const confirmed = participants.filter(p => p.status === 'Confirmado');
-    
-    if (confirmed.length < 2) {
-      toast({
-        title: 'Aviso',
-        description: 'É necessário pelo menos 2 jogadores confirmados',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const sorted = [...confirmed].sort((a, b) => getPlayerRating(b) - getPlayerRating(a));
-    const newTeamA: MatchParticipant[] = [];
-    const newTeamB: MatchParticipant[] = [];
-    
-    sorted.forEach((player, index) => {
-      if (index % 2 === 0) {
-        newTeamA.push(player);
-      } else {
-        newTeamB.push(player);
-      }
-    });
-
-    setTeamA(newTeamA);
-    setTeamB(newTeamB);
-    setShowTeamDraw(true);
-  };
-
-  const handleEndMatch = async () => {
-    if (!match || !isAdmin) return;
-
-    setActionLoading(true);
-
-    const { error } = await supabase
-      .from('matches')
-      .update({ 
-        status: 'finished',
-        ended_at: new Date().toISOString(),
-      })
-      .eq('id', match.id);
-
-    setActionLoading(false);
-    setShowEndMatchDialog(false);
-
-    if (error) {
-      toast({ title: 'Erro', description: 'Não foi possível encerrar a partida', variant: 'destructive' });
-    } else {
-      toast({ title: 'Partida encerrada!', description: 'Registre as estatísticas dos jogadores' });
-      await onRefresh();
-    }
-  };
-
-  const handleDataRefresh = async () => {
-    await onRefresh();
+    if (error) toast({ title: 'Erro', description: 'Não foi possível cancelar', variant: 'destructive' });
+    else { toast({ title: 'Presença cancelada' }); await onRefresh(); }
   };
 
   const handleTogglePaid = async (participantId: string, currentPaid: boolean) => {
     if (!isAdmin) return;
-
-    const { error } = await supabase
-      .from('match_participants')
-      .update({ paid: !currentPaid })
-      .eq('id', participantId);
-
-    if (error) {
-      toast({ title: 'Erro', description: 'Não foi possível atualizar pagamento', variant: 'destructive' });
-    } else {
-      toast({ title: !currentPaid ? 'Pagamento confirmado' : 'Pagamento removido' });
-      await onRefresh();
-    }
+    const { error } = await supabase.from('match_participants').update({ paid: !currentPaid }).eq('id', participantId);
+    if (error) toast({ title: 'Erro', variant: 'destructive' });
+    else { toast({ title: !currentPaid ? 'Pagamento confirmado' : 'Pagamento removido' }); await onRefresh(); }
   };
 
   const handleRemoveParticipant = async () => {
     if (!isAdmin || !participantToRemove) return;
-
-    const { error } = await supabase
-      .from('match_participants')
-      .delete()
-      .eq('id', participantToRemove);
-
+    const { error } = await supabase.from('match_participants').delete().eq('id', participantToRemove);
     setShowRemoveDialog(false);
     setParticipantToRemove(null);
+    if (error) toast({ title: 'Erro', variant: 'destructive' });
+    else { toast({ title: 'Jogador removido' }); await onRefresh(); }
+  };
 
-    if (error) {
-      toast({ title: 'Erro', description: 'Não foi possível remover o jogador', variant: 'destructive' });
-    } else {
-      toast({ title: 'Jogador removido' });
-      await onRefresh();
+  const buildShareMessage = () => {
+    const confirmedNames = confirmedParticipants.map(p => `• ${p.profile?.name || p.guest_name}`).join('\n');
+    const dateStr = matchDate.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const rsvpUrl = `https://${projectId}.supabase.co/functions/v1/match-preview/${match.id}`;
+    return `⚽ *${pelada.name}*
+📅 ${dateStr}
+🕐 ${match.match_time.slice(0, 5)}
+📍 ${match.location || pelada.location}
+
+✅ *CONFIRMADOS (${confirmedCount}/${pelada.max_players})*
+${confirmedNames || '—'}
+
+${slotsFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas restantes`}
+
+👉 Confirme sua presença:
+${rsvpUrl}`;
+  };
+
+  const shareOnWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(buildShareMessage())}`;
+    window.open(url, '_blank');
+  };
+
+  const sendReminder = () => {
+    const dateStr = matchDate.toLocaleDateString('pt-BR');
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const rsvpUrl = `https://${projectId}.supabase.co/functions/v1/match-preview/${match.id}`;
+    const msg = `⚠️ *LEMBRETE DE PARTIDA*
+
+⚽ ${pelada.name}
+📅 ${dateStr}
+🕐 ${match.match_time.slice(0, 5)}
+📍 ${match.location || pelada.location}
+
+👥 ${confirmedCount}/${pelada.max_players} confirmados
+
+👉 ${rsvpUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  const shuffleTeams = () => {
+    const confirmed = participants.filter(p => p.status === 'Confirmado');
+    if (confirmed.length < 2) {
+      toast({ title: 'Aviso', description: 'Mínimo 2 jogadores confirmados', variant: 'destructive' });
+      return;
     }
+    const sorted = [...confirmed].sort((a, b) => (b.profile?.overall_rating || 50) - (a.profile?.overall_rating || 50));
+    const a: MatchParticipant[] = [], b: MatchParticipant[] = [];
+    sorted.forEach((p, i) => (i % 2 === 0 ? a : b).push(p));
+    setTeamA(a); setTeamB(b); setShowTeamDraw(true);
   };
 
-  const openRemoveDialog = (participantId: string) => {
-    setParticipantToRemove(participantId);
-    setShowRemoveDialog(true);
-  };
+  // === Render: primary + secondary actions per phase (admin) ===
+  const renderAdminActions = () => {
+    if (!isAdmin) return null;
 
-  const handleToggleConfirmations = async () => {
-    if (!match || !isAdmin) return;
-    setActionLoading(true);
-
-    const newValue = !match.open_for_confirmation;
-    const { error } = await supabase
-      .from('matches')
-      .update({ open_for_confirmation: newValue })
-      .eq('id', match.id);
-
-    setActionLoading(false);
-
-    if (error) {
-      toast({ title: 'Erro', description: 'Não foi possível atualizar', variant: 'destructive' });
-    } else {
-      toast({ title: newValue ? 'Confirmações liberadas' : 'Confirmações bloqueadas' });
-      await onRefresh();
+    if (phase === 'criada') {
+      return (
+        <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={handleOpenConfirmations} disabled={actionLoading}>
+          {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Unlock className="h-5 w-5 mr-2" />Liberar confirmações</>}
+        </Button>
+      );
     }
+
+    if (phase === 'confirmacoes_abertas') {
+      return (
+        <div className="space-y-2">
+          <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={shareOnWhatsApp}>
+            <MessageCircle className="h-5 w-5 mr-2" />Compartilhar no WhatsApp
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full h-12"
+            onClick={handleStartMatch}
+            disabled={!slotsFull || actionLoading}
+          >
+            <Shuffle className="h-5 w-5 mr-2" />
+            Sortear Times {!slotsFull && <span className="ml-2 text-xs text-muted-foreground">({confirmedCount}/{pelada.max_players})</span>}
+          </Button>
+        </div>
+      );
+    }
+
+    if (phase === 'em_andamento') {
+      return (
+        <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => navigate(`/team-draw/${match.id}`)}>
+          <ListChecks className="h-5 w-5 mr-2" />Ver times / Registrar gols
+        </Button>
+      );
+    }
+
+    // encerrada
+    return (
+      <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => {
+        const el = document.getElementById('match-summary');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        else toast({ title: 'Resumo ainda não disponível', description: 'Aguardando registro de estatísticas.' });
+      }}>
+        <Trophy className="h-5 w-5 mr-2" />Ver resumo
+      </Button>
+    );
   };
 
-  // Adapt participants for legacy components
-  const adaptedParticipants = participants.map(p => ({
-    ...p,
-    game_id: match.id, // Legacy compatibility
-    profile: p.profile || {
-      id: p.user_id || '',
-      name: p.guest_name || 'Jogador',
-      position: p.guest_position || 'Meia',
-      avatar_url: null,
-      overall_rating: 50,
-      attack_rating: 50,
-      defense_rating: 50,
-      skill_rating: 50,
-      strength_rating: 50,
-      age: 25,
-      dominant_foot: 'Destro',
-      shirt_number: 10,
-      total_goals: 0,
-      total_assists: 0,
-      calibration_completed: false,
-      created_at: '',
-      preferred_game_type: null,
-    },
-  }));
+  const renderOverflowMenu = () => {
+    if (!isAdmin) return null;
+    const showEnd = phase !== 'encerrada';
+    const showReminder = phase === 'confirmacoes_abertas' || phase === 'em_andamento';
+    const showFin = !!pelada.price_per_game && pelada.price_per_game > 0 && confirmedCount > 0 && phase !== 'encerrada';
+    if (!showEnd && !showReminder && !showFin) return null;
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0">
+            <MoreVertical className="h-5 w-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          {showReminder && (
+            <DropdownMenuItem onClick={sendReminder}>
+              <Bell className="h-4 w-4 mr-2" />Lembrete WhatsApp
+            </DropdownMenuItem>
+          )}
+          {showFin && (
+            <DropdownMenuItem onClick={() => setShowFinancial(v => !v)}>
+              <ListChecks className="h-4 w-4 mr-2" />Resumo financeiro
+            </DropdownMenuItem>
+          )}
+          {showEnd && (
+            <>
+              {(showReminder || showFin) && <DropdownMenuSeparator />}
+              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setShowEndMatchDialog(true)}>
+                <Flag className="h-4 w-4 mr-2" />Encerrar partida
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
+  // Non-admin actions (presence) — only when confirmations are open
+  const renderMemberActions = () => {
+    if (isAdmin) return null;
+    if (phase !== 'confirmacoes_abertas') {
+      if (phase === 'criada') {
+        return (
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+            <Lock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Aguardando o admin liberar as confirmações</span>
+          </div>
+        );
+      }
+      return null;
+    }
+    const isCancelable = userParticipation && (userParticipation.status === 'Confirmado' || userParticipation.status === 'Lista de Espera');
+    return isCancelable ? (
+      <Button variant="outline" size="lg" className="w-full h-12" onClick={handleCancelPresence} disabled={actionLoading}>
+        <XCircle className="h-5 w-5 mr-2" />Cancelar presença
+      </Button>
+    ) : (
+      <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={handleConfirmPresence} disabled={actionLoading}>
+        {actionLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : slotsFull ? <><AlertCircle className="h-5 w-5 mr-2" />Entrar na lista de espera</> : <><CheckCircle className="h-5 w-5 mr-2" />Confirmar presença</>}
+      </Button>
+    );
+  };
+
+  const phaseLabel: Record<string, { text: string; cls: string }> = {
+    criada: { text: 'Criada', cls: 'bg-muted text-muted-foreground' },
+    confirmacoes_abertas: { text: 'Confirmações abertas', cls: 'bg-primary/20 text-primary' },
+    em_andamento: { text: 'Em andamento', cls: 'bg-sky-500/20 text-sky-400' },
+    encerrada: { text: 'Encerrada', cls: 'bg-destructive/20 text-destructive' },
+  };
 
   return (
     <div className="space-y-4">
-      {/* Match Info Card */}
-      <div className="fifa-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+      {/* === Header card === */}
+      <div className="fifa-card p-5 space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
               <CalendarDays className="h-6 w-6 text-primary" />
             </div>
-            <div>
-              <p className="font-semibold text-foreground">
+            <div className="min-w-0">
+              <p className="font-semibold text-foreground truncate">
                 {matchDate.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
               </p>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {match.match_time.slice(0, 5)}
+                <Clock className="h-3 w-3" />{match.match_time.slice(0, 5)}
               </p>
             </div>
           </div>
-          {match.status === 'finished' && (
-            <span className="text-xs bg-destructive/20 text-destructive px-2 py-1 rounded">
-              Finalizado
-            </span>
-          )}
+          <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded font-semibold ${phaseLabel[phase].cls}`}>
+            {phaseLabel[phase].text}
+          </span>
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-          <MapPin className="h-4 w-4" />
-          {match.location || pelada.location}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <MapPin className="h-4 w-4 shrink-0" />
+          <span className="truncate">{match.location || pelada.location}</span>
         </div>
 
-        <div className="space-y-2 mb-4">
+        {/* Progress */}
+        <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Users className="h-4 w-4" />
-              <span>{confirmedCount}/{pelada.max_players} confirmados</span>
-              {waitlistCount > 0 && (
-                <span className="text-xs text-sky-400">
-                  (+{waitlistCount} na espera)
-                </span>
-              )}
+              <span><span className="text-foreground font-semibold">{confirmedCount}</span>/{pelada.max_players} confirmados</span>
+              {waitlistCount > 0 && <span className="text-xs text-sky-400">(+{waitlistCount} espera)</span>}
             </div>
-            {isFull && (
-              <span className="text-xs bg-warning/20 text-warning px-2 py-0.5 rounded">
-                LOTADO
-              </span>
-            )}
+            {slotsFull && <span className="text-xs bg-warning/20 text-warning px-2 py-0.5 rounded">LOTADO</span>}
           </div>
           <div className="w-full bg-surface rounded-full h-2 overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-primary to-lime transition-all duration-500 ease-out"
-              style={{ width: `${Math.min((confirmedCount / pelada.max_players) * 100, 100)}%` }}
-            />
+            <div className="h-full bg-gradient-to-r from-primary to-lime transition-all duration-500" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
-        {/* User Status */}
-        {userParticipation && (
-          <div className="flex items-center gap-2 p-3 bg-surface/50 rounded-lg mb-4">
+        {/* User status (non-admin) */}
+        {userParticipation && !isAdmin && (
+          <div className="flex items-center gap-2 p-3 bg-surface/50 rounded-lg">
             {getStatusIcon(userParticipation.status)}
             <span className={`text-sm font-medium ${getStatusColor(userParticipation.status)}`}>
-              {userParticipation.status === 'Lista de Espera' 
+              {userParticipation.status === 'Lista de Espera'
                 ? `Você está na lista de espera (posição ${waitlistParticipants.findIndex(p => p.user_id === userId) + 1})`
                 : `Você está ${userParticipation.status.toLowerCase()}`}
             </span>
           </div>
         )}
 
-        {/* Confirmations closed message */}
-        {!match.open_for_confirmation && match.status !== 'finished' && !isAdmin && (
-          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg mb-4">
-            <Lock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              Confirmações ainda não liberadas pelo admin
-            </span>
+        {/* Primary + secondary actions + overflow */}
+        <div className="flex items-start gap-2">
+          <div className="flex-1 space-y-2">
+            {renderAdminActions()}
+            {renderMemberActions()}
           </div>
-        )}
+          {renderOverflowMenu()}
+        </div>
 
-        {/* User Actions */}
-        {match.status !== 'finished' && match.open_for_confirmation && (
-          <div className="flex gap-2">
-            {(!userParticipation || (userParticipation.status !== 'Confirmado' && userParticipation.status !== 'Lista de Espera')) && (
-              <Button
-                variant="sport"
-                className="flex-1"
-                onClick={handleConfirmPresence}
-                disabled={actionLoading}
-              >
-                {actionLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : isFull ? (
-                  <>
-                    <AlertCircle className="h-5 w-5 mr-2" />
-                    Entrar na Lista de Espera
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-5 w-5 mr-2" />
-                    Confirmar Presença
-                  </>
-                )}
-              </Button>
-            )}
-            {userParticipation && (userParticipation.status === 'Confirmado' || userParticipation.status === 'Lista de Espera') && (
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={handleCancelPresence}
-                disabled={actionLoading}
-              >
-                <XCircle className="h-5 w-5 mr-2" />
-                Cancelar
-              </Button>
-            )}
-          </div>
-        )}
-
-        {/* WhatsApp Share Button */}
-        {confirmedCount > 0 && match.status !== 'finished' && (
-          !match.open_for_confirmation ? (
-            <div className="mt-3 p-3 rounded-lg border border-warning/30 bg-warning/10 space-y-2">
-              <div className="flex items-start gap-2">
-                <Lock className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-foreground">
-                  Confirmações estão <span className="font-semibold">fechadas</span>. Libere antes de compartilhar para que os jogadores consigam confirmar pelo link.
-                </p>
-              </div>
-              {isAdmin && (
-                <Button
-                  variant="sport"
-                  size="sm"
-                  className="w-full"
-                  onClick={handleToggleConfirmations}
-                  disabled={actionLoading}
-                >
-                  <Unlock className="h-4 w-4 mr-1" />
-                  Liberar confirmações agora
-                </Button>
-              )}
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              className="w-full mt-3"
-              onClick={() => {
-                const confirmedNames = confirmedParticipants
-                  .map(p => `• ${p.profile?.name || p.guest_name}`)
-                  .join('\n');
-
-                const dateStr = matchDate.toLocaleDateString('pt-BR', {
-                  weekday: 'long',
-                  day: '2-digit',
-                  month: 'long',
-                });
-
-                // Use edge function URL so WhatsApp gets dynamic OG preview;
-                // real users are 302-redirected to /m/:matchId.
-                const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-                const rsvpUrl = `https://${projectId}.supabase.co/functions/v1/match-preview/${match.id}`;
-                const message = `⚽ *${pelada.name}*
-📅 ${dateStr}
-🕐 ${match.match_time.slice(0, 5)}
-📍 ${match.location || pelada.location}
-
-✅ *CONFIRMADOS (${confirmedCount}/${pelada.max_players})*
-${confirmedNames}
-
-${isFull ? '🔴 LOTADO!' : `🟢 ${pelada.max_players - confirmedCount} vagas restantes`}
-
-👉 Confirme sua presença:
-${rsvpUrl}`;
-
-                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
-              }}
-            >
-              <MessageCircle className="h-5 w-5 mr-2" />
-              Compartilhar no WhatsApp
-            </Button>
-          )
+        {/* Admin: add guest in active phases */}
+        {isAdmin && (phase === 'criada' || phase === 'confirmacoes_abertas') && (
+          <AddPlayerDialog matchId={match.id} onPlayerAdded={onRefresh} />
         )}
       </div>
 
-      {/* Admin Actions */}
-      {isAdmin && match.status !== 'finished' && (
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              variant={match.open_for_confirmation ? 'outline' : 'sport'}
-              onClick={handleToggleConfirmations}
-              disabled={actionLoading}
-            >
-              {match.open_for_confirmation ? (
-                <>
-                  <Lock className="h-5 w-5 mr-2" />
-                  Bloquear
-                </>
-              ) : (
-                <>
-                  <Unlock className="h-5 w-5 mr-2" />
-                  Liberar Partida
-                </>
-              )}
-            </Button>
-            <Button variant="outline" onClick={() => window.location.href = `/team-draw/${match.id}`}>
-              <Shuffle className="h-5 w-5 mr-2" />
-              Sortear Times
-            </Button>
-            <AddPlayerDialog
-              matchId={match.id}
-              onPlayerAdded={onRefresh}
-            />
-            <Button
-              variant="destructive"
-              onClick={() => setShowEndMatchDialog(true)}
-              disabled={actionLoading}
-            >
-              {actionLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <>
-                  <Flag className="h-5 w-5 mr-2" />
-                  Encerrar
-                </>
-              )}
-            </Button>
-          </div>
-          {/* Reminder Button for Admins */}
-          <div className="flex gap-3">
-            <MatchReminderButton
-              pelada={pelada}
-              match={match}
-              confirmedCount={confirmedCount}
-            />
-          </div>
-        </div>
+      {/* Optional financial summary (admin toggle, only pre-encerrada) */}
+      {isAdmin && showFinancial && pelada.price_per_game && pelada.price_per_game > 0 && phase !== 'encerrada' && (
+        <FinancialSummary pricePerGame={pelada.price_per_game} confirmedCount={confirmedCount} paidCount={paidCount} />
       )}
 
-      {/* Team Draw Result */}
+      {/* Team draw result preview (local shuffle) */}
       {showTeamDraw && (
         <div className="animate-slide-up">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm text-muted-foreground uppercase tracking-wider">
-              Times Sorteados
-            </h4>
-            <button
-              onClick={() => setShowTeamDraw(false)}
-              className="p-1 text-muted-foreground hover:text-foreground"
-            >
+            <h4 className="text-sm text-muted-foreground uppercase tracking-wider">Times Sorteados</h4>
+            <button onClick={() => setShowTeamDraw(false)} className="p-1 text-muted-foreground hover:text-foreground">
               <X className="h-5 w-5" />
             </button>
           </div>
-          <TeamDrawResult
-            teamA={teamA as any}
-            teamB={teamB as any}
-            onReshuffle={shuffleTeams}
-          />
+          <TeamDrawResult teamA={teamA as any} teamB={teamB as any} onReshuffle={shuffleTeams} />
         </div>
       )}
 
-      {/* Post-Game Section */}
-      {match.status === 'finished' && (
+      {/* In-progress: MVP gated by Pro */}
+      {phase === 'em_andamento' && (
+        <ProFeatureGate feature="mvp_voting" fallbackTitle="Votação MVP">
+          <div className="fifa-card p-4 text-center text-sm text-muted-foreground">
+            A votação de MVP estará disponível ao encerrar a partida.
+          </div>
+        </ProFeatureGate>
+      )}
+
+      {/* === Post-game === */}
+      {phase === 'encerrada' && (
         <div className="space-y-4">
-          {/* User Stats Form - each user registers their own stats */}
           {userParticipation?.status === 'Confirmado' && !userSubmittedStats && (
             <div>
-              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-                Registrar Suas Estatísticas
-              </h4>
+              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">Registrar Suas Estatísticas</h4>
               <PlayerStatsForm
                 participantId={userParticipation.id}
                 currentGoals={userParticipation.goals}
                 currentAssists={userParticipation.assists}
-                onSubmit={handleDataRefresh}
+                onSubmit={onRefresh}
               />
             </div>
           )}
-
-          {/* MVP Voting - available for 48h after match ends */}
           {userParticipation?.status === 'Confirmado' && isVotingOpen && (
             <div>
-              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-                Votação MVP
-              </h4>
-              <MatchVoting
-                matchId={match.id}
-                participants={participants}
-                currentUserId={userId!}
-                matchEndedAt={match.ended_at!}
-                onVoteSubmitted={handleDataRefresh}
-              />
+              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">Votação MVP</h4>
+              <ProFeatureGate feature="mvp_voting" fallbackTitle="Votação MVP">
+                <MatchVoting
+                  matchId={match.id}
+                  participants={participants}
+                  currentUserId={userId!}
+                  matchEndedAt={match.ended_at!}
+                  onVoteSubmitted={onRefresh}
+                />
+              </ProFeatureGate>
             </div>
           )}
-
-          {/* Player Ratings - available for 48h after match ends */}
           {userParticipation?.status === 'Confirmado' && isVotingOpen && userId && (
             <div>
-              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-                Avaliar Jogadores (0-10)
-              </h4>
+              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">Avaliar Jogadores (0-10)</h4>
               <PlayerRatingsForm
                 matchId={match.id}
                 currentUserId={userId}
-                players={participants
-                  .filter(p => p.user_id && p.status === 'Confirmado')
-                  .map(p => ({
-                    id: p.user_id!,
-                    name: p.profile?.name || 'Jogador',
-                    avatarUrl: p.profile?.avatar_url || null,
-                  }))}
-                onSubmit={handleDataRefresh}
+                players={participants.filter(p => p.user_id && p.status === 'Confirmado').map(p => ({
+                  id: p.user_id!,
+                  name: p.profile?.name || 'Jogador',
+                  avatarUrl: p.profile?.avatar_url || null,
+                }))}
+                onSubmit={onRefresh}
               />
             </div>
           )}
-
           {match.results_determined && (
-            <div>
-              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
-                Resumo da Partida
-              </h4>
-              <GameSummary
-                matchId={match.id}
-                participants={participants as any}
-                mvpId={match.mvp_id}
-                bestDefenderId={match.best_defender_id}
-              />
+            <div id="match-summary">
+              <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">Resumo da Partida</h4>
+              <GameSummary matchId={match.id} participants={participants as any} mvpId={match.mvp_id} bestDefenderId={match.best_defender_id} />
             </div>
+          )}
+          {pelada.price_per_game && pelada.price_per_game > 0 && confirmedCount > 0 && (
+            <FinancialSummary pricePerGame={pelada.price_per_game} confirmedCount={confirmedCount} paidCount={paidCount} />
           )}
         </div>
-      )}
-
-      {/* Financial Summary - only show if price is set and there are confirmed players */}
-      {pelada.price_per_game && pelada.price_per_game > 0 && confirmedCount > 0 && (
-        <FinancialSummary
-          pricePerGame={pelada.price_per_game}
-          confirmedCount={confirmedCount}
-          paidCount={paidCount}
-        />
       )}
 
       {/* Players List */}
@@ -733,8 +583,8 @@ ${rsvpUrl}`;
         <div className="space-y-2">
           {participants
             .sort((a, b) => {
-              const order = { Confirmado: 0, Pendente: 1, Recusado: 2 };
-              return (order[a.status as keyof typeof order] || 2) - (order[b.status as keyof typeof order] || 2);
+              const order = { Confirmado: 0, 'Lista de Espera': 1, Pendente: 2, Recusado: 3 } as any;
+              return (order[a.status] ?? 4) - (order[b.status] ?? 4);
             })
             .slice(0, PARTICIPANTS_DISPLAY_LIMIT)
             .map((participant) => {
@@ -744,57 +594,30 @@ ${rsvpUrl}`;
               const avatar = isGuest ? null : participant.profile?.avatar_url;
               const rating = isGuest ? 50 : participant.profile?.overall_rating;
               const showPayment = pelada.price_per_game && pelada.price_per_game > 0 && participant.status === 'Confirmado';
-
               return (
                 <div key={participant.id} className="fifa-card p-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-surface border-2 border-border flex items-center justify-center">
-                      {avatar ? (
-                        <img src={avatar} alt={name || ''} className="w-full h-full rounded-full object-cover" />
-                      ) : (
-                        <span className="text-sm font-bold text-primary">
-                          {name?.charAt(0) || '?'}
-                        </span>
-                      )}
+                      {avatar ? <img src={avatar} alt={name || ''} className="w-full h-full rounded-full object-cover" /> : <span className="text-sm font-bold text-primary">{name?.charAt(0) || '?'}</span>}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-sm">{name}</p>
-                        {isGuest && (
-                          <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                            Aleatório
-                          </span>
-                        )}
+                        {isGuest && <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">Aleatório</span>}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{position}</span>
-                        <span>•</span>
-                        <span className="text-primary font-bold">{rating}</span>
+                        <span>{position}</span><span>•</span><span className="text-primary font-bold">{rating}</span>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {/* Payment Badge - only for confirmed players when price is set */}
                     {showPayment && (
-                      <PaymentBadge
-                        paid={participant.paid}
-                        price={pelada.price_per_game || undefined}
-                        onClick={isAdmin ? () => handleTogglePaid(participant.id, participant.paid) : undefined}
-                        interactive={isAdmin}
-                      />
+                      <PaymentBadge paid={participant.paid} price={pelada.price_per_game || undefined} onClick={isAdmin ? () => handleTogglePaid(participant.id, participant.paid) : undefined} interactive={isAdmin} />
                     )}
                     {!showPayment && getStatusIcon(participant.status)}
-                    {!showPayment && (
-                      <span className={`text-xs ${getStatusColor(participant.status)}`}>
-                        {participant.status}
-                      </span>
-                    )}
-                    {isAdmin && match.status !== 'finished' && (
-                      <button
-                        onClick={() => openRemoveDialog(participant.id)}
-                        className="p-1 text-destructive/60 hover:text-destructive transition-colors"
-                        title="Remover jogador"
-                      >
+                    {!showPayment && <span className={`text-xs ${getStatusColor(participant.status)}`}>{participant.status}</span>}
+                    {isAdmin && phase !== 'encerrada' && (
+                      <button onClick={() => { setParticipantToRemove(participant.id); setShowRemoveDialog(true); }} className="p-1 text-destructive/60 hover:text-destructive" title="Remover">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     )}
@@ -802,17 +625,11 @@ ${rsvpUrl}`;
                 </div>
               );
             })}
-
           {participants.length > PARTICIPANTS_DISPLAY_LIMIT && (
-            <button
-              onClick={() => navigate(`/match/${match.id}/participants`)}
-              className="w-full py-2 text-sm text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-2 fifa-card"
-            >
-              <ChevronDown className="h-4 w-4" />
-              Ver todos ({participants.length} jogadores)
+            <button onClick={() => navigate(`/match/${match.id}/participants`)} className="w-full py-2 text-sm text-primary hover:text-primary/80 flex items-center justify-center gap-2 fifa-card">
+              <ChevronDown className="h-4 w-4" />Ver todos ({participants.length} jogadores)
             </button>
           )}
-
           {participants.length === 0 && (
             <div className="text-center py-6 text-muted-foreground">
               <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -822,26 +639,8 @@ ${rsvpUrl}`;
         </div>
       </div>
 
-      {/* Confirmation Dialogs */}
-      <ConfirmDialog
-        open={showEndMatchDialog}
-        onOpenChange={setShowEndMatchDialog}
-        title="Encerrar partida?"
-        description="Após encerrar, você poderá registrar as estatísticas dos jogadores."
-        confirmText="Encerrar"
-        onConfirm={handleEndMatch}
-        variant="destructive"
-      />
-
-      <ConfirmDialog
-        open={showRemoveDialog}
-        onOpenChange={setShowRemoveDialog}
-        title="Remover jogador?"
-        description="Tem certeza que deseja remover este jogador da partida?"
-        confirmText="Remover"
-        onConfirm={handleRemoveParticipant}
-        variant="destructive"
-      />
+      <ConfirmDialog open={showEndMatchDialog} onOpenChange={setShowEndMatchDialog} title="Encerrar partida?" description="Após encerrar, você poderá registrar as estatísticas dos jogadores." confirmText="Encerrar" onConfirm={handleEndMatch} variant="destructive" />
+      <ConfirmDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog} title="Remover jogador?" description="Tem certeza que deseja remover este jogador da partida?" confirmText="Remover" onConfirm={handleRemoveParticipant} variant="destructive" />
     </div>
   );
 };
