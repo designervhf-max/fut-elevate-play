@@ -77,7 +77,7 @@ const PeladaSettingsDialog = ({
 
     const { error } = await supabase
       .from('matches')
-      .update({ status: 'cancelled' })
+      .update({ status: 'encerrada', ended_at: new Date().toISOString() })
       .eq('id', matchId);
 
     setLoading(false);
