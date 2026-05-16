@@ -573,6 +573,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_submit_own_match_stats: {
+        Args: { _participant_id: string }
+        Returns: boolean
+      }
+      can_submit_own_match_stats_update: {
+        Args: {
+          _confirmed_via_link: boolean
+          _guest_name: string
+          _guest_position: string
+          _match_id: string
+          _paid: boolean
+          _participant_id: string
+          _status: Database["public"]["Enums"]["participant_status"]
+          _team: number
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      can_update_own_match_status_only: {
+        Args: {
+          _assists: number
+          _confirmed_via_link: boolean
+          _goals: number
+          _guest_name: string
+          _guest_position: string
+          _match_id: string
+          _paid: boolean
+          _participant_id: string
+          _rating: number
+          _saves: number
+          _stats_submitted: boolean
+          _team: number
+          _user_id: string
+        }
+        Returns: boolean
+      }
       get_my_phone: { Args: never; Returns: string }
       has_pelada_role: {
         Args: {
