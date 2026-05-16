@@ -600,7 +600,7 @@ ${rsvpUrl}`;
       {phase === 'encerrada' && (
         <div className="space-y-4">
           {userParticipation?.status === 'Confirmado' && !userSubmittedStats && (
-            <div>
+            <div id="player-stats">
               <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">Registrar Suas Estatísticas</h4>
               <PlayerStatsForm
                 participantId={userParticipation.id}
