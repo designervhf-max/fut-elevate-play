@@ -158,9 +158,7 @@ const CreatePelada = () => {
       .select()
       .single();
 
-    if (match) {
-      await supabase.from('match_participants').insert({ match_id: match.id, user_id: user.id, status: 'Confirmado' });
-    }
+    // Organizer is auto-added as Confirmado via DB trigger (auto_confirm_match_admin)
 
     setLoading(false);
     toast({ title: 'Pelada criada!', description: 'Sua pelada foi criada com sucesso' });
