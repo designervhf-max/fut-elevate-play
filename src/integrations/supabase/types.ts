@@ -591,10 +591,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      can_update_own_match_status: {
-        Args: { _participant_id: string }
-        Returns: boolean
-      }
       can_update_own_match_status_only: {
         Args: {
           _assists: number
