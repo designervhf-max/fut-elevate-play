@@ -462,6 +462,7 @@ ${rsvpUrl}`;
   const phaseLabel: Record<string, { text: string; cls: string }> = {
     criada: { text: 'Criada', cls: 'bg-muted text-muted-foreground' },
     confirmacoes_abertas: { text: 'Confirmações abertas', cls: 'bg-primary/20 text-primary' },
+    times_sorteados: { text: 'Times sorteados', cls: 'bg-amber-500/20 text-amber-400' },
     em_andamento: { text: 'Em andamento', cls: 'bg-sky-500/20 text-sky-400' },
     encerrada: { text: 'Encerrada', cls: 'bg-destructive/20 text-destructive' },
   };
