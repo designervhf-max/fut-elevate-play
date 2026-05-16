@@ -573,6 +573,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_submit_own_match_stats: {
+        Args: { _participant_id: string }
+        Returns: boolean
+      }
+      can_update_own_match_status: {
+        Args: { _participant_id: string }
+        Returns: boolean
+      }
       get_my_phone: { Args: never; Returns: string }
       has_pelada_role: {
         Args: {
