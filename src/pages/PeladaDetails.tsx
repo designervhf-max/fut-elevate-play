@@ -29,7 +29,7 @@ const PeladaDetails = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
+  
 
   useEffect(() => {
     const checkSession = async () => {
