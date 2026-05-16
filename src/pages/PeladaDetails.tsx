@@ -275,32 +275,6 @@ const PeladaDetails = () => {
         </Tabs>
 
         <BottomNav />
-
-        {/* Bottom Action Bar */}
-        {canShowActions && (
-          <BottomActionBar
-            primaryAction={
-              isConfirmed || isWaitlist
-                ? {
-                    label: 'Cancelar',
-                    onClick: handleCancelPresence,
-                    icon: <XCircle className="h-5 w-5" />,
-                    variant: 'outline' as const,
-                  }
-                : {
-                    label: 'Confirmar Presença',
-                    onClick: handleConfirmPresence,
-                    icon: <CheckCircle className="h-5 w-5" />,
-                    loading: actionLoading,
-                  }
-            }
-            secondaryAction={
-              isConfirmed || isWaitlist
-                ? undefined
-                : undefined
-            }
-          />
-        )}
       </div>
     </div>
   );
