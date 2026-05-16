@@ -579,7 +579,7 @@ ${rsvpUrl}`;
             </div>
           )}
           {userParticipation?.status === 'Confirmado' && isVotingOpen && (
-            <div>
+            <div id="mvp-voting">
               <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">Votação MVP</h4>
               <ProFeatureGate feature="mvp_voting" fallbackTitle="Votação MVP">
                 <MatchVoting
