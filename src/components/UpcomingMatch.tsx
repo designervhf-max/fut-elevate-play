@@ -357,9 +357,20 @@ ${rsvpUrl}`;
 
     if (phase === 'em_andamento') {
       return (
-        <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => navigate(`/team-draw/${match.id}`)}>
-          <ListChecks className="h-5 w-5 mr-2" />Registrar gols
-        </Button>
+        <div className="space-y-2">
+          <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => navigate(`/team-draw/${match.id}`)}>
+            <ListChecks className="h-5 w-5 mr-2" />Registrar gols
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full h-12 border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setShowEndMatchDialog(true)}
+            disabled={actionLoading}
+          >
+            <Flag className="h-5 w-5 mr-2" />Encerrar partida
+          </Button>
+        </div>
       );
     }
 
