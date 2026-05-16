@@ -551,9 +551,17 @@ ${rsvpUrl}`;
           <div className="flex-1 space-y-2">
             {renderAdminActions()}
             {renderMemberActions()}
+            {renderEncerradaActions()}
           </div>
           {renderOverflowMenu()}
         </div>
+
+        {phase === 'em_andamento' && !isAdmin && (
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+            <Lock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Partida em andamento. Aguarde o encerramento para registrar estatísticas e votar no MVP.</span>
+          </div>
+        )}
 
         {/* Admin: add guest in active phases */}
         {isAdmin && (phase === 'criada' || phase === 'confirmacoes_abertas') && (
