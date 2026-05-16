@@ -137,7 +137,7 @@ const SearchPeladas = () => {
         .select('id, pelada_id, match_date, match_time')
         .in('pelada_id', ids)
         .gte('match_date', today)
-        .eq('status', 'scheduled')
+        .in('status', ['scheduled','criada','confirmacoes_abertas'])
         .order('match_date', { ascending: true });
 
       const nextByPelada: Record<string, any> = {};

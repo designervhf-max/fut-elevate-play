@@ -120,14 +120,14 @@ async function fetchPeladaDetails(
       .select('*')
       .eq('pelada_id', peladaId)
       .gte('match_date', today)
-      .in('status', ['scheduled', 'in_progress'])
+      .in('status', ['scheduled','in_progress','criada','confirmacoes_abertas','em_andamento'])
       .order('match_date', { ascending: true })
       .limit(1),
     supabase
       .from('matches')
       .select('*')
       .eq('pelada_id', peladaId)
-      .eq('status', 'finished')
+      .in('status', ['finished','encerrada'])
       .gte('ended_at', twoDaysAgo)
       .order('ended_at', { ascending: false })
       .limit(1),
@@ -135,7 +135,7 @@ async function fetchPeladaDetails(
       .from('matches')
       .select('*')
       .eq('pelada_id', peladaId)
-      .eq('status', 'finished')
+      .in('status', ['finished','encerrada'])
       .order('match_date', { ascending: false })
       .limit(20)
   ]);

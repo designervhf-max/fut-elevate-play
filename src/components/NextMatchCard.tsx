@@ -54,7 +54,7 @@ const NextMatchCard = ({ userId }: NextMatchCardProps) => {
         peladas!inner(name, location, max_players)
       `)
       .in('pelada_id', peladaIds)
-      .in('status', ['scheduled', 'in_progress'])
+      .in('status', ['scheduled','in_progress','criada','confirmacoes_abertas','em_andamento'])
       .gte('match_date', today)
       .order('match_date', { ascending: true })
       .order('match_time', { ascending: true })
