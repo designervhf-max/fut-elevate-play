@@ -157,7 +157,7 @@ async function fetchPeladaDetails(
         match_date: nextMatchDate,
         match_time: pelada.time,
         location: pelada.location,
-        status: 'scheduled',
+        status: 'criada',
       })
       .select()
       .single();
