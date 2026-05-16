@@ -83,77 +83,6 @@ const PeladaDetails = () => {
     }
   };
 
-  const handleConfirmPresence = async () => {
-    if (!userId || !data?.nextMatch) return;
-    setActionLoading(true);
-
-    const userParticipation = data.nextMatchParticipants.find(p => p.user_id === userId);
-    const confirmedCount = data.nextMatchParticipants.filter(p => p.status === 'Confirmado').length;
-    const isFull = confirmedCount >= data.pelada.max_players;
-
-    // Determine status based on capacity
-    const newStatus = isFull ? 'Lista de Espera' : 'Confirmado';
-
-    if (userParticipation) {
-      const { error } = await supabase
-        .from('match_participants')
-        .update({ status: newStatus })
-        .eq('id', userParticipation.id);
-
-      if (error) {
-        toast({ title: 'Erro', description: 'Não foi possível confirmar presença', variant: 'destructive' });
-      } else {
-        toast({ title: isFull ? 'Você está na lista de espera' : 'Presença confirmada!' });
-        await handleRefresh();
-      }
-    } else {
-      const { error } = await supabase
-        .from('match_participants')
-        .insert({
-          match_id: data.nextMatch.id,
-          user_id: userId,
-          status: newStatus,
-        });
-
-      if (error) {
-        toast({ title: 'Erro', description: 'Não foi possível confirmar presença', variant: 'destructive' });
-      } else {
-        toast({ title: isFull ? 'Você está na lista de espera' : 'Presença confirmada!' });
-        await handleRefresh();
-      }
-    }
-
-    setActionLoading(false);
-  };
-
-  const handleCancelPresence = async () => {
-    if (!userId || !data?.nextMatch) return;
-    setActionLoading(true);
-
-    const userParticipation = data.nextMatchParticipants.find(p => p.user_id === userId);
-    
-    if (userParticipation) {
-      const { error } = await supabase
-        .from('match_participants')
-        .delete()
-        .eq('id', userParticipation.id);
-
-      if (error) {
-        toast({ title: 'Erro', description: 'Não foi possível cancelar presença', variant: 'destructive' });
-      } else {
-        toast({ title: 'Presença cancelada' });
-        await handleRefresh();
-      }
-    }
-
-    setActionLoading(false);
-  };
-
-  const handleStartMatch = async () => {
-    if (!data?.nextMatch) return;
-    navigate(`/match/${data.nextMatch.id}/live`);
-  };
-
   if (isLoading || !userId) {
     return <PeladaDetailsSkeleton />;
   }
@@ -167,14 +96,9 @@ const PeladaDetails = () => {
     ? new Date(nextMatch.match_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
     : undefined;
 
-  const userParticipation = nextMatchParticipants.find(p => p.user_id === userId);
-  const isConfirmed = userParticipation?.status === 'Confirmado';
-  const isWaitlist = userParticipation?.status === 'Lista de Espera';
-  const canShowActions = nextMatch && nextMatch.status !== 'finished' && nextMatch.open_for_confirmation;
-
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-md mx-auto pb-40">
+      <div className="max-w-md mx-auto pb-24">
         {/* Header */}
         <header className="sticky top-0 z-50 glass px-4 py-3">
           <div className="flex items-center justify-between">
