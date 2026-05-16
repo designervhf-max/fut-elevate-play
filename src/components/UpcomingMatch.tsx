@@ -408,8 +408,8 @@ ${rsvpUrl}`;
 
   const renderOverflowMenu = () => {
     if (!isAdmin) return null;
-    const showEnd = phase !== 'encerrada' && phase !== 'criada';
-    const showReminder = phase === 'confirmacoes_abertas' || phase === 'times_sorteados' || phase === 'em_andamento';
+    const showEnd = phase === 'times_sorteados';
+    const showReminder = phase === 'confirmacoes_abertas' || phase === 'times_sorteados';
     const showFin = !!pelada.price_per_game && pelada.price_per_game > 0 && confirmedCount > 0 && phase !== 'encerrada';
     if (!showEnd && !showReminder && !showFin) return null;
 
