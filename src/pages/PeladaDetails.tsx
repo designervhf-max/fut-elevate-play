@@ -9,7 +9,6 @@ import PeladaRanking from '@/components/PeladaRanking';
 import ProFeatureGate from '@/components/ProFeatureGate';
 import PeladaInfoTab from '@/components/PeladaInfoTab';
 import PeladaDetailsSkeleton from '@/components/skeletons/PeladaDetailsSkeleton';
-import BottomActionBar from '@/components/BottomActionBar';
 import MatchCountdown from '@/components/MatchCountdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -18,8 +17,6 @@ import {
   Info,
   Calendar,
   Trophy,
-  CheckCircle,
-  XCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getWeekdayLabel } from '@/lib/weekday';
