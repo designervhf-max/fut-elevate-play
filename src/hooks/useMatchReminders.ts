@@ -27,7 +27,7 @@ export function useMatchReminders() {
         .from('matches')
         .select('id, match_date, match_time, location')
         .in('id', matchIds)
-        .eq('status', 'scheduled');
+        .in('status', ['scheduled','criada','confirmacoes_abertas']);
 
       if (!matches?.length) return;
 

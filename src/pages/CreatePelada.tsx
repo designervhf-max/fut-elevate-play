@@ -153,7 +153,7 @@ const CreatePelada = () => {
         match_date: matchDateStr,
         match_time: formData.time,
         location: formData.location.trim(),
-        status: 'scheduled',
+        status: 'criada',
       })
       .select()
       .single();

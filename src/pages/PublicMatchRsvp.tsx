@@ -131,7 +131,7 @@ const PublicMatchRsvp = () => {
     month: 'long',
   });
   const vagas = pelada.max_players - confirmedCount;
-  const closed = match.status !== 'scheduled' || !match.openForConfirmation;
+  const closed = !['scheduled', 'criada', 'confirmacoes_abertas'].includes(match.status) || !match.openForConfirmation;
 
   return (
     <div className="min-h-screen bg-background pb-12">

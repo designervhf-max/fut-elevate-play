@@ -34,7 +34,7 @@ const PeladaRanking = ({ peladaId }: PeladaRankingProps) => {
         .from('matches')
         .select('id, mvp_id, best_defender_id')
         .eq('pelada_id', peladaId)
-        .eq('status', 'finished');
+        .in('status', ['finished','encerrada']);
 
       if (!matches || matches.length === 0) {
         setRankings([]);

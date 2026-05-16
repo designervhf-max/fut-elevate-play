@@ -58,7 +58,7 @@ async function fetchUserPeladas(userId: string): Promise<PeladaWithDetails[]> {
     .select('*')
     .in('pelada_id', peladaIds)
     .gte('match_date', today)
-    .in('status', ['scheduled', 'in_progress'])
+    .in('status', ['scheduled','in_progress','criada','confirmacoes_abertas','em_andamento'])
     .order('match_date', { ascending: true });
 
   // Group matches by pelada_id and get the first (next) match for each

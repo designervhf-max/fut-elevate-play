@@ -227,7 +227,7 @@ const MatchStatsModal = ({ matchId, onClose }: MatchStatsModalProps) => {
             )}
 
             {/* Voting Status Badge */}
-            {match?.status === 'finished' && (
+            {(match?.status === 'finished' || match?.status === 'encerrada') && (
               <div className="text-center">
                 {isVotingOpen ? (
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">
@@ -312,7 +312,7 @@ const MatchStatsModal = ({ matchId, onClose }: MatchStatsModalProps) => {
             )}
 
             {/* MVP Voting Section - Only show if voting is open and user is participant */}
-            {match?.status === 'finished' && isVotingOpen && isUserParticipant && currentUserId && !match.mvp_id && (
+            {(match?.status === 'finished' || match?.status === 'encerrada') && isVotingOpen && isUserParticipant && currentUserId && !match.mvp_id && (
               <div className="border-t border-border pt-4">
                 <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
                   Votar MVP
@@ -335,7 +335,7 @@ const MatchStatsModal = ({ matchId, onClose }: MatchStatsModalProps) => {
             )}
 
             {/* Player Ratings Section - Only show if voting is open and user is participant */}
-            {match?.status === 'finished' && isVotingOpen && isUserParticipant && currentUserId && (
+            {(match?.status === 'finished' || match?.status === 'encerrada') && isVotingOpen && isUserParticipant && currentUserId && (
               <div className="border-t border-border pt-4">
                 <h4 className="text-sm text-muted-foreground uppercase tracking-wider mb-3">
                   Avaliar Jogadores (0-10)
@@ -350,7 +350,7 @@ const MatchStatsModal = ({ matchId, onClose }: MatchStatsModalProps) => {
             )}
 
             {/* Player Ratings Results - Show when voting is closed */}
-            {match?.status === 'finished' && !isVotingOpen && (
+            {(match?.status === 'finished' || match?.status === 'encerrada') && !isVotingOpen && (
               <div className="border-t border-border pt-4">
                 <PlayerRatingsResult matchId={match.id} />
               </div>

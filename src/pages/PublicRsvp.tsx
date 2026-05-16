@@ -173,7 +173,7 @@ const PublicRsvp = () => {
 
   const { match, pelada, confirmedCount } = info;
   const vagas = pelada.max_players - confirmedCount;
-  const closed = match.status !== 'scheduled' || !match.openForConfirmation;
+  const closed = !['scheduled', 'criada', 'confirmacoes_abertas'].includes(match.status) || !match.openForConfirmation;
   const ogTitle = `${pelada.name} • ${dateLabel} ${match.time.slice(0, 5)}`;
   const ogDesc = `Confirme sua presença na pelada. ${confirmedCount}/${pelada.max_players} confirmados.`;
 

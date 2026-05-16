@@ -592,7 +592,14 @@ export type Database = {
       game_status: "Confirmado" | "Pendente" | "Cancelado" | "Finalizado"
       game_type: "Futsal" | "Society" | "Campo"
       join_request_status: "pending" | "approved" | "rejected"
-      match_status: "scheduled" | "in_progress" | "finished" | "cancelled"
+      match_status:
+        | "criada"
+        | "confirmacoes_abertas"
+        | "em_andamento"
+        | "encerrada"
+        | "scheduled"
+        | "in_progress"
+        | "finished"
       participant_status:
         | "Confirmado"
         | "Pendente"
@@ -740,7 +747,15 @@ export const Constants = {
       game_status: ["Confirmado", "Pendente", "Cancelado", "Finalizado"],
       game_type: ["Futsal", "Society", "Campo"],
       join_request_status: ["pending", "approved", "rejected"],
-      match_status: ["scheduled", "in_progress", "finished", "cancelled"],
+      match_status: [
+        "criada",
+        "confirmacoes_abertas",
+        "em_andamento",
+        "encerrada",
+        "scheduled",
+        "in_progress",
+        "finished",
+      ],
       participant_status: [
         "Confirmado",
         "Pendente",
