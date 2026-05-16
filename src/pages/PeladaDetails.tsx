@@ -131,7 +131,7 @@ const PeladaDetails = () => {
         </header>
 
         {/* Countdown Badge */}
-        {nextMatch && nextMatch.status !== 'finished' && (
+        {nextMatch && nextMatch.status !== 'finished' && nextMatch.status !== 'encerrada' && (
           <div className="px-4 pt-4 animate-slide-up">
             <MatchCountdown
               matchDate={nextMatch.match_date}
