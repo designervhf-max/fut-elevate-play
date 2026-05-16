@@ -357,31 +357,51 @@ ${rsvpUrl}`;
 
     if (phase === 'em_andamento') {
       return (
-        <div className="space-y-2">
-          <Button variant="sport" size="lg" className="w-full h-14 text-base font-semibold" onClick={() => navigate(`/team-draw/${match.id}`)}>
-            <ListChecks className="h-5 w-5 mr-2" />Registrar gols
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full h-12 border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => setShowEndMatchDialog(true)}
-            disabled={actionLoading}
-          >
-            <Flag className="h-5 w-5 mr-2" />Encerrar partida
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full h-14 text-base font-semibold border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+          onClick={() => setShowEndMatchDialog(true)}
+          disabled={actionLoading}
+        >
+          <Flag className="h-5 w-5 mr-2" />Encerrar partida
+        </Button>
       );
     }
 
-    // encerrada
+    // encerrada — admin actions handled by shared renderEncerradaActions
+    return null;
+  };
+
+  const renderEncerradaActions = () => {
+    if (phase !== 'encerrada') return null;
+    const isConfirmed = userParticipation?.status === 'Confirmado';
+    if (!isConfirmed) return null;
     const canVote = hasAccess('mvp_voting');
+    const canStats = hasAccess('mvp_voting');
     return (
       <div className="space-y-2">
         <Button
           variant="sport"
           size="lg"
           className="w-full h-14 text-base font-semibold"
+          onClick={() => {
+            if (!canStats) {
+              toast({ title: 'Recurso Pro', description: 'Registrar gols e assistências é exclusivo para assinantes Pro.' });
+              return;
+            }
+            const el = document.getElementById('player-stats');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            else toast({ title: 'Estatísticas já registradas' });
+          }}
+        >
+          {canStats ? <ListChecks className="h-5 w-5 mr-2" /> : <Lock className="h-5 w-5 mr-2" />}
+          Registrar gols e assistências
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full h-12"
           onClick={() => {
             if (!canVote) {
               toast({ title: 'Recurso Pro', description: 'A votação de MVP é exclusiva para assinantes Pro.' });
@@ -393,14 +413,7 @@ ${rsvpUrl}`;
           }}
         >
           {canVote ? <Trophy className="h-5 w-5 mr-2" /> : <Lock className="h-5 w-5 mr-2" />}
-          Votar MVP
-        </Button>
-        <Button variant="outline" size="lg" className="w-full h-12" onClick={() => {
-          const el = document.getElementById('match-summary');
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          else toast({ title: 'Resumo ainda não disponível', description: 'Aguardando registro de estatísticas.' });
-        }}>
-          <ListChecks className="h-5 w-5 mr-2" />Ver resumo
+          Votar no MVP
         </Button>
       </div>
     );
