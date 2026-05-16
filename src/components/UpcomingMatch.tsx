@@ -328,10 +328,10 @@ ${rsvpUrl}`;
             size="lg"
             className="w-full h-12"
             onClick={handleStartMatch}
-            disabled={!slotsFull || actionLoading}
+            disabled={confirmedCount < 4 || actionLoading}
           >
             <Shuffle className="h-5 w-5 mr-2" />
-            Sortear Times {!slotsFull && <span className="ml-2 text-xs text-muted-foreground">({confirmedCount}/{pelada.max_players})</span>}
+            Sortear Times {confirmedCount < 4 && <span className="ml-2 text-xs text-muted-foreground">(mín. 4)</span>}
           </Button>
         </div>
       );
