@@ -595,6 +595,7 @@ export type Database = {
       match_status:
         | "criada"
         | "confirmacoes_abertas"
+        | "times_sorteados"
         | "em_andamento"
         | "encerrada"
         | "scheduled"
@@ -750,6 +751,7 @@ export const Constants = {
       match_status: [
         "criada",
         "confirmacoes_abertas",
+        "times_sorteados",
         "em_andamento",
         "encerrada",
         "scheduled",
