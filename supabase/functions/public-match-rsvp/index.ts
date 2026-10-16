@@ -119,11 +119,13 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!match) return json({ error: "Partida não encontrada" }, 404);
-      if (match.status !== "scheduled" || !match.open_for_confirmation) {
+      const OPEN_STATUSES = ["scheduled", "criada", "confirmacoes_abertas"];
+      if (!OPEN_STATUSES.includes(match.status) || !match.open_for_confirmation) {
         return json({ error: "Confirmações encerradas para esta partida" }, 400);
       }
 
-      const matchDateTime = new Date(`${match.match_date}T${match.match_time}`);
+      // Interpret match time in Brasília timezone (UTC-3)
+      const matchDateTime = new Date(`${match.match_date}T${match.match_time}-03:00`);
       if (matchDateTime < new Date()) {
         return json({ error: "Essa partida já passou" }, 400);
       }

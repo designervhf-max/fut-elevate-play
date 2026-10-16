@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { OPEN_MATCH_STATUSES } from '@/lib/matchStatus';
+import { toLocalDateString } from '@/lib/date';
 
 type Pelada = {
   id: string;
@@ -50,7 +52,7 @@ async function fetchUserPeladas(userId: string): Promise<PeladaWithDetails[]> {
   if (!memberships || memberships.length === 0) return [];
 
   const peladaIds = memberships.map(m => m.pelada_id);
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateString();
 
   // 2. Fetch ALL upcoming matches for all peladas in ONE query
   const { data: allMatches } = await supabase
@@ -58,7 +60,7 @@ async function fetchUserPeladas(userId: string): Promise<PeladaWithDetails[]> {
     .select('*')
     .in('pelada_id', peladaIds)
     .gte('match_date', today)
-    .in('status', ['scheduled','in_progress','criada','confirmacoes_abertas','em_andamento'])
+    .in('status', [...OPEN_MATCH_STATUSES])
     .order('match_date', { ascending: true });
 
   // Group matches by pelada_id and get the first (next) match for each

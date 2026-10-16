@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, MapPin, Locate, Loader2, Search, ExternalLink, Users, Calendar, Clock } from 'lucide-react';
 import { usePlacesAutocomplete } from '@/lib/googleMaps';
 import { WEEKDAYS } from '@/lib/weekday';
+import { toLocalDateString } from '@/lib/date';
 import BottomNav from '@/components/BottomNav';
 
 type Mod = 'Futsal' | 'Society' | 'Campo';
@@ -131,7 +132,7 @@ const SearchPeladas = () => {
     // Fetch next match counts
     if (filtered.length > 0) {
       const ids = filtered.map((p) => p.id);
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateString();
       const { data: matches } = await supabase
         .from('matches')
         .select('id, pelada_id, match_date, match_time')
