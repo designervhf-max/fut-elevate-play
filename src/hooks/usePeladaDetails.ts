@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { OPEN_MATCH_STATUSES, LIVE_MATCH_STATUSES } from '@/lib/matchStatus';
+import { toLocalDateString } from '@/lib/date';
 
 type Pelada = {
   id: string;
@@ -80,7 +82,7 @@ const getNextMatchDate = (weekday: number): string => {
   const nextDate = new Date(today);
   nextDate.setDate(today.getDate() + daysUntilNext);
   
-  return nextDate.toISOString().split('T')[0];
+  return toLocalDateString(nextDate);
 };
 
 async function fetchPeladaDetails(
@@ -111,17 +113,25 @@ async function fetchPeladaDetails(
   const isAdmin = membership?.role === 'admin';
 
   // Batch 2: Fetch matches (upcoming and past) in parallel
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateString();
   const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
-  const [upcomingResult, recentFinishedResult, pastResult] = await Promise.all([
+  const [upcomingResult, liveResult, recentFinishedResult, pastResult] = await Promise.all([
     supabase
       .from('matches')
       .select('*')
       .eq('pelada_id', peladaId)
       .gte('match_date', today)
-      .in('status', ['scheduled','in_progress','criada','confirmacoes_abertas','em_andamento'])
+      .in('status', [...OPEN_MATCH_STATUSES])
       .order('match_date', { ascending: true })
+      .limit(1),
+    // Live/drawn matches show even if match_date is before today (game past midnight)
+    supabase
+      .from('matches')
+      .select('*')
+      .eq('pelada_id', peladaId)
+      .in('status', [...LIVE_MATCH_STATUSES])
+      .order('match_date', { ascending: false })
       .limit(1),
     supabase
       .from('matches')
@@ -141,13 +151,16 @@ async function fetchPeladaDetails(
   ]);
 
   let matchToUse: Match | null = null;
+  const liveMatch = liveResult.data && liveResult.data.length > 0 ? (liveResult.data[0] as Match) : null;
 
-  if (upcomingResult.data && upcomingResult.data.length > 0) {
+  if (liveMatch) {
+    matchToUse = liveMatch;
+  } else if (upcomingResult.data && upcomingResult.data.length > 0) {
     matchToUse = upcomingResult.data[0] as Match;
   } else if (recentFinishedResult.data && recentFinishedResult.data.length > 0) {
     matchToUse = recentFinishedResult.data[0] as Match;
   } else if (isAdmin) {
-    // Auto-create next match if admin and no upcoming/recent match exists
+    // Auto-create next match if admin and no upcoming/recent/live match exists
     const nextMatchDate = getNextMatchDate(pelada.weekday);
     
     const { data: newMatch, error: createError } = await supabase
