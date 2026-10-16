@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { toLocalDateString } from '@/lib/date';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -144,7 +145,7 @@ const CreatePelada = () => {
     await supabase.from('pelada_members').insert({ pelada_id: pelada.id, user_id: user.id, role: 'admin' });
 
     const nextMatchDate = getNextOccurrence(parseInt(formData.weekday), formData.time);
-    const matchDateStr = nextMatchDate.toISOString().split('T')[0];
+    const matchDateStr = toLocalDateString(nextMatchDate);
 
     const { data: match } = await supabase
       .from('matches')
