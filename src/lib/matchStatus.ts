@@ -6,6 +6,19 @@ export type MatchPhase =
   | 'em_andamento'
   | 'encerrada';
 
+// Statuses that mean the match is still "open" (not finished)
+export const OPEN_MATCH_STATUSES = [
+  'scheduled',
+  'in_progress',
+  'criada',
+  'confirmacoes_abertas',
+  'times_sorteados',
+  'em_andamento',
+] as const;
+
+// Statuses where the game is live/drawn — must show even if match_date < today
+export const LIVE_MATCH_STATUSES = ['em_andamento', 'in_progress', 'times_sorteados'] as const;
+
 export function getMatchPhase(status: string | null | undefined, openForConfirmation?: boolean): MatchPhase {
   switch (status) {
     case 'criada':

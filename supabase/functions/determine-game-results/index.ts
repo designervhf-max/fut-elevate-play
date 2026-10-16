@@ -84,7 +84,7 @@ serve(async (req) => {
     const { data: matches, error: matchesError } = await supabase
       .from('matches')
       .select('id, ended_at, status, mvp_id, best_defender_id, results_determined, pelada_id')
-      .eq('status', 'finished')
+      .in('status', ['encerrada', 'finished'])
       .eq('results_determined', false);
 
     if (matchesError) {
