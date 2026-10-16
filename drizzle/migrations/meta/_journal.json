@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792158507906,
+      "tag": "0000_protect_profile_stats_trigger",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792158512079,
+      "tag": "0001_replace_hardcoded_admin_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792158515629,
+      "tag": "0002_match_participants_stats_check_constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792158519574,
+      "tag": "0003_tighten_vote_insert_policies",
+      "breakpoints": true
+    }
+  ]
+}

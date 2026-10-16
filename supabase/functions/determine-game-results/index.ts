@@ -33,7 +33,8 @@ serve(async (req) => {
   }
 
   try {
-    // Authentication: verify cron secret, service role key, or user JWT
+    // Authentication: only cron secret or the anon key used by the internal cron job.
+    // User JWTs are NOT accepted — no logged-in user may trigger this function.
     const cronSecret = req.headers.get('x-cron-secret');
     const expectedSecret = Deno.env.get('CRON_SECRET');
     const authHeader = req.headers.get('Authorization');
@@ -43,29 +44,17 @@ serve(async (req) => {
     let isAuthenticated = false;
 
     // Option 1: Cron job with secret header
-    if (cronSecret && cronSecret === expectedSecret) {
+    if (cronSecret && expectedSecret && cronSecret === expectedSecret) {
       isAuthenticated = true;
       console.log('Authenticated via cron secret');
     }
-    
-    // Option 2: Authorization header (user JWT or service key via cron)
+
+    // Option 2: anon key used by the internal cron job
     if (!isAuthenticated && authHeader) {
       const token = authHeader.replace('Bearer ', '');
-      
-      // Check if it's the anon key (used by internal cron job)
       if (token === supabaseAnonKey) {
         isAuthenticated = true;
         console.log('Authenticated via anon key (internal cron)');
-      } else {
-        // Validate as user JWT
-        const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-          global: { headers: { Authorization: authHeader } },
-        });
-        const { data: { user }, error } = await authClient.auth.getUser();
-        if (!error && user) {
-          isAuthenticated = true;
-          console.log('Authenticated via user JWT');
-        }
       }
     }
 
@@ -154,6 +143,22 @@ serve(async (req) => {
         continue;
       }
 
+      // Atomically "reserve" the match: only one concurrent execution can flip
+      // results_determined from false to true. If no row is returned, another
+      // execution already claimed it — skip to avoid double-processing.
+      const { data: claimed } = await supabase
+        .from('matches')
+        .update({ results_determined: true })
+        .eq('id', match.id)
+        .eq('results_determined', false)
+        .select('id');
+
+      if (!claimed || claimed.length === 0) {
+        console.log(`Match ${match.id}: already claimed by another execution, skipping`);
+        results.push({ matchId: match.id, status: 'already_processing' });
+        continue;
+      }
+
       // Count MVP votes
       const mvpCounts: Record<string, number> = {};
       for (const vote of mvpVotes || []) {
@@ -179,7 +184,6 @@ serve(async (req) => {
         .update({
           mvp_id: mvpWinner,
           best_defender_id: defenderWinner,
-          results_determined: true,
         })
         .eq('id', match.id);
 
