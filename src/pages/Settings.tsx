@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/hooks/use-toast';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription, FREE_LAUNCH } from '@/hooks/useSubscription';
 import {
   AlertDialog,
   AlertDialogAction,

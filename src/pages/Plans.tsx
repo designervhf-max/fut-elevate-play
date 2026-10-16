@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription, FREE_LAUNCH } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
