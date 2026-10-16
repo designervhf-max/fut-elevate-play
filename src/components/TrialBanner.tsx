@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription, FREE_LAUNCH } from '@/hooks/useSubscription';
 
 const TrialBanner = () => {
   const { isAdmin, isPro, isFree, trialDaysLeft, trialActive, isLoading } = useSubscription();
   const navigate = useNavigate();
 
+  if (FREE_LAUNCH) return null;
   if (isLoading || isAdmin) return null;
 
   if (isPro && trialActive) {
