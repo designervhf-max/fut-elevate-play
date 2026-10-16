@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { CalendarDays, Clock, MapPin, Users, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { OPEN_MATCH_STATUSES } from '@/lib/matchStatus';
+import { toLocalDateString } from '@/lib/date';
 
 type NextMatch = {
   id: string;
@@ -43,7 +45,7 @@ const NextMatchCard = ({ userId }: NextMatchCardProps) => {
     const peladaIds = memberships.map(m => m.pelada_id);
 
     // Get upcoming matches
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDateString();
     const { data: matches } = await supabase
       .from('matches')
       .select(`
@@ -54,7 +56,7 @@ const NextMatchCard = ({ userId }: NextMatchCardProps) => {
         peladas!inner(name, location, max_players)
       `)
       .in('pelada_id', peladaIds)
-      .in('status', ['scheduled','in_progress','criada','confirmacoes_abertas','em_andamento'])
+      .in('status', [...OPEN_MATCH_STATUSES])
       .gte('match_date', today)
       .order('match_date', { ascending: true })
       .order('match_time', { ascending: true })
