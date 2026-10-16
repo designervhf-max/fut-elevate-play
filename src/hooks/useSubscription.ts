@@ -2,6 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
 
+// TEMPORÁRIO: lançamento gratuito — enquanto o pagamento não está integrado,
+// todos os usuários têm acesso Pro. Desligar (false) quando o checkout for ativado.
+export const FREE_LAUNCH = true;
+
 type PremiumFeature =
   | 'goals_assists'
   | 'ranking'
@@ -56,6 +60,7 @@ export function useSubscription() {
   
   // Pro if: admin, paid active subscription, or trial still running
   const isPro =
+    FREE_LAUNCH ||
     isAdmin ||
     (subscriptionStatus === 'active' && role !== 'free') ||
     (subscriptionStatus === 'trialing' && trialActive);
