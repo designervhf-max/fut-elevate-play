@@ -148,12 +148,19 @@ const Setup = () => {
         position: profileData.position as Database['public']['Enums']['player_position'],
         shirt_number: parseInt(profileData.shirtNumber),
         dominant_foot: profileData.dominantFoot as Database['public']['Enums']['dominant_foot'],
-        phone: `+55${phoneDigits}`,
       })
       .eq('id', user.id);
 
+    // Phone is stored in a separate, owner-only table for privacy
+    const { error: phoneError } = await supabase
+      .from('user_contact_info')
+      .upsert({
+        user_id: user.id,
+        phone: `+55${phoneDigits}`,
+      }, { onConflict: 'user_id' });
+
     setLoading(false);
-    if (error) {
+    if (error || phoneError) {
       toast({ title: "Erro", description: "Não foi possível salvar seus dados", variant: "destructive" });
       return;
     }

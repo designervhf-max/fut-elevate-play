@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/hooks/use-toast';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription, FREE_LAUNCH } from '@/hooks/useSubscription';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +23,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isPro, isAdmin, isFree, trialDaysLeft, trialActive } = useSubscription();
+  // FREE_LAUNCH: enquanto o pagamento não está integrado, todos são Pro
 
   const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -127,9 +128,11 @@ const Settings = () => {
     navigate('/login');
   };
 
-  const planLabel = isAdmin ? 'Admin' : isPro ? 'Pro' : 'Free';
+  const planLabel = isAdmin ? 'Admin' : isPro ? (FREE_LAUNCH ? 'Pro (lançamento gratuito)' : 'Pro') : 'Free';
   const planDescription = isAdmin
     ? 'Acesso total permanente'
+    : FREE_LAUNCH && isPro
+    ? 'Acesso Pro liberado no lançamento'
     : isPro && trialActive
     ? `Trial Pro — ${trialDaysLeft} dias restantes`
     : isPro
@@ -259,7 +262,7 @@ const Settings = () => {
               )}
             </div>
 
-            {(isFree || (isPro && trialActive)) && (
+            {!FREE_LAUNCH && (isFree || (isPro && trialActive)) && (
               <>
                 <div className="border-t border-border" />
                 <button

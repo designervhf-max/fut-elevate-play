@@ -29,6 +29,13 @@
       "when": 1792158519574,
       "tag": "0003_tighten_vote_insert_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792158761422,
+      "tag": "0004_fix_protect_profile_stats_role_check",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription, FREE_LAUNCH } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -72,7 +72,7 @@ const Plans = () => {
         </section>
 
         {/* Trial Banner */}
-        {trialActive && currentPlan === 'pro' && (
+        {!FREE_LAUNCH && trialActive && currentPlan === 'pro' && (
           <div className="px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 text-center animate-slide-up">
             <p className="text-xs text-primary font-medium">
               ⚽ Trial Pro expira em {trialDaysLeft} {trialDaysLeft === 1 ? 'dia' : 'dias'}
@@ -209,7 +209,11 @@ const Plans = () => {
           )}
 
           <div>
-            {currentPlan === 'pro' && !trialActive ? (
+            {FREE_LAUNCH ? (
+              <Button variant="sport" className="w-full" disabled>
+                Pro liberado no lançamento
+              </Button>
+            ) : currentPlan === 'pro' && !trialActive ? (
               <Button variant="sport" className="w-full" disabled>
                 Plano atual
               </Button>
